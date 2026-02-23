@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+
 import "@/app/globals.css";
+
+import { Toaster } from "sonner";
 
 const primaryFont = localFont({
   src: "./assets/fonts/momo-trust-display-regular.ttf",
@@ -62,6 +65,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );
