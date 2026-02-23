@@ -1,0 +1,19 @@
+npx prisma init
+npx prisma generate
+npx prisma db push
+
+
+Ctrl + Shift + P → TypeScript: Restart TS Server
+
+
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+
+
+npm install supabase --save-dev
+npx supabase init
+npx supabase login
+npx supabase link --project-ref [PROJECT_ID]
+
+npx supabase migration new 0001_initial_schema
+npx supabase db push
