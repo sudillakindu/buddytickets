@@ -1,5 +1,5 @@
 import Image from "next/image";
-import logoImg from "./assets/images/logo/upscale_media_logo.png";
+import logoImg from "@/app/assets/images/logo/upscale_media_logo.png";
 
 export default function Home() {
   return (

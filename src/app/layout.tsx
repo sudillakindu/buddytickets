@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
+import "@/app/globals.css";
 
 const primaryFont = localFont({
   src: "./assets/fonts/momo-trust-display-regular.ttf",
@@ -23,6 +23,7 @@ const specialFont = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://buddyticket.store"),
   title: "BuddyTickets | Secure Ticket Selling Platform",
   description: "Complete production-grade ticket-selling web application",
   openGraph: {
@@ -33,8 +34,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og-image.png",
-        width: 967,
-        height: 1200,
+        width: 1200,
+        height: 630,
         alt: "BuddyTickets - Secure Ticket Selling Platform",
       },
     ],
