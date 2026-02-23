@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Toaster } from '@/components/ui/toast';
+
 import "@/app/globals.css";
 
 const primaryFont = localFont({
@@ -58,10 +60,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased`}
-        suppressHydrationWarning
+        className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950`}
       >
-        {children}
+        <div className="flex flex-col min-h-[100dvh] bg-background">
+            {children}
+          </div>
+          <Toaster defaultPosition="top-right" />
       </body>
     </html>
   );

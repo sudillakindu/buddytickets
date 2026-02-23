@@ -1,32 +1,29 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { updateSession } from "@/utils/supabase/middleware";
 
-export function proxy(request: NextRequest) {
-  // Check if maintenance mode is enabled via environment variables
-  const isMaintenanceMode = process.env.MAINTENANCE_MODE === "true";
+export async function proxy(request: NextRequest) {
+    const url = request.nextUrl.clone();
+    const isMaintenanceMode = process.env.MAINTENANCE_MODE === "true";
 
-  // Clone the current request URL
-  const url = request.nextUrl.clone();
+    // Redirect all traffic to /maintenance when maintenance mode is active
+    if (isMaintenanceMode && url.pathname !== "/maintenance") {
+        url.pathname = "/maintenance";
+        return NextResponse.redirect(url);
+    }
 
-  // If maintenance mode is ON and the user is not already on the maintenance page:
-  if (isMaintenanceMode && url.pathname !== "/maintenance") {
-    url.pathname = "/maintenance";
-    return NextResponse.redirect(url);
-  }
+    // Prevent direct access to /maintenance when it's not active
+    if (!isMaintenanceMode && url.pathname === "/maintenance") {
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+    }
 
-  // If maintenance mode is OFF but a user attempts to access /maintenance directly, redirect them to the home page:
-  if (!isMaintenanceMode && url.pathname === "/maintenance") {
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
-
-  // If no conditions match, allow the request to proceed normally
-  return NextResponse.next();
+    // Refresh the Supabase auth session on every request
+    return await updateSession(request);
 }
 
-// Define paths where this Proxy should not run (e.g., static assets, images, etc.)
+// Run middleware on all routes except static assets
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+    matcher: [
+        "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    ],
 };
