@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, type MouseEvent } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
@@ -50,7 +50,7 @@ export default function Hero() {
             className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white pt-24 pb-12 sm:pt-28 sm:pb-16"
             onMouseMove={handleMouseMove}
         >
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
                 <TargetCursor
                     spinDuration={2}
                     hideDefaultCursor={false}
@@ -62,7 +62,7 @@ export default function Hero() {
 
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
-                    className="absolute top-[-5%] right-[-30%] sm:right-[-20%] md:right-[-10%] w-[80vw] sm:w-[60vw] md:w-[40vw] h-[80vw] sm:h-[60vw] md:h-[40vw] min-w-[250px] min-h-[250px] rounded-full blur-[60px] sm:blur-[80px] md:blur-[100px] opacity-30 md:opacity-40"
+                    className="absolute top-[-5%] right-[-30%] sm:right-[-20%] lg:right-[-10%] w-[80vw] sm:w-[60vw] lg:w-[40vw] h-[80vw] sm:h-[60vw] lg:h-[40vw] min-w-[250px] min-h-[250px] rounded-full blur-[60px] sm:blur-[80px] lg:blur-[100px] opacity-30 lg:opacity-40"
                     style={{
                         background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
                         x: springX,
@@ -72,7 +72,7 @@ export default function Hero() {
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                 />
                 <motion.div
-                    className="absolute bottom-[-10%] left-[-30%] sm:left-[-20%] md:left-[-10%] w-[70vw] sm:w-[50vw] md:w-[35vw] h-[70vw] sm:h-[50vw] md:h-[35vw] min-w-[250px] min-h-[250px] rounded-full blur-[60px] sm:blur-[80px] md:blur-[100px] opacity-30 md:opacity-40"
+                    className="absolute bottom-[-10%] left-[-30%] sm:left-[-20%] lg:left-[-10%] w-[70vw] sm:w-[50vw] lg:w-[35vw] h-[70vw] sm:h-[50vw] lg:h-[35vw] min-w-[250px] min-h-[250px] rounded-full blur-[60px] sm:blur-[80px] lg:blur-[100px] opacity-30 lg:opacity-40"
                     style={{
                         background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
                         x: springX,
@@ -95,7 +95,7 @@ export default function Hero() {
                 {particles.map((particle) => (
                     <motion.div
                         key={particle.id}
-                        className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full"
+                        className="absolute w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full"
                         style={{
                             background: `hsl(${particle.hue}, 70%, 50%)`,
                             left: particle.left,
@@ -115,7 +115,7 @@ export default function Hero() {
                     transition={{ duration: 0.5 }}
                 >
                     <motion.span
-                        className="font-primary inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs md:text-sm font-medium mb-4 sm:mb-6"
+                        className="font-primary inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-[11px] lg:text-xs font-medium mb-4 sm:mb-6"
                         style={{
                             border: '1px solid hsl(222.2 47.4% 11.2% / 0.2)',
                             color: 'hsl(222.2 47.4% 11.2%)',
@@ -131,14 +131,14 @@ export default function Hero() {
                     </motion.span>
 
                     <motion.h1
-                        className="font-special text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[5rem] leading-[1.1] sm:leading-tight mb-4 sm:mb-6 px-2 sm:px-0"
+                        className="font-special text-3xl sm:text-4xl lg:text-6xl leading-[1.1] sm:leading-tight mb-4 sm:mb-6 px-2 sm:px-0"
                         style={{ color: 'hsl(222.2 47.4% 11.2%)' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
                     >
-                        Connect, Create and Celebrate <br className="hidden md:block" />with{' '}
-                        <span className="relative inline-block mt-1 sm:mt-2 md:mt-0">
+                        Connect, Create and Celebrate <br className="hidden lg:block" />with{' '}
+                        <span className="relative inline-block mt-1 sm:mt-2 lg:mt-0">
                             <span
                                 className="relative z-10 font-special font-semibold"
                                 style={{
@@ -161,7 +161,7 @@ export default function Hero() {
                     </motion.h1>
 
                     <motion.p
-                        className="font-secondary text-sm sm:text-base md:text-lg lg:text-xl mb-6 sm:mb-8 max-w-[90%] sm:max-w-2xl mx-auto leading-relaxed"
+                        className="font-secondary text-xs sm:text-sm lg:text-lg mb-6 sm:mb-8 max-w-[90%] sm:max-w-2xl mx-auto leading-relaxed"
                         style={{ color: 'hsl(215.4 16.3% 46.9%)' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -178,7 +178,7 @@ export default function Hero() {
                         transition={{ delay: 0.25 }}
                     >
                         <Button
-                            className="font-primary w-full sm:w-auto relative cursor-target group overflow-hidden inline-flex items-center justify-center h-12 md:h-14 px-6 sm:px-8 text-sm sm:text-base text-white rounded-xl shadow-lg transition-all duration-500 hover:scale-[1.02] sm:hover:scale-105"
+                            className="font-primary w-full sm:w-auto relative cursor-target group overflow-hidden inline-flex items-center justify-center h-10 lg:h-12 px-5 sm:px-7 text-xs sm:text-sm text-white rounded-xl shadow-lg transition-all duration-500 hover:scale-[1.02] sm:hover:scale-105"
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
                             onClick={() => Toast('Feature Coming Soon', 'Event discovery is launching soon. Stay tuned!', 'warning')}
@@ -194,7 +194,7 @@ export default function Hero() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="font-primary w-full sm:w-auto relative cursor-target group overflow-hidden inline-flex items-center justify-center h-12 md:h-14 px-6 sm:px-8 text-sm sm:text-base rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent"
+                            className="font-primary w-full sm:w-auto relative cursor-target group overflow-hidden inline-flex items-center justify-center h-10 lg:h-12 px-5 sm:px-7 text-xs sm:text-sm rounded-xl border-2 transition-all duration-500 shadow-lg bg-transparent hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"
                             onClick={() => Toast('Feature Coming Soon', 'Organizer sign-up is launching soon. Stay tuned!', 'warning')}
                             style={{
                                 color: 'hsl(222.2 47.4% 11.2%)',
@@ -212,7 +212,7 @@ export default function Hero() {
                 </motion.div>
 
                 <motion.div
-                    className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 items-center px-4 max-w-3xl"
+                    className="flex flex-wrap justify-center gap-2 sm:gap-3 lg:gap-4 items-center px-4 max-w-3xl"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.35 }}
@@ -220,7 +220,7 @@ export default function Hero() {
                     {categories.map(({ icon: Icon, label, color, delay }) => (
                         <motion.div
                             key={label}
-                            className="font-secondary flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs md:text-sm cursor-pointer group px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm"
+                            className="font-secondary flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] lg:text-xs cursor-pointer group px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm"
                             style={{ color: 'hsl(215.4 16.3% 46.9%)' }}
                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
                             initial={{ opacity: 0, y: 20 }}
@@ -236,13 +236,13 @@ export default function Hero() {
             </div>
 
             <motion.div
-                className="absolute top-1/4 left-4 sm:left-8 md:left-10 w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 rounded-full"
+                className="absolute top-1/4 left-4 sm:left-8 lg:left-10 w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 rounded-full"
                 style={{ background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%))' }}
                 animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.div
-                className="absolute bottom-1/4 right-4 sm:right-8 md:right-10 w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 rounded-full"
+                className="absolute bottom-1/4 right-4 sm:right-8 lg:right-10 w-3 h-3 sm:w-4 sm:h-4 lg:w-6 lg:h-6 rounded-full"
                 style={{ background: 'linear-gradient(to right, hsl(210 100% 60%), hsl(180 70% 50%))' }}
                 animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}

@@ -58,14 +58,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950`}
       >
         <div className="flex flex-col min-h-[100dvh] bg-background">
-            {children}
-          </div>
-          <Toaster defaultPosition="top-right" />
+          {children}
+        </div>
+        <Toaster defaultPosition="top-right" />
       </body>
     </html>
   );
