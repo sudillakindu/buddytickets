@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
 
 import { Button } from './button';
 import Image from 'next/image';
-import { Toast } from '@/components/ui/toast';
+import { Toast } from './toast';
 
 export interface Event {
     event_id: string;

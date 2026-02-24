@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from '@/components/ui/toast';
 
-import "@/app/globals.css";
+import "./globals.css";
 
 const primaryFont = localFont({
   src: "./assets/fonts/momo-trust-display-regular.ttf",
@@ -58,7 +58,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body
         className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950`}
       >
