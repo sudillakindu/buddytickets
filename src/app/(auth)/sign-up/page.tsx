@@ -1,0 +1,171 @@
+"use client";
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { Eye, EyeOff, UserPlus, Mail, Lock, User } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Toast } from '@/components/ui/toast';
+
+const fadeUp = (delay = 0) => ({
+    initial: { opacity: 0, y: 16 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.4, delay },
+});
+
+export default function SignUpPage() {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (form.password !== form.confirm) {
+            Toast('Password Mismatch', 'Your passwords do not match.', 'error');
+            return;
+        }
+        setLoading(true);
+        // TODO: implement Supabase sign up
+        await new Promise(r => setTimeout(r, 1200));
+        setLoading(false);
+        Toast('Coming Soon', 'Sign-up is launching soon. Stay tuned!', 'warning');
+    };
+
+    const inputClass = "font-secondary pl-10 h-11 rounded-xl border-[hsl(222.2,47.4%,11.2%)]/15 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)]";
+    const labelClass = "font-primary text-xs font-semibold uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]";
+
+    return (
+        <motion.div
+            className="w-full max-w-md"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+        >
+            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl px-8 py-10 sm:px-10">
+
+                {/* Header */}
+                <motion.div className="mb-8 text-center" {...fadeUp(0.05)}>
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, hsl(270 70% 50%), hsl(330 80% 60%))' }}>
+                        <UserPlus className="w-6 h-6 text-white" />
+                    </div>
+                    <h1 className="font-special text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">Create account</h1>
+                    <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">Join BuddyTicket and discover amazing events</p>
+                </motion.div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+
+                    {/* Full name */}
+                    <motion.div className="space-y-1.5" {...fadeUp(0.1)}>
+                        <Label htmlFor="name" className={labelClass}>Full Name</Label>
+                        <div className="relative">
+                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215.4,16.3%,46.9%)]" />
+                            <Input id="name" name="name" type="text" autoComplete="name" required
+                                placeholder="Your full name" value={form.name} onChange={handleChange}
+                                className={inputClass} />
+                        </div>
+                    </motion.div>
+
+                    {/* Email */}
+                    <motion.div className="space-y-1.5" {...fadeUp(0.13)}>
+                        <Label htmlFor="email" className={labelClass}>Email Address</Label>
+                        <div className="relative">
+                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215.4,16.3%,46.9%)]" />
+                            <Input id="email" name="email" type="email" autoComplete="email" required
+                                placeholder="you@example.com" value={form.email} onChange={handleChange}
+                                className={inputClass} />
+                        </div>
+                    </motion.div>
+
+                    {/* Password */}
+                    <motion.div className="space-y-1.5" {...fadeUp(0.16)}>
+                        <Label htmlFor="password" className={labelClass}>Password</Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215.4,16.3%,46.9%)]" />
+                            <Input id="password" name="password" type={showPassword ? 'text' : 'password'}
+                                autoComplete="new-password" required placeholder="Min. 8 characters"
+                                value={form.password} onChange={handleChange}
+                                className={`${inputClass} pr-11`} />
+                            <button type="button" onClick={() => setShowPassword(v => !v)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(222.2,47.4%,11.2%)] transition-colors"
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </motion.div>
+
+                    {/* Confirm password */}
+                    <motion.div className="space-y-1.5" {...fadeUp(0.19)}>
+                        <Label htmlFor="confirm" className={labelClass}>Confirm Password</Label>
+                        <div className="relative">
+                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215.4,16.3%,46.9%)]" />
+                            <Input id="confirm" name="confirm" type={showConfirm ? 'text' : 'password'}
+                                autoComplete="new-password" required placeholder="Repeat password"
+                                value={form.confirm} onChange={handleChange}
+                                className={`${inputClass} pr-11 ${form.confirm && form.password !== form.confirm ? 'border-red-400 focus-visible:border-red-400 focus-visible:ring-red-400/20' : ''}`} />
+                            <button type="button" onClick={() => setShowConfirm(v => !v)}
+                                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(222.2,47.4%,11.2%)] transition-colors"
+                                aria-label={showConfirm ? 'Hide password' : 'Show password'}>
+                                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                        {form.confirm && form.password !== form.confirm && (
+                            <p className="font-secondary text-xs text-red-500 mt-1">Passwords do not match</p>
+                        )}
+                    </motion.div>
+
+                    {/* Terms */}
+                    <motion.p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] leading-relaxed" {...fadeUp(0.22)}>
+                        By creating an account you agree to our{' '}
+                        <Link href="#" className="text-[hsl(270,70%,50%)] hover:underline">Terms of Service</Link>{' '}
+                        and{' '}
+                        <Link href="#" className="text-[hsl(270,70%,50%)] hover:underline">Privacy Policy</Link>.
+                    </motion.p>
+
+                    {/* Submit */}
+                    <motion.div {...fadeUp(0.25)} className="pt-1">
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl disabled:opacity-60 disabled:scale-100"
+                            style={{
+                                background: 'linear-gradient(to right, hsl(270 70% 50%), hsl(330 80% 60%), hsl(270 70% 50%))',
+                                backgroundSize: '200% auto',
+                            }}
+                        >
+                            {loading ? (
+                                <span className="flex items-center gap-2">
+                                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
+                                    </svg>
+                                    Creating account…
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-2">
+                                    <UserPlus className="w-4 h-4" />
+                                    Create Account
+                                </span>
+                            )}
+                        </Button>
+                    </motion.div>
+                </form>
+
+                {/* Sign in link */}
+                <motion.p className="font-secondary text-center text-sm text-[hsl(215.4,16.3%,46.9%)] mt-6" {...fadeUp(0.3)}>
+                    Already have an account?{' '}
+                    <Link href="/sign-in" className="font-semibold text-[hsl(270,70%,50%)] hover:text-[hsl(270,70%,40%)] transition-colors">
+                        Sign in
+                    </Link>
+                </motion.p>
+            </div>
+        </motion.div>
+    );
+}

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Button } from './button';
 
 export type Variant = 'default' | 'success' | 'error' | 'warning';
 
