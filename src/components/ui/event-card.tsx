@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
 
 import { Button } from './button';
 import Image from 'next/image';
-import { Toast } from '@/components/ui/toast';
+import { Toast } from './toast';
 
 export interface Event {
     event_id: string;
@@ -119,17 +119,17 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                     </div>
                 </div>
 
-                <div className="flex items-end justify-between mt-auto pt-3 sm:pt-4 border-t-2 border-gray-100">
+                <div className="flex items-end justify-between mt-auto pt-2 sm:pt-3 border-t-2 border-gray-100">
                     <div>
                         <p className="event-label text-[9px] sm:text-[10px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">Starting from</p>
-                        <p className="event-price text-base sm:text-lg md:text-xl font-bold text-[hsl(222.2,47.4%,11.2%)]">{event.start_ticket_price}</p>
+                        <p className="event-price text-base sm:text-lg md:text-xl font-bold text-[hsl(222.2,47.4%,11.2%)]">{event.start_ticket_price} LKR</p>
                     </div>
                 </div>
 
                 <Button
                     aria-label={`${event.name} status: ${event.status}`}
                     disabled={ui.disabled}
-                    className="event-button w-full relative overflow-hidden py-3 sm:py-3.5 h-auto rounded-xl text-xs sm:text-sm text-white shadow-md transition-all group-hover:shadow-lg mt-2 sm:mt-3 group-hover:-translate-y-0.5"
+                    className="event-button w-full relative overflow-hidden py-3 sm:py-3.5 h-auto rounded-xl text-xs sm:text-sm text-white shadow-md transition-all group-hover:shadow-lg mt-1.5 sm:mt-2 group-hover:-translate-y-0.5"
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
                     onClick={() => { if (!ui.disabled) Toast('Feature Coming Soon', 'Ticket booking is launching soon. Stay tuned!', 'warning'); }}

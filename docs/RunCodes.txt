@@ -15,5 +15,5 @@ npx supabase init
 npx supabase login
 npx supabase link --project-ref [PROJECT_ID]
 
-npx supabase migration new 0001_initial_schema
+npx supabase migration new initial_schema
 npx supabase db push
