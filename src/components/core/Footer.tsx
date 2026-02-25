@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -34,16 +34,14 @@ const LEGAL_LINKS: NavLink[] = [
 ];
 
 export function Footer() {
-  const [isLogoHovered, setIsLogoHovered] = useState(false);
-
   return (
     <footer
       className="bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-12 pb-6 border-t border-[hsl(222.2,47.4%,11.2%)]/5"
       aria-label="Site footer"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
-          {/* Brand Col */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-10 mb-10">
+          
           <motion.div
             className="space-y-5 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
@@ -55,8 +53,6 @@ export function Footer() {
               href="/"
               className="flex items-center gap-2.5 text-lg group"
               aria-label="BuddyTicket.lk Home"
-              onMouseEnter={() => setIsLogoHovered(true)}
-              onMouseLeave={() => setIsLogoHovered(false)}
             >
               <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
@@ -71,16 +67,7 @@ export function Footer() {
                   className="w-9 h-9 object-contain drop-shadow-sm"
                 />
               </motion.div>
-              <span
-                className="font-special transition-all duration-300 text-lg"
-                style={{
-                  backgroundImage: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(222.2 47.4% 11.2%))',
-                  backgroundSize: '200% auto',
-                  backgroundPosition: isLogoHovered ? '100% 0' : '0 0',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
+              <span className="font-special transition-all duration-500 text-lg text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0]">
                 BuddyTickets
               </span>
             </Link>
@@ -113,7 +100,6 @@ export function Footer() {
             </div>
           </motion.div>
 
-          {/* Nav Cols */}
           <motion.nav
             className="space-y-4 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
@@ -176,7 +162,6 @@ export function Footer() {
             </ul>
           </motion.nav>
 
-          {/* Contact Col */}
           <motion.div
             className="space-y-4 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
@@ -198,7 +183,7 @@ export function Footer() {
                   <MapPin className="w-3.5 h-3.5 text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
                 </div>
                 <span className="font-secondary text-[hsl(215.4,16.3%,46.9%)] text-left">
-                  Buddy Ticket, Matara, Sri Lanka
+                  Buddy Tickets, Matara, Sri Lanka
                 </span>
               </motion.li>
 
@@ -230,16 +215,15 @@ export function Footer() {
                   href="mailto:info@buddyticket.lk"
                   className="font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors text-left"
                 >
-                  info@buddyticket.lk
+                  info@buddytickets.lk
                 </a>
               </motion.li>
             </ul>
           </motion.div>
         </div>
 
-        {/* Bottom Bar */}
         <motion.div
-          className="border-t border-gray-200/60 pt-5 flex flex-col md:flex-row justify-between items-center gap-4"
+          className="border-t border-gray-200/60 pt-3 flex flex-col md:flex-row justify-between items-center gap-4"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
