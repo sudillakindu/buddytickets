@@ -3,7 +3,6 @@ import { createClient } from "@/utils/supabase/server";
 export default async function TestPage() {
     const supabase = await createClient();
 
-    // Fetch all users — remove or replace with real query before production
     const { data: users, error } = await supabase.from("users").select("*");
 
     if (error) {
@@ -21,7 +20,6 @@ export default async function TestPage() {
                 Users Data from Supabase
             </h1>
 
-            {/* JSON preview — dev only */}
             <pre className="bg-zinc-100 dark:bg-zinc-900 p-4 rounded-lg overflow-auto text-sm text-zinc-800 dark:text-zinc-200">
                 {JSON.stringify(users, null, 2)}
             </pre>
