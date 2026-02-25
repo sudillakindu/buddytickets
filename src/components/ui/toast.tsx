@@ -73,7 +73,7 @@ export const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' 
     style={{ zIndex: 9999 }}
     toastOptions={{
       unstyled: true,
-      className: 'flex justify-end w-full mb-2',
+      className: 'flex justify-end w-full mb-[8px]',
     }}
   />
 );
@@ -107,31 +107,31 @@ export const Toast = (
         aria-live="assertive"
         aria-atomic="true"
         className={cn(
-          'flex items-start w-[420px] p-4 rounded-xl border shadow-xl backdrop-blur-md bg-white/95 select-none pointer-events-auto',
+          'flex items-start w-[420px] p-[16px] rounded-xl border shadow-xl backdrop-blur-md bg-white/95 select-none pointer-events-auto',
           variantStyles[variant]
         )}
       >
-        <div className="flex-shrink-0 pt-0.5" aria-hidden="true">
-          <Icon className={cn('h-5 w-5', iconColor[variant])} />
+        <div className="flex-shrink-0 pt-[2px]" aria-hidden="true">
+          <Icon className={cn('h-[20px] w-[20px]', iconColor[variant])} />
         </div>
 
-        <div className="flex-1 ml-3 mr-2 space-y-0.5">
+        <div className="flex-1 ml-[12px] mr-[8px] space-y-[2px]">
           {title && (
             <h3
               className={cn(
-                'font-primary text-sm leading-tight',
+                'font-primary text-[14px] leading-tight',
                 highlightTitle ? 'text-green-600' : titleColor[variant]
               )}
             >
               {title}
             </h3>
           )}
-          <p className="font-secondary text-sm text-gray-600 leading-snug opacity-90">
+          <p className="font-secondary text-[14px] text-gray-600 leading-snug opacity-90">
             {message}
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 items-end flex-shrink-0 ml-1">
+        <div className="flex flex-col gap-[8px] items-end flex-shrink-0 ml-[4px]">
           <button
             type="button"
             aria-label="Dismiss notification"
@@ -139,9 +139,9 @@ export const Toast = (
               sonnerToast.dismiss(toastId);
               onDismiss?.();
             }}
-            className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-[4px] rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <X className="h-4 w-4" />
+            <X className="h-[16px] w-[16px]" />
           </button>
 
           {action?.label && (
@@ -153,7 +153,7 @@ export const Toast = (
                 action.onClick();
                 sonnerToast.dismiss(toastId);
               }}
-              className="text-xs h-7 px-3 mt-1"
+              className="text-[12px] h-[28px] px-[12px] mt-[4px]"
             >
               {action.label}
             </Button>

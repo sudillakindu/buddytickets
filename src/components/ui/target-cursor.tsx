@@ -295,12 +295,12 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
     >
       <div
         ref={dotRef}
-        className="absolute top-1/2 left-1/2 w-1 h-1 bg-[hsl(222.2,47.4%,11.2%)] rounded-full -translate-x-1/2 -translate-y-1/2"
+        className="absolute top-1/2 left-1/2 w-[4px] h-[4px] bg-[hsl(222.2,47.4%,11.2%)] rounded-full -translate-x-1/2 -translate-y-1/2"
       />
-      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-[hsl(222.2,47.4%,11.2%)] -translate-x-[150%] -translate-y-[150%] border-r-0 border-b-0" />
-      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-[hsl(222.2,47.4%,11.2%)] translate-x-1/2 -translate-y-[150%] border-l-0 border-b-0" />
-      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-[hsl(222.2,47.4%,11.2%)] translate-x-1/2 translate-y-1/2 border-l-0 border-t-0" />
-      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-3 h-3 border-[3px] border-[hsl(222.2,47.4%,11.2%)] -translate-x-[150%] translate-y-1/2 border-r-0 border-t-0" />
+      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-[12px] h-[12px] border-[3px] border-[hsl(222.2,47.4%,11.2%)] -translate-x-[150%] -translate-y-[150%] border-r-0 border-b-0" />
+      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-[12px] h-[12px] border-[3px] border-[hsl(222.2,47.4%,11.2%)] translate-x-1/2 -translate-y-[150%] border-l-0 border-b-0" />
+      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-[12px] h-[12px] border-[3px] border-[hsl(222.2,47.4%,11.2%)] translate-x-1/2 translate-y-1/2 border-l-0 border-t-0" />
+      <div className="target-cursor-corner absolute top-1/2 left-1/2 w-[12px] h-[12px] border-[3px] border-[hsl(222.2,47.4%,11.2%)] -translate-x-[150%] translate-y-1/2 border-r-0 border-t-0" />
     </div>
   );
 };

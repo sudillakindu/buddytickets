@@ -36,7 +36,7 @@ export default function NotFound() {
 
     return (
         <section
-            className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white p-4"
+            className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white p-[16px]"
             onMouseMove={handleMouseMove}
         >
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -74,7 +74,7 @@ export default function NotFound() {
                 {PARTICLES.map((particle) => (
                     <motion.div
                         key={particle.id}
-                        className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+                        className="absolute w-[6px] h-[6px] rounded-full pointer-events-none"
                         style={{
                             background: `hsl(${particle.hue}, 70%, 50%)`,
                             left: particle.left,
@@ -90,16 +90,16 @@ export default function NotFound() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="max-w-2xl w-full text-center relative z-10"
+                className="max-w-[672px] w-full text-center relative z-10"
             >
                 <motion.div
-                    className="mb-6 inline-flex p-3 rounded-full bg-white/50 backdrop-blur-sm border border-gray-200/50 shadow-xl"
+                    className="mb-[24px] inline-flex p-[12px] rounded-full bg-white/50 backdrop-blur-sm border border-gray-200/50 shadow-xl"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
                 >
                     <Settings
-                        className="w-10 h-10 text-indigo-500"
+                        className="w-[40px] h-[40px] text-indigo-500"
                         style={{ animation: 'spin 8s linear infinite' }}
                     />
                 </motion.div>
@@ -108,31 +108,31 @@ export default function NotFound() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.8 }}
                 >
-                    <h2 className="font-primary text-4xl font-bold text-gray-900 mt-4 tracking-tight">
+                    <h2 className="font-primary text-[36px] font-bold text-gray-900 mt-[16px] tracking-tight">
                         Oops! Page Not Found
                     </h2>
-                    <p className="font-secondary text-gray-500 mt-3 mb-8 text-base leading-relaxed max-w-lg mx-auto">
+                    <p className="font-secondary text-gray-500 mt-[12px] mb-[32px] text-[16px] leading-relaxed max-w-[512px] mx-auto">
                         The page you are looking for might have been removed, had its name changed, or is temporarily unavailable. Let's get you back on track.
                     </p>
 
-                    <div className="flex flex-row gap-4 justify-center">
+                    <div className="flex flex-row gap-[16px] justify-center">
                         <Button
                             asChild
                             variant="outline"
-                            className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50"
+                            className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-[8px] h-[48px] px-[32px] text-[14px] rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50"
                             style={{
                                 color: 'hsl(222.2 47.4% 11.2%)',
                                 borderColor: 'hsl(222.2 47.4% 11.2% / 0.2)',
                             }}
                         >
                             <a onClick={() => router.back()} className="cursor-pointer">
-                                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+                                <ArrowLeft className="w-[16px] h-[16px] group-hover:-translate-x-1 transition-transform duration-300" />
                                 <span>Go Back</span>
                             </a>
                         </Button>
                         <Button
                             asChild
-                            className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2 h-12 px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98]"
+                            className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-[8px] h-[48px] px-[32px] text-[14px] text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98]"
                             style={{
                                 background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(222.2 47.4% 11.2%))',
                                 backgroundSize: '200% auto',
@@ -143,7 +143,7 @@ export default function NotFound() {
                             onMouseLeave={() => setIsHomeHovered(false)}
                         >
                             <Link href="/">
-                                <Home className="w-4 h-4" />
+                                <Home className="w-[16px] h-[16px]" />
                                 <span>Home Page</span>
                             </Link>
                         </Button>

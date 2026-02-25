@@ -27,27 +27,27 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                 />
             </div>
 
-            <header className="w-full px-6 py-4">
+            <header className="w-full px-[24px] py-[16px]">
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="BuddyTickets home">
+                    <Link href="/" className="inline-flex items-center gap-[10px] group" aria-label="BuddyTickets home">
                         <Image src={Logo} alt="BuddyTickets" width={32} height={32} className="rounded-lg" />
-                        <span className="font-special text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)] group-hover:opacity-80 transition-opacity">
+                        <span className="font-special text-[18px] font-semibold text-[hsl(222.2,47.4%,11.2%)] group-hover:opacity-80 transition-opacity">
                             BuddyTicket.lk
                         </span>
                     </Link>
                 </motion.div>
             </header>
 
-            <main className="flex-1 flex items-center justify-center px-4 py-8">
+            <main className="flex-1 flex items-center justify-center px-[16px] py-[32px]">
                 {children}
             </main>
 
-            <footer className="text-center py-5 px-4">
-                <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)]">
+            <footer className="text-center py-[20px] px-[16px]">
+                <p className="font-secondary text-[12px] text-[hsl(215.4,16.3%,46.9%)]">
                     &copy; {new Date().getFullYear()} BuddyTicket.lk — All rights reserved.
                 </p>
             </footer>

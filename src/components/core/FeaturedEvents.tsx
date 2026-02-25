@@ -20,20 +20,20 @@ function SectionHeader({ highlight, title, link }: SectionHeaderProps) {
     const router = useRouter();
 
     return (
-        <div className="flex flex-row items-center justify-between mb-8">
+        <div className="flex flex-row items-center justify-between mb-[32px]">
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
             >
-                <h2 className="font-primary font-semibold text-3xl text-[hsl(222.2,47.4%,11.2%)]">
+                <h2 className="font-primary font-semibold text-[30px] text-[hsl(222.2,47.4%,11.2%)]">
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
                         {highlight}
                     </span>{' '}
                     {title}
                 </h2>
-                <div className="h-1.5 w-24 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] rounded-full mt-2" />
+                <div className="h-[6px] w-[96px] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] rounded-full mt-[8px]" />
             </motion.div>
 
             <motion.div
@@ -46,10 +46,10 @@ function SectionHeader({ highlight, title, link }: SectionHeaderProps) {
                 <Button
                     variant="ghost"
                     onClick={() => router.push(link)}
-                    className="font-secondary group flex items-center gap-1 text-sm font-semibold text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto"
+                    className="font-secondary group flex items-center gap-[4px] text-[14px] font-semibold text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto"
                 >
                     View All
-                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-[16px] h-[16px] group-hover:translate-x-1 transition-transform" />
                 </Button>
             </motion.div>
         </div>
@@ -86,18 +86,18 @@ export default function FeaturedEvents() {
     );
 
     return (
-        <section id="events" className="py-20 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
+        <section id="events" className="py-[80px] relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[20%] left-[-5%] w-[300px] h-[300px] bg-[hsl(222.2,47.4%,11.2%)]/5 rounded-full blur-[80px]" />
                 <div className="absolute bottom-[20%] right-[-5%] w-[300px] h-[300px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px]" />
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 relative z-10 space-y-16 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary">
+            <div className="max-w-[1280px] mx-auto px-[16px] relative z-10 space-y-16 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary">
 
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-[hsl(215.4,16.3%,46.9%)]">
+                    <div className="flex flex-col items-center justify-center py-[80px] text-[hsl(215.4,16.3%,46.9%)]">
                         <Loader2
-                            className="w-8 h-8 animate-spin relative z-10"
+                            className="w-[32px] h-[32px] animate-spin relative z-10"
                             style={{ color: 'hsl(270,70%,50%)' }}
                         />
                     </div>
@@ -105,11 +105,11 @@ export default function FeaturedEvents() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center justify-center py-20 text-center"
+                        className="flex flex-col items-center justify-center py-[80px] text-center"
                     >
-                        <CalendarX className="w-16 h-16 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" />
-                        <h3 className="font-primary text-2xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">No Events Right Now</h3>
-                        <p className="font-secondary text-[hsl(215.4,16.3%,46.9%)] max-w-md">
+                        <CalendarX className="w-[64px] h-[64px] mb-[16px] text-[hsl(215.4,16.3%,46.9%)] opacity-50" />
+                        <h3 className="font-primary text-[24px] font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-[8px]">No Events Right Now</h3>
+                        <p className="font-secondary text-[hsl(215.4,16.3%,46.9%)] max-w-[448px]">
                             We&apos;re currently planning our next exciting events. Check back soon!
                         </p>
                     </motion.div>
@@ -118,7 +118,7 @@ export default function FeaturedEvents() {
                         {activeEvents.length > 0 && (
                             <div>
                                 <SectionHeader highlight="Latest" title="Events" link="/events?filter=latest" />
-                                <div className="grid grid-cols-4 gap-6">
+                                <div className="grid grid-cols-4 gap-[24px]">
                                     {activeEvents.map((event, index) => (
                                         <motion.div
                                             key={event.event_id || index}
@@ -137,7 +137,7 @@ export default function FeaturedEvents() {
                         {upcomingEvents.length > 0 && (
                             <div>
                                 <SectionHeader highlight="Upcoming" title="Events" link="/events?filter=upcoming" />
-                                <div className="grid grid-cols-3 gap-6">
+                                <div className="grid grid-cols-3 gap-[24px]">
                                     {upcomingEvents.map((event, index) => (
                                         <motion.div
                                             key={event.event_id || index}

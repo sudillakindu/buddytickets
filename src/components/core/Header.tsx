@@ -56,15 +56,15 @@ export function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-3 px-3">
-      <nav className="relative w-full max-w-7xl mx-auto">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-[12px] px-[12px]">
+      <nav className="relative w-full max-w-[1280px] mx-auto">
         <div
-          className={`flex items-center justify-between px-4 py-2.5 rounded-full border transition-all duration-500 ease-out w-full ${NAV_STYLE.container} ${isLoaded ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'}`}
+          className={`flex items-center justify-between px-[16px] py-[10px] rounded-full border transition-all duration-500 ease-out w-full ${NAV_STYLE.container} ${isLoaded ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'}`}
         >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-[8px]">
             <Link
               href="/"
-              className="flex items-center gap-2 group"
+              className="flex items-center gap-[8px] group"
               onMouseEnter={() => setIsLogoHovered(true)}
               onMouseLeave={() => setIsLogoHovered(false)}
             >
@@ -74,11 +74,11 @@ export function Header() {
                   alt="BuddyTickets Logo"
                   width={40}
                   height={40}
-                  className="w-7 h-7 object-contain drop-shadow-sm"
+                  className="w-[28px] h-[28px] object-contain drop-shadow-sm"
                 />
               </div>
               <span
-                className="font-special text-sm tracking-tight"
+                className="font-special text-[14px] tracking-tight"
                 style={{
                   backgroundImage: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(222.2 47.4% 11.2%))',
                   backgroundSize: '200% auto',
@@ -95,34 +95,34 @@ export function Header() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-6">
+          <div className="flex items-center gap-[12px]">
+            <div className="flex items-center gap-[24px]">
               {NAV_LINKS.map((item) => (
                 <Button
                   key={item.name}
                   variant="ghost"
                   onClick={() => handleNavigation(item.sectionId)}
-                  className={`font-secondary text-sm transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent ${NAV_STYLE.text} ${NAV_STYLE.hover}`}
+                  className={`font-secondary text-[14px] transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent ${NAV_STYLE.text} ${NAV_STYLE.hover}`}
                 >
                   {item.name}
-                  <span className={`absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full ${NAV_STYLE.underline}`} />
+                  <span className={`absolute bottom-0 left-0 w-0 h-[2px] transition-all duration-300 group-hover:w-full ${NAV_STYLE.underline}`} />
                 </Button>
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="h-4 w-px bg-[hsl(222.2,47.4%,11.2%)]/10 mr-2" />
+            <div className="flex items-center gap-[8px]">
+              <div className="h-[16px] w-px bg-[hsl(222.2,47.4%,11.2%)]/10 mr-[8px]" />
 
-              <div className="items-center gap-3 text-sm flex">
+              <div className="items-center gap-[12px] text-[14px] flex">
                   <Link
                     href="/sign-in"
-                    className="font-primary transition-colors bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] bg-clip-text text-transparent hover:opacity-80 text-sm"
+                    className="font-primary transition-colors bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] bg-clip-text text-transparent hover:opacity-80 text-[14px]"
                   >
                     Sign In
                   </Link>
                   <Button
                     asChild
-                    className="font-primary relative cursor-target overflow-hidden px-4 py-1.5 rounded-full text-xs text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 h-auto border-none"
+                    className="font-primary relative cursor-target overflow-hidden px-[16px] py-[6px] rounded-full text-[12px] text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 h-auto border-none"
                     onMouseEnter={() => setIsGetStartedHovered(true)}
                     onMouseLeave={() => setIsGetStartedHovered(false)}
                     style={{

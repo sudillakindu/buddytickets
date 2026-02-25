@@ -58,8 +58,8 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
         >
             <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
                 {imgError || !event.primary_image ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 bg-gray-50">
-                        <ImageOff className="w-6 h-6" aria-hidden="true" />
+                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-[8px] bg-gray-50">
+                        <ImageOff className="w-[24px] h-[24px]" aria-hidden="true" />
                         <span className="text-[10px] font-secondary">Image unavailable</span>
                     </div>
                 ) : (
@@ -75,54 +75,54 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                 )}
 
                 {event.is_vip && (
-                    <div className="absolute top-3 left-3 flex items-center">
-                        <span className="bg-yellow-400/90 text-yellow-900 px-2 py-1 rounded-lg backdrop-blur-md shadow-sm border border-yellow-300 flex items-center gap-1">
-                            <Crown className="w-3.5 h-3.5" aria-hidden="true" />
+                    <div className="absolute top-[12px] left-[12px] flex items-center">
+                        <span className="bg-yellow-400/90 text-yellow-900 px-[8px] py-[4px] rounded-lg backdrop-blur-md shadow-sm border border-yellow-300 flex items-center gap-[4px]">
+                            <Crown className="w-[14px] h-[14px]" aria-hidden="true" />
                             <span className="text-[10px] font-bold uppercase tracking-wide">VIP</span>
                         </span>
                     </div>
                 )}
 
-                <div className="absolute top-3 right-3 flex items-center">
-                    <span className="event-category px-2.5 py-1 text-[10px] font-bold bg-white/90 backdrop-blur-md rounded-lg text-[hsl(222.2,47.4%,11.2%)] shadow-sm uppercase tracking-wider">
+                <div className="absolute top-[12px] right-[12px] flex items-center">
+                    <span className="event-category px-[10px] py-[4px] text-[10px] font-bold bg-white/90 backdrop-blur-md rounded-lg text-[hsl(222.2,47.4%,11.2%)] shadow-sm uppercase tracking-wider">
                         {event.category}
                     </span>
                 </div>
             </div>
 
-            <div className="p-4 flex flex-col flex-grow gap-2.5">
+            <div className="p-[16px] flex flex-col flex-grow gap-[10px]">
                 <div className="event-meta flex items-center justify-between w-full text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
-                    <div className="flex items-center gap-1 shrink-0">
-                        <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <div className="flex items-center gap-[4px] shrink-0">
+                        <Calendar className="w-[14px] h-[14px] shrink-0" aria-hidden="true" />
                         <time>{displayDate}</time>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                        <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <div className="flex items-center gap-[4px] shrink-0">
+                        <Clock className="w-[14px] h-[14px] shrink-0" aria-hidden="true" />
                         <time>{displayTime}</time>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
-                    <h3 className="event-title text-base font-black text-[hsl(222.2,47.4%,11.2%)] uppercase leading-tight line-clamp-2">
+                <div className="flex flex-col gap-[4px]">
+                    <h3 className="event-title text-[16px] font-black text-[hsl(222.2,47.4%,11.2%)] uppercase leading-tight line-clamp-2">
                         {event.name}
                     </h3>
-                    <div className="event-location flex items-start gap-1 text-gray-500 text-[11px]">
-                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
+                    <div className="event-location flex items-start gap-[4px] text-gray-500 text-[11px]">
+                        <MapPin className="w-[14px] h-[14px] mt-[2px] flex-shrink-0 text-gray-400" aria-hidden="true" />
                         <span className="line-clamp-2">{event.location}</span>
                     </div>
                 </div>
 
-                <div className="flex items-end justify-between mt-auto pt-3 border-t-2 border-gray-100">
+                <div className="flex items-end justify-between mt-auto pt-[12px] border-t-2 border-gray-100">
                     <div>
-                        <p className="event-label text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">Starting from</p>
-                        <p className="event-price text-base font-bold text-[hsl(222.2,47.4%,11.2%)]">{event.start_ticket_price}</p>
+                        <p className="event-label text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-[2px]">Starting from</p>
+                        <p className="event-price text-[16px] font-bold text-[hsl(222.2,47.4%,11.2%)]">{event.start_ticket_price}</p>
                     </div>
                 </div>
 
                 <Button
                     aria-label={`${event.name} status: ${event.status}`}
                     disabled={ui.disabled}
-                    className="event-button w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md transition-all group-hover:shadow-lg mt-2 group-hover:-translate-y-0.5"
+                    className="event-button w-full relative overflow-hidden py-[12px] h-auto rounded-xl text-[12px] text-white shadow-md transition-all group-hover:shadow-lg mt-[8px] group-hover:-translate-y-0.5"
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
                     style={{
@@ -132,8 +132,8 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
                         transition: 'background-position 0.5s ease',
                     }}
                 >
-                    <span className="flex items-center justify-center gap-1.5 relative z-10">
-                        {event.status === 'ON_SALE' && <Ticket className="w-3.5 h-3.5" aria-hidden="true" />}
+                    <span className="flex items-center justify-center gap-[6px] relative z-10">
+                        {event.status === 'ON_SALE' && <Ticket className="w-[14px] h-[14px]" aria-hidden="true" />}
                         {ui.text}
                     </span>
                 </Button>

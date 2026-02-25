@@ -48,7 +48,7 @@ export function Hero() {
         <section
             id="home"
             ref={sectionRef}
-            className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white pt-24 pb-12"
+            className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white pt-[96px] pb-[48px]"
             onMouseMove={handleMouseMove}
         >
             <div className="block">
@@ -96,7 +96,7 @@ export function Hero() {
                 {PARTICLES.map((particle) => (
                     <motion.div
                         key={particle.id}
-                        className="absolute w-1.5 h-1.5 rounded-full"
+                        className="absolute w-[6px] h-[6px] rounded-full"
                         style={{
                             background: `hsl(${particle.hue}, 70%, 50%)`,
                             left: particle.left,
@@ -108,15 +108,15 @@ export function Hero() {
                 ))}
             </div>
 
-            <div className="w-full max-w-7xl mx-auto px-4 relative z-10 flex flex-col justify-center items-center">
+            <div className="w-full max-w-[1280px] mx-auto px-[16px] relative z-10 flex flex-col justify-center items-center">
                 <motion.div
-                    className="max-w-5xl mx-auto text-center w-full"
+                    className="max-w-[1024px] mx-auto text-center w-full"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
                     <motion.span
-                        className="font-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium mb-4"
+                        className="font-primary inline-flex items-center gap-[6px] px-[12px] py-[6px] rounded-full text-[11px] font-medium mb-[16px]"
                         style={{
                             border: '1px solid hsl(222.2 47.4% 11.2% / 0.2)',
                             color: 'hsl(222.2 47.4% 11.2%)',
@@ -127,19 +127,19 @@ export function Hero() {
                         transition={{ delay: 0.1 }}
                         whileHover={{ scale: 1.05 }}
                     >
-                            <SparklesIcon className="w-3.5 h-3.5 animate-pulse text-yellow-400" />
+                            <SparklesIcon className="w-[14px] h-[14px] animate-pulse text-yellow-400" />
                         Discover Amazing Events
                     </motion.span>
 
                     <motion.h1
-                        className="font-special text-6xl leading-tight mb-6 px-2"
+                        className="font-special text-[60px] leading-tight mb-[24px] px-[8px]"
                         style={{ color: 'hsl(222.2 47.4% 11.2%)' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
                     >
                         Connect, Create and Celebrate <br />with{' '}
-                            <span className="relative inline-block mt-1">
+                            <span className="relative inline-block mt-[4px]">
                             <span
                                 className="relative z-10 font-special font-semibold"
                                 style={{
@@ -162,7 +162,7 @@ export function Hero() {
                     </motion.h1>
 
                     <motion.p
-                        className="font-secondary text-base mb-8 max-w-2xl mx-auto leading-relaxed"
+                        className="font-secondary text-[16px] mb-[32px] max-w-[672px] mx-auto leading-relaxed"
                         style={{ color: 'hsl(215.4 16.3% 46.9%)' }}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -173,14 +173,14 @@ export function Hero() {
                     </motion.p>
 
                     <motion.div
-                        className="flex flex-row gap-4 justify-center items-center w-full mb-10"
+                        className="flex flex-row gap-[16px] justify-center items-center w-full mb-[40px]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 }}
                     >
                         <Button
                             asChild
-                            className="font-primary relative cursor-target group overflow-hidden inline-flex items-center justify-center h-12 px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-500 hover:scale-[1.02]"
+                            className="font-primary relative cursor-target group overflow-hidden inline-flex items-center justify-center h-[48px] px-[32px] text-[14px] text-white rounded-xl shadow-lg transition-all duration-500 hover:scale-[1.02]"
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
                             style={{
@@ -198,7 +198,7 @@ export function Hero() {
                         <Button
                             asChild
                             variant="outline"
-                            className="font-primary relative cursor-target group overflow-hidden inline-flex items-center justify-center h-12 px-8 text-sm rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent"
+                            className="font-primary relative cursor-target group overflow-hidden inline-flex items-center justify-center h-[48px] px-[32px] text-[14px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent"
                             style={{
                                 color: 'hsl(222.2 47.4% 11.2%)',
                                 borderColor: 'hsl(222.2 47.4% 11.2% / 0.2)',
@@ -217,7 +217,7 @@ export function Hero() {
                 </motion.div>
 
                 <motion.div
-                    className="flex flex-wrap justify-center gap-2 items-center px-4 max-w-3xl"
+                    className="flex flex-wrap justify-center gap-[8px] items-center px-[16px] max-w-[768px]"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.35 }}
@@ -225,7 +225,7 @@ export function Hero() {
                     {CATEGORIES.map(({ icon: Icon, label, color, delay }) => (
                         <motion.div
                             key={label}
-                            className="font-secondary flex items-center gap-1.5 text-[11px] cursor-pointer group px-3 py-1.5 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm"
+                            className="font-secondary flex items-center gap-[6px] text-[11px] cursor-pointer group px-[12px] py-[6px] rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm"
                             style={{ color: 'hsl(215.4 16.3% 46.9%)' }}
                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
                             initial={{ opacity: 0, y: 20 }}
@@ -240,13 +240,13 @@ export function Hero() {
             </div>
 
             <motion.div
-                className="absolute top-1/4 left-4 w-2.5 h-2.5 rounded-full"
+                className="absolute top-1/4 left-[16px] w-[10px] h-[10px] rounded-full"
                 style={{ background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%))' }}
                 animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.div
-                className="absolute bottom-1/4 right-4 w-3 h-3 rounded-full"
+                className="absolute bottom-1/4 right-[16px] w-[12px] h-[12px] rounded-full"
                 style={{ background: 'linear-gradient(to right, hsl(210 100% 60%), hsl(180 70% 50%))' }}
                 animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
