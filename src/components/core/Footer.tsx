@@ -38,14 +38,14 @@ export function Footer() {
 
   return (
     <footer
-      className="bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-[48px] pb-[24px] border-t border-[hsl(222.2,47.4%,11.2%)]/5"
+      className="bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-12 pb-6 border-t border-[hsl(222.2,47.4%,11.2%)]/5"
       aria-label="Site footer"
     >
-        <div className="max-w-[1280px] mx-auto px-[16px]">
-<div className="grid grid-cols-4 gap-[40px] mb-[40px]">
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
+          {/* Brand Col */}
           <motion.div
-            className="space-y-[20px] flex flex-col items-start text-left"
+            className="space-y-5 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -53,7 +53,7 @@ export function Footer() {
           >
             <Link
               href="/"
-              className="flex items-center gap-[10px] text-[18px] group"
+              className="flex items-center gap-2.5 text-lg group"
               aria-label="BuddyTicket.lk Home"
               onMouseEnter={() => setIsLogoHovered(true)}
               onMouseLeave={() => setIsLogoHovered(false)}
@@ -68,33 +68,30 @@ export function Footer() {
                   alt="BuddyTicket.lk Logo"
                   width={40}
                   height={40}
-                  className="w-[36px] h-[36px] object-contain drop-shadow-sm"
+                  className="w-9 h-9 object-contain drop-shadow-sm"
                 />
               </motion.div>
               <span
-                  className="font-special transition-all duration-300 text-[18px]"
+                className="font-special transition-all duration-300 text-lg"
                 style={{
                   backgroundImage: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(222.2 47.4% 11.2%))',
                   backgroundSize: '200% auto',
                   backgroundPosition: isLogoHovered ? '100% 0' : '0 0',
-                  transition: 'background-position 0.5s ease',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  color: 'transparent',
                 }}
               >
                 BuddyTickets
               </span>
             </Link>
 
-            <p className="font-secondary text-[hsl(215.4,16.3%,46.9%)] text-[12px] leading-relaxed">
+            <p className="font-secondary text-[hsl(215.4,16.3%,46.9%)] text-xs leading-relaxed">
               Your premier platform for discovering, creating, and managing events in Sri Lanka.
               Connect with experiences that matter.
             </p>
 
             <div
-              className="flex space-x-[12px] pt-[4px] justify-start w-full"
+              className="flex space-x-3 pt-1 justify-start w-full"
               role="list"
               aria-label="Social media links"
             >
@@ -104,30 +101,31 @@ export function Footer() {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-[36px] h-[36px] rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:border-[hsl(270,70%,50%)]/20 transition-colors"
+                  className="w-9 h-9 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:border-[hsl(270,70%,50%)]/20 transition-colors"
                   aria-label={`Follow us on ${label}`}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Icon className="w-[16px] h-[16px]" />
+                  <Icon className="w-4 h-4" />
                 </motion.a>
               ))}
             </div>
           </motion.div>
 
+          {/* Nav Cols */}
           <motion.nav
-            className="space-y-[16px] flex flex-col items-start text-left"
+            className="space-y-4 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             viewport={{ once: true }}
             aria-label="Quick links"
           >
-            <h3 className="font-primary text-[14px] font-bold text-[hsl(222.2,47.4%,11.2%)]">
+            <h3 className="font-primary text-sm font-bold text-[hsl(222.2,47.4%,11.2%)]">
               Quick Links
             </h3>
-            <ul className="space-y-[10px] text-[12px] w-full" role="list">
+            <ul className="space-y-2.5 text-xs w-full" role="list">
               {QUICK_LINKS.map(({ href, label }) => (
                 <motion.li
                   key={label}
@@ -137,9 +135,9 @@ export function Footer() {
                 >
                   <Link
                     href={href}
-                    className="font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors flex items-center gap-[8px] group"
+                    className="font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors flex items-center gap-2 group"
                   >
-                    <ArrowRight className="w-[12px] h-[12px] opacity-0 -ml-[20px] group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-[hsl(270,70%,50%)]" />
+                    <ArrowRight className="w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-[hsl(270,70%,50%)]" />
                     {label}
                   </Link>
                 </motion.li>
@@ -148,17 +146,17 @@ export function Footer() {
           </motion.nav>
 
           <motion.nav
-            className="space-y-[16px] flex flex-col items-start text-left"
+            className="space-y-4 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
             aria-label="Legal links"
           >
-            <h3 className="font-primary text-[14px] font-bold text-[hsl(222.2,47.4%,11.2%)]">
+            <h3 className="font-primary text-sm font-bold text-[hsl(222.2,47.4%,11.2%)]">
               Legal
             </h3>
-            <ul className="space-y-[10px] text-[12px] w-full" role="list">
+            <ul className="space-y-2.5 text-xs w-full" role="list">
               {LEGAL_LINKS.map(({ href, label }) => (
                 <motion.li
                   key={label}
@@ -168,9 +166,9 @@ export function Footer() {
                 >
                   <Link
                     href={href}
-                    className="font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors flex items-center gap-[8px] group"
+                    className="font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors flex items-center gap-2 group"
                   >
-                    <ArrowRight className="w-[12px] h-[12px] opacity-0 -ml-[20px] group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-[hsl(270,70%,50%)]" />
+                    <ArrowRight className="w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-[hsl(270,70%,50%)]" />
                     {label}
                   </Link>
                 </motion.li>
@@ -178,25 +176,26 @@ export function Footer() {
             </ul>
           </motion.nav>
 
+          {/* Contact Col */}
           <motion.div
-            className="space-y-[16px] flex flex-col items-start text-left"
+            className="space-y-4 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             viewport={{ once: true }}
             aria-label="Contact information"
           >
-            <h3 className="font-primary text-[14px] font-bold text-[hsl(222.2,47.4%,11.2%)]">
+            <h3 className="font-primary text-sm font-bold text-[hsl(222.2,47.4%,11.2%)]">
               Contact Info
             </h3>
-            <ul className="space-y-[12px] text-[12px] w-full" role="list">
+            <ul className="space-y-3 text-xs w-full" role="list">
               <motion.li
-                className="flex flex-row items-center justify-start gap-[12px] group"
+                className="flex flex-row items-center justify-start gap-3 group"
                 whileHover={{ x: 5 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                  <div className="w-[28px] h-[28px] rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
-                    <MapPin className="w-[14px] h-[14px] text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
+                <div className="w-7 h-7 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
+                  <MapPin className="w-3.5 h-3.5 text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
                 </div>
                 <span className="font-secondary text-[hsl(215.4,16.3%,46.9%)] text-left">
                   Buddy Ticket, Matara, Sri Lanka
@@ -204,12 +203,12 @@ export function Footer() {
               </motion.li>
 
               <motion.li
-                className="flex flex-row items-center justify-start gap-[12px] group"
+                className="flex flex-row items-center justify-start gap-3 group"
                 whileHover={{ x: 5 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                <div className="w-[28px] h-[28px] rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
-                    <Phone className="w-[14px] h-[14px] text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
+                <div className="w-7 h-7 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
+                  <Phone className="w-3.5 h-3.5 text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
                 </div>
                 <a
                   href="tel:+94763356907"
@@ -220,12 +219,12 @@ export function Footer() {
               </motion.li>
 
               <motion.li
-                className="flex flex-row items-center justify-start gap-[12px] group"
+                className="flex flex-row items-center justify-start gap-3 group"
                 whileHover={{ x: 5 }}
                 transition={{ type: 'spring', stiffness: 300 }}
               >
-                <div className="w-[28px] h-[28px] rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
-                    <Mail className="w-[14px] h-[14px] text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
+                <div className="w-7 h-7 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
+                  <Mail className="w-3.5 h-3.5 text-[hsl(222.2,47.4%,11.2%)] group-hover:text-[hsl(270,70%,50%)] transition-colors" />
                 </div>
                 <a
                   href="mailto:info@buddyticket.lk"
@@ -238,17 +237,18 @@ export function Footer() {
           </motion.div>
         </div>
 
+        {/* Bottom Bar */}
         <motion.div
-          className="border-t border-gray-200/60 pt-[20px] flex flex-row justify-between items-center"
+          className="border-t border-gray-200/60 pt-5 flex flex-col md:flex-row justify-between items-center gap-4"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <p className="font-secondary text-[12px] text-[hsl(215.4,16.3%,46.9%)] text-center">
+          <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] text-center">
             © {CURRENT_YEAR} BuddyTickets. All rights reserved.
           </p>
-          <p className="font-secondary text-[12px] text-[hsl(215.4,16.3%,46.9%)] text-center flex flex-row items-center gap-[4px]">
+          <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] text-center flex flex-row items-center gap-1">
             Digitally crafted by{' '}
             <a
               href="https://sudillakindu.online"
