@@ -1,35 +1,39 @@
-"use client";
+'use client';
 
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, CalendarX, Loader2 } from 'lucide-react';
 
 import { MOCK_EVENTS } from '@/lib/api/event';
 import { Button } from '@/components/ui/button';
-import { Toast } from '@/components/ui/toast';
 import EventCard, { type Event } from '@/components/ui/event-card';
+import { Toast } from '@/components/ui/toast';
 
 interface SectionHeaderProps {
     highlight: string;
     title: string;
+    link: string;
 }
 
-const SectionHeader = ({ highlight, title }: SectionHeaderProps) => {
+function SectionHeader({ highlight, title, link }: SectionHeaderProps) {
+    const router = useRouter();
+
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between mb-5 sm:mb-7 lg:mb-10 gap-4 sm:gap-6 lg:gap-8 w-full text-center sm:text-left">
+        <div className="flex flex-row items-center justify-between mb-8">
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="flex flex-col items-center sm:items-start"
             >
-                <h2 className="font-primary font-semibold text-xl sm:text-2xl lg:text-4xl text-[hsl(222.2,47.4%,11.2%)]">
+                <h2 className="font-primary font-semibold text-3xl text-[hsl(222.2,47.4%,11.2%)]">
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
                         {highlight}
                     </span>{' '}
                     {title}
                 </h2>
-                <div className="h-1 sm:h-1.5 lg:w-40 w-20 sm:w-28 lg:h-2 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] rounded-full mt-2 sm:mt-3 lg:mt-4" />
+                <div className="h-1.5 w-24 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] rounded-full mt-2" />
             </motion.div>
 
             <motion.div
@@ -37,74 +41,118 @@ const SectionHeader = ({ highlight, title }: SectionHeaderProps) => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5 }}
-                className="flex justify-center items-center"
+                className="self-center"
             >
                 <Button
                     variant="ghost"
-                    onClick={() => Toast('Feature Coming Soon', 'Full event listing is launching soon. Stay tuned!', 'warning')}
-                    className="font-secondary group flex items-center justify-center gap-1.5 sm:gap-2 lg:gap-3 text-[11px] sm:text-sm lg:text-base font-semibold text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto"
+                    onClick={() => router.push(link)}
+                    className="font-secondary group flex items-center gap-1 text-sm font-semibold text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto"
                 >
                     View All
-                    <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:translate-x-2 transition-transform" />
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
             </motion.div>
         </div>
     );
-};
+}
 
 export default function FeaturedEvents() {
-    const activeEvents = MOCK_EVENTS.filter((event: Event) => ['ON_SALE', 'ONGOING'].includes(event.status));
-    const upcomingEvents = MOCK_EVENTS.filter((event: Event) => event.status === 'PUBLISHED');
+    const [eventsList, setEventsList] = useState<Event[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchHighlights = async () => {
+            setIsLoading(true);
+            try {
+                await new Promise((resolve) => setTimeout(resolve, 400));
+                setEventsList(MOCK_EVENTS);
+            } catch {
+                Toast('Connection Error', 'Something went wrong while connecting to the server.', 'error');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchHighlights();
+    }, []);
+
+    const activeEvents = useMemo(
+        () => eventsList.filter(e => ['ON_SALE', 'PUBLISHED', 'ONGOING'].includes(e.status)),
+        [eventsList]
+    );
+    const upcomingEvents = useMemo(
+        () => eventsList.filter(e => e.status === 'DRAFT'),
+        [eventsList]
+    );
 
     return (
-        <section 
-            id="events" 
-            className="min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex flex-col justify-center items-center py-10 sm:py-16 lg:py-24 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]"
-        >
-            <div className="absolute inset-0 overflow-hidden pointer-events-none flex justify-center items-center">
-                <div className="absolute top-[20%] left-[-5%] w-[300px] sm:w-[500px] lg:w-[700px] h-[300px] sm:h-[500px] lg:h-[700px] bg-[hsl(222.2,47.4%,11.2%)]/5 rounded-full blur-[80px] sm:blur-[100px] lg:blur-[140px]" />
-                <div className="absolute bottom-[20%] right-[-5%] w-[300px] sm:w-[500px] lg:w-[700px] h-[300px] sm:h-[500px] lg:h-[700px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px] sm:blur-[100px] lg:blur-[140px]" />
+        <section id="events" className="py-20 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-[20%] left-[-5%] w-[300px] h-[300px] bg-[hsl(222.2,47.4%,11.2%)]/5 rounded-full blur-[80px]" />
+                <div className="absolute bottom-[20%] right-[-5%] w-[300px] h-[300px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px]" />
             </div>
 
-            <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col justify-center items-center space-y-12 sm:space-y-16 lg:space-y-24 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary">
-                {activeEvents.length > 0 && (
-                    <div className="w-full flex flex-col justify-center items-center">
-                        <SectionHeader highlight="Latest" title="Events" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-14 w-full justify-items-center">
-                            {activeEvents.map((event, index) => (
-                                <motion.div
-                                    key={event.event_id}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                                    className="w-full flex justify-center"
-                                >
-                                    <EventCard event={event} />
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+            <div className="max-w-7xl mx-auto px-4 relative z-10 space-y-16 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary">
 
-                {upcomingEvents.length > 0 && (
-                    <div className="w-full flex flex-col justify-center items-center">
-                        <SectionHeader highlight="Upcoming" title="Events" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-14 w-full justify-items-center">
-                            {upcomingEvents.map((event, index) => (
-                                <motion.div
-                                    key={event.event_id}
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                                    className="w-full flex justify-center"
-                                >
-                                    <EventCard event={event} />
-                                </motion.div>
-                            ))}
-                        </div>
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-[hsl(215.4,16.3%,46.9%)]">
+                        <Loader2
+                            className="w-8 h-8 animate-spin relative z-10"
+                            style={{ color: 'hsl(270,70%,50%)' }}
+                        />
                     </div>
+                ) : eventsList.length === 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-20 text-center"
+                    >
+                        <CalendarX className="w-16 h-16 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" />
+                        <h3 className="font-primary text-2xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">No Events Right Now</h3>
+                        <p className="font-secondary text-[hsl(215.4,16.3%,46.9%)] max-w-md">
+                            We&apos;re currently planning our next exciting events. Check back soon!
+                        </p>
+                    </motion.div>
+                ) : (
+                    <>
+                        {activeEvents.length > 0 && (
+                            <div>
+                                <SectionHeader highlight="Latest" title="Events" link="/events?filter=latest" />
+                                <div className="grid grid-cols-4 gap-6">
+                                    {activeEvents.map((event, index) => (
+                                        <motion.div
+                                            key={event.event_id || index}
+                                            initial={{ opacity: 0, y: 30 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                                        >
+                                            <EventCard event={event} />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {upcomingEvents.length > 0 && (
+                            <div>
+                                <SectionHeader highlight="Upcoming" title="Events" link="/events?filter=upcoming" />
+                                <div className="grid grid-cols-3 gap-6">
+                                    {upcomingEvents.map((event, index) => (
+                                        <motion.div
+                                            key={event.event_id || index}
+                                            initial={{ opacity: 0, y: 30 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                                        >
+                                            <EventCard event={event} />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </section>

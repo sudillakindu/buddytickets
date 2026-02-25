@@ -19,7 +19,6 @@ const fadeUp = (delay = 0) => ({
 
 export default function VerifyEmailPage() {
     const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-    const [loading, setLoading] = useState(false);
     const [resendTimer, setResendTimer] = useState(60);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -57,24 +56,19 @@ export default function VerifyEmailPage() {
         inputRefs.current[last]?.focus();
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const code = otp.join('');
         if (code.length < OTP_LENGTH) {
             Toast('Incomplete Code', 'Please enter all 6 digits.', 'error');
             return;
         }
-        setLoading(true);
-        // TODO: Supabase verifyOtp
-        await new Promise(r => setTimeout(r, 1200));
-        setLoading(false);
         Toast('Coming Soon', 'Email verification is launching soon.', 'warning');
     };
 
-    const handleResend = async () => {
+    const handleResend = () => {
         if (resendTimer > 0) return;
         setResendTimer(60);
-        // TODO: resend
         Toast('Code Resent', 'A new verification code has been sent.', 'success');
     };
 
@@ -87,9 +81,8 @@ export default function VerifyEmailPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl px-8 py-10 sm:px-10">
+            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl px-8 py-10">
 
-                {/* Header */}
                 <motion.div className="mb-8 text-center" {...fadeUp(0.05)}>
                     <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg"
                         style={{ background: 'linear-gradient(135deg, hsl(270 70% 50%), hsl(330 80% 60%))' }}>
@@ -103,9 +96,8 @@ export default function VerifyEmailPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
 
-                    {/* OTP inputs */}
                     <motion.div {...fadeUp(0.1)}>
-                        <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+                        <div className="flex justify-center gap-2" onPaste={handlePaste}>
                             {otp.map((digit, i) => (
                                 <Input
                                     key={i}
@@ -116,7 +108,7 @@ export default function VerifyEmailPage() {
                                     value={digit}
                                     onChange={e => handleChange(i, e.target.value)}
                                     onKeyDown={e => handleKeyDown(i, e)}
-                                    className="font-primary w-11 h-14 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border-[hsl(222.2,47.4%,11.2%)]/20 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] transition-all duration-200 caret-transparent"
+                                    className="font-primary w-11 h-14 text-center text-xl font-bold rounded-xl border-[hsl(222.2,47.4%,11.2%)]/20 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] transition-all duration-200 caret-transparent"
                                     style={{
                                         borderWidth: digit ? '2px' : '1.5px',
                                         borderColor: digit ? 'hsl(270 70% 50% / 0.5)' : undefined,
@@ -127,35 +119,24 @@ export default function VerifyEmailPage() {
                         </div>
                     </motion.div>
 
-                    {/* Submit */}
                     <motion.div {...fadeUp(0.15)}>
                         <Button
                             type="submit"
-                            disabled={loading || !filled}
+                            disabled={!filled}
                             className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl disabled:opacity-60 disabled:scale-100"
                             style={{
                                 background: 'linear-gradient(to right, hsl(270 70% 50%), hsl(330 80% 60%), hsl(270 70% 50%))',
                                 backgroundSize: '200% auto',
                             }}
                         >
-                            {loading ? (
-                                <span className="flex items-center gap-2">
-                                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
-                                    </svg>
-                                    Verifying…
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-2">
-                                    <MailCheck className="w-4 h-4" />
-                                    Verify Email
-                                </span>
-                            )}
+                            <span className="flex items-center gap-2">
+                                <MailCheck className="w-4 h-4" />
+                                Verify Email
+                            </span>
                         </Button>
                     </motion.div>
                 </form>
 
-                {/* Resend */}
                 <motion.div className="mt-5 text-center" {...fadeUp(0.2)}>
                     <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
                         Didn&apos;t receive the code?{' '}
@@ -171,7 +152,6 @@ export default function VerifyEmailPage() {
                     </p>
                 </motion.div>
 
-                {/* Back link */}
                 <motion.div className="mt-4 text-center" {...fadeUp(0.25)}>
                     <Link href="/sign-in"
                         className="font-secondary inline-flex items-center gap-1.5 text-sm text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors">

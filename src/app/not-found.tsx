@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Home, ArrowLeft, Settings } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { Settings, Clock, RefreshCw, Home } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -18,7 +19,8 @@ const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
     delay: (i % 8) * 0.25,
 }));
 
-export default function MaintenancePage() {
+export default function NotFound() {
+    const router = useRouter();
     const [isHomeHovered, setIsHomeHovered] = React.useState(false);
 
     const mouseX = useMotionValue(0);
@@ -34,7 +36,6 @@ export default function MaintenancePage() {
 
     return (
         <section
-            id="maintenance"
             className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white p-4"
             onMouseMove={handleMouseMove}
         >
@@ -85,23 +86,10 @@ export default function MaintenancePage() {
                 ))}
             </div>
 
-            <motion.div
-                className="absolute top-1/4 left-4 w-2.5 h-2.5 rounded-full"
-                style={{ background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%))' }}
-                animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-                className="absolute bottom-1/4 right-4 w-3 h-3 rounded-full"
-                style={{ background: 'linear-gradient(to right, hsl(210 100% 60%), hsl(180 70% 50%))' }}
-                animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            />
-
-            <motion.div
+            <motion.div 
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
                 className="max-w-2xl w-full text-center relative z-10"
             >
                 <motion.div
@@ -120,27 +108,11 @@ export default function MaintenancePage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3, duration: 0.8 }}
                 >
-                    <motion.span
-                        className="font-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium mb-4 bg-white/50 backdrop-blur-sm"
-                        style={{
-                            border: '1px solid hsl(222.2 47.4% 11.2% / 0.2)',
-                            color: 'hsl(222.2 47.4% 11.2%)',
-                            boxShadow: '0 10px 15px -3px hsl(222.2 47.4% 11.2% / 0.1)',
-                        }}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 }}
-                        whileHover={{ scale: 1.05 }}
-                    >
-                        <Clock className="w-3.5 h-3.5 text-orange-500" />
-                        System Update in Progress
-                    </motion.span>
                     <h2 className="font-primary text-4xl font-bold text-gray-900 mt-4 tracking-tight">
-                        We'll be right back soon!
+                        Oops! Page Not Found
                     </h2>
                     <p className="font-secondary text-gray-500 mt-3 mb-8 text-base leading-relaxed max-w-lg mx-auto">
-                        BuddyTickets is currently undergoing scheduled maintenance to improve your experience.
-                        Please grab a cup of coffee and check back in a few minutes.
+                        The page you are looking for might have been removed, had its name changed, or is temporarily unavailable. Let's get you back on track.
                     </p>
 
                     <div className="flex flex-row gap-4 justify-center">
@@ -153,9 +125,9 @@ export default function MaintenancePage() {
                                 borderColor: 'hsl(222.2 47.4% 11.2% / 0.2)',
                             }}
                         >
-                            <a onClick={() => window.location.reload()} className="cursor-pointer">
-                                <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                                <span>Refresh Page</span>
+                            <a onClick={() => router.back()} className="cursor-pointer">
+                                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
+                                <span>Go Back</span>
                             </a>
                         </Button>
                         <Button

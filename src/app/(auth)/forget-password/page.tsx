@@ -18,15 +18,10 @@ const fadeUp = (delay = 0) => ({
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
-    const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        // TODO: Supabase resetPasswordForEmail
-        await new Promise(r => setTimeout(r, 1200));
-        setLoading(false);
         setSent(true);
         Toast('Email Sent', 'Check your inbox for the reset link.', 'success');
     };
@@ -38,13 +33,12 @@ export default function ForgotPasswordPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl px-8 py-10 sm:px-10">
+            <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl px-8 py-10">
 
                 <AnimatePresence mode="wait">
                     {!sent ? (
                         <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
-                            {/* Header */}
                             <motion.div className="mb-8 text-center" {...fadeUp(0.05)}>
                                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg"
                                     style={{ background: 'linear-gradient(135deg, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%))' }}>
@@ -79,21 +73,13 @@ export default function ForgotPasswordPage() {
                                 <motion.div {...fadeUp(0.15)} className="pt-1">
                                     <Button
                                         type="submit"
-                                        disabled={loading}
-                                        className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl disabled:opacity-60 disabled:scale-100"
+                                        className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
                                         style={{
                                             background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(222.2 47.4% 11.2%))',
                                             backgroundSize: '200% auto',
                                         }}
                                     >
-                                        {loading ? (
-                                            <span className="flex items-center gap-2">
-                                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="32" strokeLinecap="round" />
-                                                </svg>
-                                                Sending…
-                                            </span>
-                                        ) : 'Send Reset Link'}
+                                        Send Reset Link
                                     </Button>
                                 </motion.div>
                             </form>
