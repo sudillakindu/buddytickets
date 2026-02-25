@@ -1,64 +1,65 @@
-import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import type { Metadata } from 'next';
+import localFont from 'next/font/local';
 import { Toaster } from '@/components/ui/toast';
 
-import "./globals.css";
+import './globals.css';
 
 const primaryFont = localFont({
-  src: "./assets/fonts/momo-trust-display-regular.ttf",
-  variable: "--font-primary",
+  src: './assets/fonts/momo-trust-display-regular.ttf',
+  variable: '--font-primary',
 });
 
 const secondaryFont = localFont({
-  src: "./assets/fonts/geom-regular.ttf",
-  variable: "--font-secondary",
+  src: './assets/fonts/geom-regular.ttf',
+  variable: '--font-secondary',
 });
 
 const tertiaryFont = localFont({
-  src: "./assets/fonts/bagel-fat-one-regular.ttf",
-  variable: "--font-tertiary",
+  src: './assets/fonts/bagel-fat-one-regular.ttf',
+  variable: '--font-tertiary',
 });
 
 const specialFont = localFont({
-  src: "./assets/fonts/tanheadline-regular.ttf",
-  variable: "--font-special",
+  src: './assets/fonts/tanheadline-regular.ttf',
+  variable: '--font-special',
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://buddyticket.store"),
-  title: "BuddyTickets | Secure Ticket Selling Platform",
-  description: "Complete production-grade ticket-selling web application",
+  metadataBase: new URL('https://buddyticket.store'),
+  title: 'BuddyTickets | Secure Ticket Selling Platform',
+  description: 'Complete production-grade ticket-selling web application',
   openGraph: {
-    title: "BuddyTickets",
-    description: "Complete production-grade ticket-selling web application",
-    url: "https://buddyticket.store",
-    siteName: "BuddyTickets",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "BuddyTickets - Secure Ticket Selling Platform" }],
-    locale: "en_US",
-    type: "website",
+    title: 'BuddyTickets',
+    description: 'Complete production-grade ticket-selling web application',
+    url: 'https://buddyticket.store',
+    siteName: 'BuddyTickets',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'BuddyTickets - Secure Ticket Selling Platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
-    card: "summary_large_image",
-    title: "BuddyTickets | Secure Ticket Selling Platform",
-    description: "Complete production-grade ticket-selling web application",
-    images: ["/og-image.png"],
+    card: 'summary_large_image',
+    title: 'BuddyTickets | Secure Ticket Selling Platform',
+    description: 'Complete production-grade ticket-selling web application',
+    images: ['/og-image.png'],
   },
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950 font-secondary`}
+        className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950`}
       >
-        <div className="flex flex-col min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] bg-background">
+        <div className="flex flex-col min-h-[100dvh] bg-background">
           {children}
         </div>
         <Toaster defaultPosition="top-right" />

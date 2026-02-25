@@ -19,19 +19,12 @@ const NAV_LINKS: NavLink[] = [
   { name: 'Events', sectionId: 'events' },
 ];
 
-const STYLE_TOKENS = {
-  textDark: 'hsl(222.2,47.4%,11.2%)',
-  brandPurple: 'hsl(270,70%,50%)',
-};
-
 export function Header() {
   const router = useRouter();
   const pathname = usePathname();
 
   const [isLoaded, setIsLoaded] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isGetStartedHovered, setIsGetStartedHovered] = useState(false);
-  const [isLogoHovered, setIsLogoHovered] = useState(false);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -54,6 +47,9 @@ export function Header() {
     }
   };
 
+  const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-3 px-3">
       <nav className="relative w-full max-w-7xl mx-auto">
@@ -62,13 +58,10 @@ export function Header() {
             isLoaded ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'
           }`}
         >
-          {/* Logo Section */}
           <div className="flex items-center gap-2">
             <Link
               href="/"
               className="flex items-center gap-2 group"
-              onMouseEnter={() => setIsLogoHovered(true)}
-              onMouseLeave={() => setIsLogoHovered(false)}
             >
               <div className="flex items-center justify-center transition-transform group-hover:scale-105 text-[hsl(222.2,47.4%,11.2%)]">
                 <Image
@@ -79,23 +72,12 @@ export function Header() {
                   className="w-7 h-7 object-contain drop-shadow-sm"
                 />
               </div>
-              <span
-                className="font-special text-sm tracking-tight"
-                style={{
-                  backgroundImage: `linear-gradient(to right, ${STYLE_TOKENS.textDark}, ${STYLE_TOKENS.brandPurple}, ${STYLE_TOKENS.textDark})`,
-                  backgroundSize: '200% auto',
-                  backgroundPosition: isLogoHovered ? '100% 0' : '0 0',
-                  transition: 'background-position 0.5s ease',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
+              <span className="font-special text-sm tracking-tight text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0] transition-all duration-500">
                 BuddyTickets
               </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-3">
             <div className="flex items-center gap-6">
               {NAV_LINKS.map((item) => (
@@ -122,16 +104,7 @@ export function Header() {
                 </Link>
                 <Button
                   asChild
-                  className="font-primary relative cursor-pointer overflow-hidden px-4 py-1.5 rounded-full text-xs text-white shadow-lg hover:shadow-xl transition-all hover:scale-105 h-auto border-none"
-                  onMouseEnter={() => setIsGetStartedHovered(true)}
-                  onMouseLeave={() => setIsGetStartedHovered(false)}
-                  style={{
-                    background: `linear-gradient(to right, ${STYLE_TOKENS.textDark}, ${STYLE_TOKENS.brandPurple}, ${STYLE_TOKENS.textDark})`,
-                    backgroundSize: '200% auto',
-                    backgroundPosition: isGetStartedHovered ? '100% 0' : '0 0',
-                    transition: 'background-position 0.5s ease',
-                    boxShadow: '0 10px 15px -3px hsl(222.2 47.4% 11.2% / 0.2)',
-                  }}
+                  className="font-primary relative cursor-pointer overflow-hidden px-4 py-1.5 rounded-full text-xs text-white shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] hover:shadow-xl transition-all duration-500 hover:scale-105 h-auto border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] group"
                 >
                   <Link href="/sign-up">Get Started</Link>
                 </Button>
@@ -139,10 +112,9 @@ export function Header() {
             </div>
           </div>
 
-          {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center">
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={toggleMobileMenu}
               className="text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)] transition-colors"
               aria-label="Toggle mobile menu"
             >
@@ -151,7 +123,6 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation Dropdown */}
         {isMobileMenuOpen && (
           <div className="absolute top-full left-0 right-0 mt-2 p-4 bg-white/95 backdrop-blur-xl border border-[hsl(222.2,47.4%,11.2%)]/10 rounded-2xl shadow-xl md:hidden flex flex-col gap-4">
             {NAV_LINKS.map((item) => (
@@ -167,13 +138,13 @@ export function Header() {
             <Link
               href="/sign-in"
               className="font-primary text-base text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)] transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileMenu}
             >
               Sign In
             </Link>
             <Link
               href="/sign-up"
-              onClick={() => setIsMobileMenuOpen(false)}
+              onClick={closeMobileMenu}
               className="font-primary text-center w-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] text-white py-2.5 rounded-full text-sm shadow-md"
             >
               Get Started
