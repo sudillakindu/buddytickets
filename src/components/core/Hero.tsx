@@ -113,7 +113,7 @@ export default function Hero() {
           transition={{ duration: 0.5 }}
         >
           <motion.span
-            className="font-primary inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-[11px] font-medium mb-2 sm:mb-3 lg:mb-4 border border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)] shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm"
+            className="font-primary inline-flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-full text-[12px] sm:text-[13px] font-medium mb-3 sm:mb-3 lg:mb-4 border border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)] shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
@@ -124,7 +124,7 @@ export default function Hero() {
           </motion.span>
 
           <motion.h1
-            className="font-special text-[1.6rem] xs:text-3xl sm:text-4xl lg:text-5xl xl:text-[60px] leading-tight mb-2 sm:mb-4 lg:mb-6 px-2 text-[hsl(222.2,47.4%,11.2%)]"
+            className="font-special text-[2rem] xs:text-3xl sm:text-4xl lg:text-5xl xl:text-[60px] leading-tight mb-3 sm:mb-4 lg:mb-6 px-2 text-[hsl(222.2,47.4%,11.2%)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -148,7 +148,7 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p
-            className="font-secondary text-xs sm:text-sm lg:text-base xl:text-lg mb-3 sm:mb-5 lg:mb-8 max-w-2xl mx-auto leading-relaxed text-[hsl(215.4,16.3%,46.9%)] px-4"
+            className="font-secondary text-sm sm:text-sm lg:text-base xl:text-lg mb-4 sm:mb-5 lg:mb-8 max-w-2xl mx-auto leading-relaxed text-[hsl(215.4,16.3%,46.9%)] px-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -165,7 +165,7 @@ export default function Hero() {
           >
             <Button
               asChild
-              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-9 sm:h-11 lg:h-12 px-6 sm:px-8 w-full sm:w-auto text-xs sm:text-sm text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 sm:h-11 lg:h-12 px-8 sm:px-8 w-full sm:w-auto text-sm sm:text-sm text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
             >
               <Link href="/events">
                 <span className="relative z-10">Explore Events</span>
@@ -174,7 +174,7 @@ export default function Hero() {
             <Button
               asChild
               variant="outline"
-              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-9 sm:h-11 lg:h-12 w-full sm:w-auto px-6 sm:px-8 text-xs sm:text-sm rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
+              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 sm:h-11 lg:h-12 w-full sm:w-auto px-8 sm:px-8 text-sm sm:text-sm rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
             >
               <Link href="/become-an-organizer">
                 <span className="relative z-10">Become an Organizer</span>
@@ -185,7 +185,7 @@ export default function Hero() {
         </motion.div>
 
         <motion.div
-          className="hidden sm:flex flex-wrap justify-center gap-1.5 sm:gap-2 items-center px-4 max-w-3xl"
+          className="flex flex-wrap justify-center gap-1.5 sm:gap-2 items-center px-4 max-w-3xl"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
@@ -193,7 +193,7 @@ export default function Hero() {
           {CATEGORIES.map(({ icon: Icon, label, color, delay }) => (
             <motion.div
               key={label}
-              className="font-secondary flex items-center gap-1.5 text-[11px] cursor-pointer group px-3 py-1.5 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
+              className="font-secondary flex items-center gap-1.5 text-xs cursor-pointer group px-3.5 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
               whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
