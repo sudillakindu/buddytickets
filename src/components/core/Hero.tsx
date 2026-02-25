@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { SparklesIcon, CalendarIcon, MusicIcon, UsersIcon, TrophyIcon, StarIcon, ZapIcon } from 'lucide-react';
@@ -31,12 +31,12 @@ const CATEGORIES = [
 export function Hero() {
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
-    const [isHovered, setIsHovered] = React.useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     const springX = useSpring(useTransform(mouseX, (v) => v * 0.05), SPRING_CONFIG);
     const springY = useSpring(useTransform(mouseY, (v) => v * 0.05), SPRING_CONFIG);
 
-    const sectionRef = React.useRef<HTMLElement>(null);
+    const sectionRef = useRef<HTMLElement>(null);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -48,10 +48,10 @@ export function Hero() {
         <section
             id="home"
             ref={sectionRef}
-            className="relative w-full min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white pt-[96px] pb-[48px]"
+            className="relative w-full min-h-screen flex flex-col justify-center items-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white pt-24 pb-12 supports-[min-height:100dvh]:min-h-[100dvh]"
             onMouseMove={handleMouseMove}
         >
-            <div className="block">
+            <div className="hidden md:block">
                 <TargetCursor
                     spinDuration={2}
                     hideDefaultCursor={false}
@@ -61,6 +61,7 @@ export function Hero() {
                 />
             </div>
 
+            {/* Background Animations */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
                     className="absolute top-[-5%] right-[-30%] w-[80vw] h-[80vw] min-w-[250px] min-h-[250px] rounded-full blur-[60px] opacity-30"
@@ -82,10 +83,7 @@ export function Hero() {
                     animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
                     transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
                 />
-                <div
-                    className="absolute inset-0"
-                    style={{ background: 'radial-gradient(circle at center, hsl(222.2 47.4% 11.2% / 0.05), transparent, transparent)' }}
-                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
                 <div
                     className="absolute inset-0"
                     style={{
@@ -96,7 +94,7 @@ export function Hero() {
                 {PARTICLES.map((particle) => (
                     <motion.div
                         key={particle.id}
-                        className="absolute w-[6px] h-[6px] rounded-full"
+                        className="absolute w-1.5 h-1.5 rounded-full"
                         style={{
                             background: `hsl(${particle.hue}, 70%, 50%)`,
                             left: particle.left,
@@ -108,53 +106,43 @@ export function Hero() {
                 ))}
             </div>
 
-            <div className="w-full max-w-[1280px] mx-auto px-[16px] relative z-10 flex flex-col justify-center items-center">
+            {/* Main Content */}
+            <div className="w-full max-w-7xl mx-auto px-4 relative z-10 flex flex-col justify-center items-center">
                 <motion.div
-                    className="max-w-[1024px] mx-auto text-center w-full"
+                    className="max-w-4xl mx-auto text-center w-full"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                 >
                     <motion.span
-                        className="font-primary inline-flex items-center gap-[6px] px-[12px] py-[6px] rounded-full text-[11px] font-medium mb-[16px]"
-                        style={{
-                            border: '1px solid hsl(222.2 47.4% 11.2% / 0.2)',
-                            color: 'hsl(222.2 47.4% 11.2%)',
-                            boxShadow: '0 10px 15px -3px hsl(222.2 47.4% 11.2% / 0.1)',
-                        }}
+                        className="font-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium mb-4 border border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)] shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm"
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.1 }}
                         whileHover={{ scale: 1.05 }}
                     >
-                            <SparklesIcon className="w-[14px] h-[14px] animate-pulse text-yellow-400" />
+                        <SparklesIcon className="w-3.5 h-3.5 animate-pulse text-yellow-400" />
                         Discover Amazing Events
                     </motion.span>
 
                     <motion.h1
-                        className="font-special text-[60px] leading-tight mb-[24px] px-[8px]"
-                        style={{ color: 'hsl(222.2 47.4% 11.2%)' }}
+                        className="font-special text-4xl sm:text-5xl lg:text-[60px] leading-tight mb-6 px-2 text-[hsl(222.2,47.4%,11.2%)]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 }}
                     >
-                        Connect, Create and Celebrate <br />with{' '}
-                            <span className="relative inline-block mt-[4px]">
+                        Connect, Create and Celebrate <br className="hidden sm:block" />with{' '}
+                        <span className="relative inline-block mt-1">
                             <span
-                                className="relative z-10 font-special font-semibold"
+                                className="relative z-10 font-special font-semibold bg-clip-text text-transparent drop-shadow-sm"
                                 style={{
                                     backgroundImage: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(330 80% 60%))',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
                                 }}
                             >
                                 BuddyTicket.lk
                             </span>
                             <motion.span
-                                className="absolute inset-0 rounded-lg -z-10 blur-sm"
-                                style={{ background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))' }}
+                                className="absolute inset-0 rounded-lg -z-10 blur-sm bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)]/20 via-[hsl(270,70%,50%)]/20 to-[hsl(330,80%,60%)]/20"
                                 animate={{ scale: [1, 1.1, 1] }}
                                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                             />
@@ -162,8 +150,7 @@ export function Hero() {
                     </motion.h1>
 
                     <motion.p
-                        className="font-secondary text-[16px] mb-[32px] max-w-[672px] mx-auto leading-relaxed"
-                        style={{ color: 'hsl(215.4 16.3% 46.9%)' }}
+                        className="font-secondary text-base sm:text-lg mb-8 max-w-2xl mx-auto leading-relaxed text-[hsl(215.4,16.3%,46.9%)] px-4"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
@@ -173,21 +160,20 @@ export function Hero() {
                     </motion.p>
 
                     <motion.div
-                        className="flex flex-row gap-[16px] justify-center items-center w-full mb-[40px]"
+                        className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full mb-10 px-4"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25 }}
                     >
                         <Button
                             asChild
-                            className="font-primary relative cursor-target group overflow-hidden inline-flex items-center justify-center h-[48px] px-[32px] text-[14px] text-white rounded-xl shadow-lg transition-all duration-500 hover:scale-[1.02]"
+                            className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-12 px-8 w-full sm:w-auto text-sm text-white rounded-xl shadow-lg transition-all duration-500 hover:scale-[1.02] border-none"
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
                             style={{
                                 background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%), hsl(222.2 47.4% 11.2%))',
                                 backgroundSize: '200% auto',
                                 backgroundPosition: isHovered ? '100% 0' : '0 0',
-                                transition: 'background-position 0.5s ease',
                                 boxShadow: '0 10px 15px -3px hsl(222.2 47.4% 11.2% / 0.2)',
                             }}
                         >
@@ -198,26 +184,19 @@ export function Hero() {
                         <Button
                             asChild
                             variant="outline"
-                            className="font-primary relative cursor-target group overflow-hidden inline-flex items-center justify-center h-[48px] px-[32px] text-[14px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent"
-                            style={{
-                                color: 'hsl(222.2 47.4% 11.2%)',
-                                borderColor: 'hsl(222.2 47.4% 11.2% / 0.2)',
-                                boxShadow: '0 10px 15px -3px hsl(222.2 47.4% 11.2% / 0.1)',
-                            }}
+                            className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
                         >
                             <Link href="/become-an-organizer">
                                 <span className="relative z-10">Become an Organizer</span>
-                                <span
-                                    className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-300"
-                                    style={{ background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.1), hsl(270 70% 50% / 0.1))' }}
-                                />
+                                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)]/10 to-[hsl(270,70%,50%)]/10" />
                             </Link>
                         </Button>
                     </motion.div>
                 </motion.div>
 
+                {/* Categories Wrapper */}
                 <motion.div
-                    className="flex flex-wrap justify-center gap-[8px] items-center px-[16px] max-w-[768px]"
+                    className="flex flex-wrap justify-center gap-2 items-center px-4 max-w-3xl"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.35 }}
@@ -225,8 +204,7 @@ export function Hero() {
                     {CATEGORIES.map(({ icon: Icon, label, color, delay }) => (
                         <motion.div
                             key={label}
-                            className="font-secondary flex items-center gap-[6px] text-[11px] cursor-pointer group px-[12px] py-[6px] rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm"
-                            style={{ color: 'hsl(215.4 16.3% 46.9%)' }}
+                            className="font-secondary flex items-center gap-1.5 text-[11px] cursor-pointer group px-3 py-1.5 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -239,15 +217,14 @@ export function Hero() {
                 </motion.div>
             </div>
 
+            {/* Floating Elements */}
             <motion.div
-                className="absolute top-1/4 left-[16px] w-[10px] h-[10px] rounded-full"
-                style={{ background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2%), hsl(270 70% 50%))' }}
+                className="hidden md:block absolute top-1/4 left-4 w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]"
                 animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
             <motion.div
-                className="absolute bottom-1/4 right-[16px] w-[12px] h-[12px] rounded-full"
-                style={{ background: 'linear-gradient(to right, hsl(210 100% 60%), hsl(180 70% 50%))' }}
+                className="hidden md:block absolute bottom-1/4 right-4 w-3 h-3 rounded-full bg-gradient-to-r from-[hsl(210,100%,60%)] to-[hsl(180,70%,50%)]"
                 animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />

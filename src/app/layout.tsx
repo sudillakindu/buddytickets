@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from '@/components/ui/toast';
 
@@ -33,14 +33,7 @@ export const metadata: Metadata = {
     description: "Complete production-grade ticket-selling web application",
     url: "https://buddyticket.store",
     siteName: "BuddyTickets",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "BuddyTickets - Secure Ticket Selling Platform",
-      },
-    ],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "BuddyTickets - Secure Ticket Selling Platform" }],
     locale: "en_US",
     type: "website",
   },
@@ -52,18 +45,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950`}
+        className={`${primaryFont.variable} ${secondaryFont.variable} ${tertiaryFont.variable} ${specialFont.variable} antialiased bg-white text-zinc-950 font-secondary`}
       >
-        <div className="flex flex-col min-h-[100dvh] bg-background">
+        <div className="flex flex-col min-h-screen supports-[min-height:100dvh]:min-h-[100dvh] bg-background">
           {children}
         </div>
         <Toaster defaultPosition="top-right" />
