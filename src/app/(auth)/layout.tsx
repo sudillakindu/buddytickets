@@ -22,7 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         />
       </div>
 
-      <header className="w-full px-4 sm:px-6 py-4">
+      <header className="w-full px-6 py-4">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -37,11 +37,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </motion.div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 sm:px-6 py-8">
+      <main className="flex-1 flex items-center justify-center px-6 py-8">
         {children}
       </main>
 
-      <footer className="text-center py-5 px-4 sm:px-6">
+      <footer className="text-center py-5 px-6">
         <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)]">
           &copy; {new Date().getFullYear()} BuddyTicket.lk — All rights reserved.
         </p>

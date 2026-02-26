@@ -41,7 +41,7 @@ export default function SignInPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl p-6 sm:p-10">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl p-10">
         <motion.div
           className="mb-8 text-center"
           variants={ANIMATION_VARIANTS}
@@ -52,7 +52,7 @@ export default function SignInPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg bg-gradient-to-br from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
             <LogIn className="w-6 h-6 text-white" />
           </div>
-          <h1 className="font-special text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">
+          <h1 className="font-special text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">
             Welcome back
           </h1>
           <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
