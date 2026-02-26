@@ -82,7 +82,7 @@ export default function VerifyEmailPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl p-6 sm:p-10">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl p-10">
         <motion.div
           className="mb-8 text-center"
           variants={ANIMATION_VARIANTS}
@@ -93,7 +93,7 @@ export default function VerifyEmailPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg bg-gradient-to-br from-[hsl(270,70%,50%)] to-[hsl(330,80%,60%)]">
             <MailCheck className="w-6 h-6 text-white" />
           </div>
-          <h1 className="font-special text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">
+          <h1 className="font-special text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">
             Verify your email
           </h1>
           <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
@@ -108,7 +108,7 @@ export default function VerifyEmailPage() {
             animate="animate"
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+            <div className="flex justify-center gap-3" onPaste={handlePaste}>
               {otp.map((digit, i) => (
                 <Input
                   key={i}
@@ -121,7 +121,7 @@ export default function VerifyEmailPage() {
                   value={digit}
                   onChange={(e) => handleChange(i, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="font-primary w-10 h-12 sm:w-11 sm:h-14 text-center text-xl font-bold rounded-xl border-[hsl(222.2,47.4%,11.2%)]/20 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] transition-all duration-200 caret-transparent"
+                  className="font-primary w-11 h-14 text-center text-xl font-bold rounded-xl border-[hsl(222.2,47.4%,11.2%)]/20 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] transition-all duration-200 caret-transparent"
                   style={{
                     borderWidth: digit ? '2px' : '1.5px',
                     borderColor: digit ? 'hsl(270 70% 50% / 0.5)' : undefined,

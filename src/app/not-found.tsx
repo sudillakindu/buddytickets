@@ -106,18 +106,18 @@ export default function NotFound() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          <h2 className="font-primary text-3xl sm:text-4xl font-bold text-gray-900 mt-4 tracking-tight">
+          <h2 className="font-primary text-4xl font-bold text-gray-900 mt-4 tracking-tight">
             Oops! Page Not Found
           </h2>
           <p className="font-secondary text-gray-500 mt-3 mb-8 text-base leading-relaxed max-w-lg mx-auto">
             The page you are looking for might have been removed, had its name changed, or is temporarily unavailable. Let&apos;s get you back on track.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-row gap-4 justify-center">
             <Button
               asChild
               variant="outline"
-              className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
+              className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
             >
               <button type="button" onClick={goBack} className="cursor-pointer">
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
@@ -127,7 +127,7 @@ export default function NotFound() {
             
             <Button
               asChild
-              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto]"
+              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-auto px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto]"
               style={{
                 backgroundPosition: isHomeHovered ? '100% 0' : '0 0',
               }}

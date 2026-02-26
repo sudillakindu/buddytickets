@@ -127,7 +127,7 @@ export default function MaintenancePage() {
             System Update in Progress
           </motion.span>
           
-          <h2 className="font-primary text-3xl sm:text-4xl font-bold text-gray-900 mt-4 tracking-tight">
+          <h2 className="font-primary text-4xl font-bold text-gray-900 mt-4 tracking-tight">
             We&apos;ll be right back soon!
           </h2>
           
@@ -136,11 +136,11 @@ export default function MaintenancePage() {
             Please grab a cup of coffee and check back in a few minutes.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-row gap-4 justify-center">
             <Button
               asChild
               variant="outline"
-              className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
+              className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
             >
               <button type="button" onClick={handleRefresh} className="cursor-pointer">
                 <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
@@ -150,7 +150,7 @@ export default function MaintenancePage() {
             
             <Button
               asChild
-              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto]"
+              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-auto px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto]"
               style={{
                 backgroundPosition: isHomeHovered ? '100% 0' : '0 0',
               }}
