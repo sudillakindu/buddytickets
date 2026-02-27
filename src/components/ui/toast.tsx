@@ -5,7 +5,7 @@ import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
 import { motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X, LucideIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/utils';
 import { Button } from './button';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
