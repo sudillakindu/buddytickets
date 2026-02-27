@@ -4,14 +4,11 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-import { AnimatedBackground, SPRING_CONFIG } from '@/components/shared/animated-background';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type FormData = {
@@ -124,17 +121,6 @@ function PasswordToggle({
 export default function SignInPage() {
   const router = useRouter();
 
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const springX = useSpring(useTransform(mouseX, (v: number) => v * 0.05), SPRING_CONFIG);
-  const springY = useSpring(useTransform(mouseY, (v: number) => v * 0.05), SPRING_CONFIG);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - rect.left - rect.width  / 2);
-    mouseY.set(e.clientY - rect.top  - rect.height / 2);
-  }, [mouseX, mouseY]);
-
   const [formData, setFormData] = useState<FormData>({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
@@ -158,10 +144,7 @@ export default function SignInPage() {
   const onBlur   = () => setFocusedField(null);
 
   return (
-    <section className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white py-10 px-4 sm:px-6"
-      onMouseMove={handleMouseMove}>
-      <AnimatedBackground springX={springX} springY={springY} />
-
+    <section className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10 px-4 sm:px-6">
       <AuthCard>
         <AuthLogo />
         <AuthHeading
