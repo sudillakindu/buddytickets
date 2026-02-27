@@ -1,170 +1,239 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { KeyRound, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Mail, Lock, Eye, EyeOff, LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Toast } from '@/components/ui/toast';
+import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 
-const ANIMATION_VARIANTS = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type Step = 'email' | 'resetPassword';
+
+// ─── Shared Auth Primitives (co-located) ──────────────────────────────────────
+
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center overflow-hidden my-auto bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
+      {children}
+    </div>
+  );
+}
+
+function InputIcon({ icon: Icon, isFocused }: { icon: LucideIcon; isFocused: boolean }) {
+  return (
+    <Icon
+      className={[
+        'absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 z-10 pointer-events-none',
+        isFocused ? 'text-[hsl(270,70%,50%)]' : 'text-[hsl(215.4,16.3%,46.9%)]',
+      ].join(' ')}
+      aria-hidden="true"
+    />
+  );
+}
+
+function inputCls(isFocused: boolean, extra = '') {
+  return [
+    'font-secondary pl-11 py-3 rounded-xl h-auto text-sm transition-all duration-200',
+    'bg-[hsl(210,40%,98%)] border-2 text-[hsl(222.2,47.4%,11.2%)]',
+    'placeholder:text-[hsl(215.4,16.3%,46.9%)]',
+    'focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]',
+    isFocused ? 'border-[hsl(270,70%,50%)]' : 'border-[hsl(214.3,31.8%,91.4%)]',
+    extra,
+  ].join(' ');
+}
+
+function SubmitButton({ label }: { label: string }) {
+  return (
+    <Button
+      type="submit"
+      className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+    >
+      {label}
+    </Button>
+  );
+}
+
+function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      onClick={onToggle}
+      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-transparent text-[hsl(215.4,16.3%,46.9%)] transition-colors duration-200"
+      aria-label={show ? 'Hide password' : 'Show password'}
+    >
+      {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+    </Button>
+  );
+}
+
+// ─── Step content maps ────────────────────────────────────────────────────────
+
+const STEP_TITLES: Record<Step, string> = {
+  email:         'Forgot Password?',
+  resetPassword: 'New Password',
 };
 
-export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
-  const [isSent, setIsSent] = useState(false);
+const STEP_DESCRIPTIONS: Record<Step, string> = {
+  email:         "Enter your email and we'll send you a reset code.",
+  resetPassword: 'Your identity is verified. Set your new password below.',
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSent(true);
-    Toast('Email Sent', 'Check your inbox for the reset link.', 'success');
-  };
+// ─── Inner Form (needs useSearchParams — wrapped in Suspense) ─────────────────
 
-  const resetForm = () => {
-    setIsSent(false);
-    setEmail('');
-  };
+function ForgotPasswordForm() {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  const [step, setStep]                     = useState<Step>('email');
+  const [email, setEmail]                   = useState('');
+  const [newPassword, setNewPassword]       = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword]       = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [focusedField, setFocusedField]     = useState<string | null>(null);
+
+  useEffect(() => {
+    const stepParam  = searchParams.get('step');
+    const emailParam = searchParams.get('email');
+    if (stepParam === 'reset' && emailParam) {
+      setEmail(emailParam);
+      setStep('resetPassword');
+    }
+  }, [searchParams]);
+
+  const handleSendOtp = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      router.push(
+        `/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}&reason=forgot-password`
+      );
+    },
+    [router, email]
+  );
+
+  const handleResetPassword = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      router.push('/sign-in');
+    },
+    [router]
+  );
+
+  const focused = (field: string) => focusedField === field;
+  const onFocus = (field: string) => () => setFocusedField(field);
+  const onBlur  = () => setFocusedField(null);
 
   return (
-    <motion.div
-      className="w-full max-w-md mx-auto"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl p-10">
-        <AnimatePresence mode="wait">
-          {!isSent ? (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="mb-8 text-center"
-                variants={ANIMATION_VARIANTS}
-                initial="initial"
-                animate="animate"
-                transition={{ duration: 0.4, delay: 0.05 }}
-              >
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg bg-gradient-to-br from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
-                  <KeyRound className="w-6 h-6 text-white" />
-                </div>
-                <h1 className="font-special text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">
-                  Forgot password?
-                </h1>
-                <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
-                  Enter your email and we&apos;ll send you a reset link.
-                </p>
-              </motion.div>
+    <div className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10 px-4 sm:px-6">
+      <AuthCard>
+        <div className="flex items-center justify-center mb-6">
+          <Image
+            src={LogoSrc}
+            alt="BuddyTickets Logo"
+            width={48}
+            height={48}
+            className="w-12 h-12 object-contain drop-shadow-sm"
+            priority
+          />
+        </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <motion.div
-                  className="space-y-1.5"
-                  variants={ANIMATION_VARIANTS}
-                  initial="initial"
-                  animate="animate"
-                  transition={{ duration: 0.4, delay: 0.1 }}
-                >
-                  <Label
-                    htmlFor="email"
-                    className="font-primary text-xs font-semibold uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]"
-                  >
-                    Email Address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215.4,16.3%,46.9%)]" />
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="font-secondary pl-10 h-11 rounded-xl border-[hsl(222.2,47.4%,11.2%)]/15 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)]"
-                    />
-                  </div>
-                </motion.div>
+        <h1 className="font-primary text-3xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
+          {STEP_TITLES[step]}
+        </h1>
+        <p className="font-secondary text-sm mb-8 text-center text-[hsl(215.4,16.3%,46.9%)]">
+          {STEP_DESCRIPTIONS[step]}
+        </p>
 
-                <motion.div
-                  className="pt-1"
-                  variants={ANIMATION_VARIANTS}
-                  initial="initial"
-                  animate="animate"
-                  transition={{ duration: 0.4, delay: 0.15 }}
-                >
-                  <Button
-                    type="submit"
-                    className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto]"
-                  >
-                    Send Reset Link
-                  </Button>
-                </motion.div>
-              </form>
+        {step === 'email' && (
+          <form onSubmit={handleSendOtp} className="w-full flex flex-col gap-4">
+            <div className="relative">
+              <InputIcon icon={Mail} isFocused={focused('email')} />
+              <Input
+                placeholder="Email Address"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={onFocus('email')}
+                onBlur={onBlur}
+                className={inputCls(focused('email'))}
+              />
+            </div>
+            <SubmitButton label="Send Reset Code" />
+          </form>
+        )}
 
-              <motion.div
-                className="mt-6 text-center"
-                variants={ANIMATION_VARIANTS}
-                initial="initial"
-                animate="animate"
-                transition={{ duration: 0.4, delay: 0.2 }}
-              >
-                <Link
-                  href="/sign-in"
-                  className="font-secondary inline-flex items-center gap-1.5 text-sm text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Back to sign in
-                </Link>
-              </motion.div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="success"
-              className="text-center py-4"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 mb-6">
-                <CheckCircle2 className="w-8 h-8 text-green-500" />
-              </div>
-              <h2 className="font-special text-2xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">
-                Check your inbox
-              </h2>
-              <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mb-2">
-                We&apos;ve sent a password reset link to
-              </p>
-              <p className="font-primary text-sm font-semibold text-[hsl(270,70%,50%)] mb-8">
-                {email}
-              </p>
-              <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] mb-6">
-                Didn&apos;t receive it? Check your spam folder or{' '}
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="text-[hsl(270,70%,50%)] hover:underline focus:outline-none focus:ring-2 focus:ring-[hsl(270,70%,50%)] rounded"
-                >
-                  try again
-                </button>
-                .
-              </p>
-              <Link href="/sign-in" className="inline-block w-full">
-                <Button className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
-                  Back to Sign In
-                </Button>
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+        {step === 'resetPassword' && (
+          <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4">
+            {/* New Password */}
+            <div className="relative">
+              <InputIcon icon={Lock} isFocused={focused('newPassword')} />
+              <Input
+                placeholder="New Password"
+                type={showNewPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                onFocus={onFocus('newPassword')}
+                onBlur={onBlur}
+                className={inputCls(focused('newPassword'), 'pr-11')}
+              />
+              <PasswordToggle
+                show={showNewPassword}
+                onToggle={() => setShowNewPassword((p) => !p)}
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div className="relative">
+              <InputIcon icon={Lock} isFocused={focused('confirmPassword')} />
+              <Input
+                placeholder="Confirm New Password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onFocus={onFocus('confirmPassword')}
+                onBlur={onBlur}
+                className={inputCls(focused('confirmPassword'), 'pr-11')}
+              />
+              <PasswordToggle
+                show={showConfirmPassword}
+                onToggle={() => setShowConfirmPassword((p) => !p)}
+              />
+            </div>
+
+            <SubmitButton label="Reset Password" />
+          </form>
+        )}
+
+        <p className="mt-5 text-sm text-center font-secondary text-[hsl(215.4,16.3%,46.9%)]">
+          Remember your password?{' '}
+          <Link
+            href="/sign-in"
+            className="font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
+          >
+            Sign In
+          </Link>
+        </p>
+      </AuthCard>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }

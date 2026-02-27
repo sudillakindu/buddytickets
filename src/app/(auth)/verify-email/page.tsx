@@ -1,193 +1,213 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { MailCheck, ArrowLeft, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Toast } from '@/components/ui/toast';
+import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 
-const OTP_LENGTH = 6;
+// ─── Shared Auth Primitives (co-located) ──────────────────────────────────────
 
-const ANIMATION_VARIANTS = {
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-};
+function AuthCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center overflow-hidden my-auto bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
+      {children}
+    </div>
+  );
+}
 
-export default function VerifyEmailPage() {
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [resendTimer, setResendTimer] = useState(60);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+function SubmitButton({ label }: { label: string }) {
+  return (
+    <Button
+      type="submit"
+      className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+    >
+      {label}
+    </Button>
+  );
+}
 
-  useEffect(() => {
-    inputRefs.current[0]?.focus();
+// ─── OTP Input ────────────────────────────────────────────────────────────────
+
+interface OtpInputProps {
+  digits: string[];
+  focusedIndex: number | null;
+  inputRefs: React.MutableRefObject<(HTMLInputElement | null)[]>;
+  onChange: (index: number, value: string) => void;
+  onKeyDown: (index: number, e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onPaste: (e: React.ClipboardEvent) => void;
+  onFocus: (index: number) => void;
+  onBlur: () => void;
+}
+
+function OtpInput({
+  digits, focusedIndex, inputRefs, onChange, onKeyDown, onPaste, onFocus, onBlur,
+}: OtpInputProps) {
+  return (
+    <div className="flex gap-2 sm:gap-3 justify-center w-full" role="group" aria-label="One-time password">
+      {digits.map((digit, i) => (
+        <input
+          key={i}
+          ref={(el) => { inputRefs.current[i] = el; }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={digit}
+          onChange={(e) => onChange(i, e.target.value)}
+          onKeyDown={(e) => onKeyDown(i, e)}
+          onPaste={onPaste}
+          onFocus={() => onFocus(i)}
+          onBlur={onBlur}
+          className={[
+            'w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-primary font-semibold rounded-xl border-2',
+            'transition-all duration-200 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)]',
+            'outline-none select-none caret-transparent',
+            focusedIndex === i
+              ? 'border-[hsl(270,70%,50%)] shadow-[0_0_0_3px_hsl(270,70%,50%,0.15)]'
+              : digit
+              ? 'border-[hsl(270,70%,50%)] bg-[hsl(270,70%,98%)]'
+              : 'border-[hsl(214.3,31.8%,91.4%)]',
+          ].join(' ')}
+          aria-label={`Digit ${i + 1}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Inner Form (needs useSearchParams — wrapped in Suspense) ─────────────────
+
+function VerifyEmailForm() {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  const email  = searchParams.get('email')  ?? '';
+  const reason = searchParams.get('reason') ?? 'signup';
+
+  const [digits, setDigits]           = useState<string[]>(Array(6).fill(''));
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
+
+  const handleDigitChange = useCallback((index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    setDigits((prev) => {
+      const next = [...prev];
+      next[index] = digit;
+      return next;
+    });
+    if (digit && index < 5) inputRefs.current[index + 1]?.focus();
   }, []);
 
-  useEffect(() => {
-    if (resendTimer <= 0) return;
-    const t = setInterval(() => setResendTimer((v) => v - 1), 1000);
-    return () => clearInterval(t);
-  }, [resendTimer]);
+  const handleKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace') {
+        if (digits[index]) {
+          setDigits((prev) => { const next = [...prev]; next[index] = ''; return next; });
+        } else if (index > 0) {
+          inputRefs.current[index - 1]?.focus();
+        }
+      } else if (e.key === 'ArrowLeft' && index > 0) {
+        e.preventDefault();
+        inputRefs.current[index - 1]?.focus();
+      } else if (e.key === 'ArrowRight' && index < 5) {
+        e.preventDefault();
+        inputRefs.current[index + 1]?.focus();
+      }
+    },
+    [digits]
+  );
 
-  const handleChange = (i: number, val: string) => {
-    const char = val.replace(/\D/g, '').slice(-1);
-    const next = [...otp];
-    next[i] = char;
-    setOtp(next);
-    if (char && i < OTP_LENGTH - 1) inputRefs.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[i] && i > 0) {
-      inputRefs.current[i - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e: React.ClipboardEvent) => {
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
-    const next = [...otp];
-    pasted.split('').forEach((c, idx) => {
-      next[idx] = c;
-    });
-    setOtp(next);
-    const last = Math.min(pasted.length, OTP_LENGTH - 1);
-    inputRefs.current[last]?.focus();
-  };
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    const next = Array(6).fill('');
+    pasted.split('').forEach((char, i) => { next[i] = char; });
+    setDigits(next);
+    inputRefs.current[Math.min(pasted.length, 5)]?.focus();
+  }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = otp.join('');
-    if (code.length < OTP_LENGTH) {
-      Toast('Incomplete Code', 'Please enter all 6 digits.', 'error');
-      return;
-    }
-    Toast('Coming Soon', 'Email verification is launching soon.', 'warning');
-  };
-
-  const handleResend = () => {
-    if (resendTimer > 0) return;
-    setResendTimer(60);
-    Toast('Code Resent', 'A new verification code has been sent.', 'success');
-  };
-
-  const isFilled = otp.every((v) => v !== '');
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (reason === 'forgot-password') {
+        router.push(`/forget-password?step=reset&email=${encodeURIComponent(email)}`);
+      } else {
+        router.push('/sign-in');
+      }
+    },
+    [router, email, reason]
+  );
 
   return (
-    <motion.div
-      className="w-full max-w-md mx-auto"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <div className="bg-white/80 backdrop-blur-xl border border-white/60 shadow-2xl shadow-[hsl(222.2,47.4%,11.2%)]/5 rounded-3xl p-10">
-        <motion.div
-          className="mb-8 text-center"
-          variants={ANIMATION_VARIANTS}
-          initial="initial"
-          animate="animate"
-          transition={{ duration: 0.4, delay: 0.05 }}
-        >
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 shadow-lg bg-gradient-to-br from-[hsl(270,70%,50%)] to-[hsl(330,80%,60%)]">
-            <MailCheck className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="font-special text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-1.5">
-            Verify your email
-          </h1>
-          <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
-            We sent a 6-digit code to your email address. Enter it below to verify your account.
-          </p>
-        </motion.div>
+    <div className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10 px-4 sm:px-6">
+      <AuthCard>
+        <div className="flex items-center justify-center mb-6">
+          <Image
+            src={LogoSrc}
+            alt="BuddyTickets Logo"
+            width={48}
+            height={48}
+            className="w-12 h-12 object-contain drop-shadow-sm"
+            priority
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <motion.div
-            variants={ANIMATION_VARIANTS}
-            initial="initial"
-            animate="animate"
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
-            <div className="flex justify-center gap-3" onPaste={handlePaste}>
-              {otp.map((digit, i) => (
-                <Input
-                  key={i}
-                  ref={(el) => {
-                    inputRefs.current[i] = el;
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleChange(i, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(i, e)}
-                  className="font-primary w-11 h-14 text-center text-xl font-bold rounded-xl border-[hsl(222.2,47.4%,11.2%)]/20 focus-visible:border-[hsl(270,70%,50%)] focus-visible:ring-[hsl(270,70%,50%)]/20 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] transition-all duration-200 caret-transparent"
-                  style={{
-                    borderWidth: digit ? '2px' : '1.5px',
-                    borderColor: digit ? 'hsl(270 70% 50% / 0.5)' : undefined,
-                  }}
-                  aria-label={`OTP digit ${i + 1}`}
-                />
-              ))}
-            </div>
-          </motion.div>
+        <h1 className="font-primary text-3xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
+          Verify Your Email
+        </h1>
+        <p className="font-secondary text-sm mb-6 text-center text-[hsl(215.4,16.3%,46.9%)]">
+          Enter the 6-digit code sent to
+          <br />
+          <span className="font-primary font-medium text-[hsl(270,70%,50%)] truncate inline-block max-w-[250px] align-bottom">
+            {email}
+          </span>
+        </p>
 
-          <motion.div
-            variants={ANIMATION_VARIANTS}
-            initial="initial"
-            animate="animate"
-            transition={{ duration: 0.4, delay: 0.15 }}
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+          <OtpInput
+            digits={digits}
+            focusedIndex={focusedIndex}
+            inputRefs={inputRefs}
+            onChange={handleDigitChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            onFocus={setFocusedIndex}
+            onBlur={() => setFocusedIndex(null)}
+          />
+
+          <SubmitButton label="Verify Email" />
+
+          <button
+            type="button"
+            className="text-xs font-secondary mx-auto mt-0 text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors duration-200"
           >
-            <Button
-              type="submit"
-              disabled={!isFilled}
-              className="font-primary w-full h-11 rounded-xl text-sm text-white shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl disabled:opacity-60 disabled:scale-100 bg-gradient-to-r from-[hsl(270,70%,50%)] via-[hsl(330,80%,60%)] to-[hsl(270,70%,50%)] bg-[length:200%_auto]"
-            >
-              <span className="flex items-center gap-2">
-                <MailCheck className="w-4 h-4" />
-                Verify Email
-              </span>
-            </Button>
-          </motion.div>
+            Didn&apos;t receive the code? Resend
+          </button>
         </form>
 
-        <motion.div
-          className="mt-5 text-center"
-          variants={ANIMATION_VARIANTS}
-          initial="initial"
-          animate="animate"
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
-            Didn&apos;t receive the code?{' '}
-            <button
-              type="button"
-              onClick={handleResend}
-              disabled={resendTimer > 0}
-              className="font-semibold text-[hsl(270,70%,50%)] disabled:opacity-40 hover:text-[hsl(270,70%,40%)] transition-colors inline-flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-[hsl(270,70%,50%)] rounded"
-            >
-              <RefreshCw className="w-3 h-3" />
-              {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Resend code'}
-            </button>
-          </p>
-        </motion.div>
-
-        <motion.div
-          className="mt-4 text-center"
-          variants={ANIMATION_VARIANTS}
-          initial="initial"
-          animate="animate"
-          transition={{ duration: 0.4, delay: 0.25 }}
-        >
+        <p className="mt-4 text-sm text-center font-secondary text-[hsl(215.4,16.3%,46.9%)]">
+          Already verified?{' '}
           <Link
             href="/sign-in"
-            className="font-secondary inline-flex items-center gap-1.5 text-sm text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors"
+            className="font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to sign in
+            Sign In
           </Link>
-        </motion.div>
-      </div>
-    </motion.div>
+        </p>
+      </AuthCard>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense>
+      <VerifyEmailForm />
+    </Suspense>
   );
 }
