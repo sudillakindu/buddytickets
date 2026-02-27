@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ChevronRight, CalendarX, Loader2 } from 'lucide-react';
 
-import { MOCK_EVENTS } from '@/lib/api.test/event';
+import { MOCK_EVENTS } from '@/lib/meta/event';
 import { Button } from '@/components/ui/button';
 import EventCard, { type Event } from '@/components/ui/event-card';
 import { Toast } from '@/components/ui/toast';
