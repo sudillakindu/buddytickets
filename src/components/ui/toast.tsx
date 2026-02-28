@@ -76,7 +76,7 @@ const TOAST_TRANSITION = {
   damping: 22,
 } as const;
 
-export const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' }) => (
+const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' }) => (
   <SonnerToaster
     position={defaultPosition}
     expand={false}
@@ -90,7 +90,7 @@ export const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' 
   />
 );
 
-export const Toast = (
+const Toast = (
   title: string,
   message: string,
   variant: ToastVariant = 'default',
@@ -176,3 +176,7 @@ export const Toast = (
     { duration, position }
   );
 };
+
+Toaster.displayName = 'Toaster';
+
+export { Toaster, Toast };

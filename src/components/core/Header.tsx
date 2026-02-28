@@ -160,7 +160,7 @@ export function Header({ user }: { user: UserInfo | null }) {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-4 px-4 sm:px-6">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-4 px-4 sm:px-6 lg:px-8">
       <nav className="relative w-full max-w-7xl mx-auto" aria-label="Main navigation">
         <div
           className={`flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full ${isMounted ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'}`}

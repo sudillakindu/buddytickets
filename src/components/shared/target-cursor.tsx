@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { gsap } from 'gsap';
 
-export interface TargetCursorProps {
+interface TargetCursorProps {
   targetSelector?: string;
   spinDuration?: number;
   hideDefaultCursor?: boolean;
@@ -319,4 +319,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
   );
 };
 
-export default TargetCursor;
+TargetCursor.displayName = 'TargetCursor';
+
+export { TargetCursor };
+export type { TargetCursorProps };

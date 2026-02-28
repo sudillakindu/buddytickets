@@ -1,4 +1,24 @@
-import type { Event } from '@/components/ui/event-card';
+export type EventStatus =
+    | 'DRAFT'
+    | 'PUBLISHED'
+    | 'ON_SALE'
+    | 'SOLD_OUT'
+    | 'ONGOING'
+    | 'COMPLETED'
+    | 'CANCELLED';
+
+export interface Event {
+    event_id: string;
+    name: string;
+    start_at: string;
+    end_at: string;
+    location: string;
+    primary_image: string;
+    category: string;
+    start_ticket_price: string;
+    status: EventStatus;
+    is_vip: boolean;
+}
 
 export const MOCK_EVENTS: Event[] = [
     {
@@ -75,7 +95,7 @@ export const MOCK_EVENTS: Event[] = [
     },
 ];
 
-export async function getEventsHighlight(): Promise<Event[]> {
+export async function getEventsMock(): Promise<Event[]> {
     return MOCK_EVENTS;
 }
 

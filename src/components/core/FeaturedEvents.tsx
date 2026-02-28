@@ -3,11 +3,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ChevronRight, CalendarX, Loader2 } from 'lucide-react';
+import { ChevronRight, CalendarX } from 'lucide-react';
 
-import { MOCK_EVENTS } from '@/lib/meta/event';
+import { MOCK_EVENTS, type Event } from '@/lib/meta/event';
 import { Button } from '@/components/ui/button';
-import EventCard, { type Event } from '@/components/ui/event-card';
+import { EventCard } from '@/components/shared/event/event-card';
+import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
 import { Toast } from '@/components/ui/toast';
 
 const ACTIVE_STATUSES = ['ON_SALE', 'PUBLISHED', 'ONGOING'] as const;
@@ -66,19 +67,7 @@ const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
   );
 };
 
-const LoadingState = () => (
-  <div 
-    className={`flex flex-col items-center justify-center py-24 ${cn.textMuted}`} 
-    aria-label="Loading events" 
-    role="status"
-  >
-    <Loader2 
-      className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]" 
-      aria-hidden="true" 
-    />
-    <span className="sr-only">Loading events...</span>
-  </div>
-);
+const LoadingState = () => <EventGridSkeleton />;
 
 const EmptyState = () => (
   <motion.div

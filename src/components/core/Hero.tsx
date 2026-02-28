@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import TargetCursor from '@/components/shared/target-cursor';
+import { TargetCursor } from '@/components/shared/target-cursor';
 
 interface Particle {
   id: number;
