@@ -7,8 +7,6 @@ import { Settings, Clock, RefreshCw, Home } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Particle {
   id: number;
   hue: number;
@@ -18,30 +16,24 @@ interface Particle {
   delay: number;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
-  id:       i,
-  hue:      i * 18,
-  left:     `${(i * 37 + 13) % 100}%`,
-  top:      `${(i * 53 + 7)  % 100}%`,
+  id: i,
+  hue: i * 18,
+  left: `${(i * 37 + 13) % 100}%`,
+  top: `${(i * 53 + 7) % 100}%`,
   duration: 3 + (i % 5) * 0.4,
-  delay:    (i % 8) * 0.25,
+  delay: (i % 8) * 0.25,
 }));
 
 const SPRING_CONFIG = { stiffness: 100, damping: 30 } as const;
 
-// ─── Animated Background ──────────────────────────────────────────────────────
-
 function AnimatedBackground({ springX, springY }: { springX: MotionValue<number>; springY: MotionValue<number> }) {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      {/* Top-right blob */}
       <motion.div
         className="absolute top-[-5%] right-[-30%] w-[80vw] h-[80vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
         style={{
-          background:
-            'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
+          background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
           x: springX,
           y: springY,
         }}
@@ -49,12 +41,10 @@ function AnimatedBackground({ springX, springY }: { springX: MotionValue<number>
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      {/* Bottom-left blob */}
       <motion.div
         className="absolute bottom-[-10%] left-[-30%] w-[70vw] h-[70vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
         style={{
-          background:
-            'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
+          background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
           x: springX,
           y: springY,
         }}
@@ -62,29 +52,21 @@ function AnimatedBackground({ springX, springY }: { springX: MotionValue<number>
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      {/* Radial overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
 
-      {/* Grid pattern */}
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage:
-            'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       />
 
-      {/* Particles */}
       {PARTICLES.map((p) => (
         <motion.div
           key={p.id}
           className="absolute w-1.5 h-1.5 rounded-full"
-          style={{
-            background: `hsl(${p.hue}, 70%, 50%)`,
-            left: p.left,
-            top:  p.top,
-          }}
+          style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
           animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3], y: [0, -20, 0] }}
           transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
         />
@@ -93,18 +75,17 @@ function AnimatedBackground({ springX, springY }: { springX: MotionValue<number>
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function MaintenancePage() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  
   const springX = useSpring(useTransform(mouseX, (v: number) => v * 0.05), SPRING_CONFIG);
   const springY = useSpring(useTransform(mouseY, (v: number) => v * 0.05), SPRING_CONFIG);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - rect.left - rect.width  / 2);
-    mouseY.set(e.clientY - rect.top  - rect.height / 2);
+    mouseX.set(e.clientX - rect.left - rect.width / 2);
+    mouseY.set(e.clientY - rect.top - rect.height / 2);
   }, [mouseX, mouseY]);
 
   const handleRefresh = useCallback(() => window.location.reload(), []);
@@ -112,15 +93,12 @@ export default function MaintenancePage() {
   return (
     <section
       id="maintenance"
-      className="relative w-full min-h-screen flex items-center justify-center overflow-hidden
-        bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white p-4
-        supports-[min-height:100dvh]:min-h-[100dvh]"
+      className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white p-4 supports-[min-height:100dvh]:min-h-[100dvh]"
       onMouseMove={handleMouseMove}
       aria-label="Site maintenance"
     >
       <AnimatedBackground springX={springX} springY={springY} />
 
-      {/* Floating orbs */}
       <motion.div
         className="hidden sm:block absolute top-1/4 left-4 w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]"
         animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}
@@ -140,7 +118,6 @@ export default function MaintenancePage() {
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="max-w-2xl w-full text-center relative z-10 px-4"
       >
-        {/* Icon */}
         <motion.div
           className="mb-6 inline-flex p-3 rounded-full bg-white/50 backdrop-blur-sm border border-gray-200/50 shadow-xl"
           initial={{ scale: 0 }}
@@ -158,11 +135,8 @@ export default function MaintenancePage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
         >
-          {/* Badge */}
           <motion.span
-            className="font-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium mb-4
-              bg-white/50 backdrop-blur-sm border border-[hsl(222.2,47.4%,11.2%)]/20
-              text-[hsl(222.2,47.4%,11.2%)] shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)]"
+            className="font-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium mb-4 bg-white/50 backdrop-blur-sm border border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)] shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)]"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
@@ -181,15 +155,11 @@ export default function MaintenancePage() {
             Please grab a cup of coffee and check back in a few minutes.
           </p>
 
-          {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
             <Button
               variant="outline"
               onClick={handleRefresh}
-              className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2
-                h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2
-                transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50
-                text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
+              className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
             >
               <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" aria-hidden="true" />
               <span>Refresh Page</span>
@@ -197,11 +167,7 @@ export default function MaintenancePage() {
 
             <Button
               asChild
-              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2
-                h-12 w-full sm:w-auto px-8 text-sm text-white rounded-xl shadow-lg
-                transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98]
-                bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]
-                bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+              className="font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm text-white rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl active:scale-[0.98] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
             >
               <Link href="/">
                 <Home className="w-4 h-4" aria-hidden="true" />

@@ -12,8 +12,6 @@ import {
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface SocialLink {
   icon: LucideIcon;
   href: string;
@@ -36,8 +34,6 @@ interface FooterNavGroupProps {
   links: NavLink[];
   delay: number;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -67,8 +63,6 @@ const cn = {
   textAccent:  'text-[hsl(270,70%,50%)]',
   hoverAccent: 'hover:text-[hsl(270,70%,50%)]',
 } as const;
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const FooterNavGroup = ({ title, links, delay }: FooterNavGroupProps) => (
   <motion.nav
@@ -107,7 +101,10 @@ const FooterNavGroup = ({ title, links, delay }: FooterNavGroupProps) => (
 const ContactItem = ({ icon: Icon, text, href }: ContactItemProps) => {
   const iconEl = (
     <div className="w-8 h-8 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
-      <Icon className={`w-4 h-4 ${cn.textPrimary} group-hover:text-[hsl(270,70%,50%)] transition-colors`} aria-hidden="true" />
+      <Icon 
+        className={`w-4 h-4 ${cn.textPrimary} group-hover:text-[hsl(270,70%,50%)] transition-colors`} 
+        aria-hidden="true" 
+      />
     </div>
   );
 
@@ -117,13 +114,6 @@ const ContactItem = ({ icon: Icon, text, href }: ContactItemProps) => {
     </span>
   );
 
-  const inner = (
-    <>
-      {iconEl}
-      {textEl}
-    </>
-  );
-
   return (
     <motion.li
       className="flex flex-row items-center justify-start gap-3 group"
@@ -131,15 +121,19 @@ const ContactItem = ({ icon: Icon, text, href }: ContactItemProps) => {
       transition={{ type: 'spring', stiffness: 300 }}
     >
       {href ? (
-        <a href={href} className="flex items-center gap-3">{inner}</a>
+        <a href={href} className="flex items-center gap-3">
+          {iconEl}
+          {textEl}
+        </a>
       ) : (
-        <div className="flex items-center gap-3">{inner}</div>
+        <div className="flex items-center gap-3">
+          {iconEl}
+          {textEl}
+        </div>
       )}
     </motion.li>
   );
 };
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function Footer() {
   return (
@@ -148,9 +142,7 @@ export function Footer() {
       aria-label="Site footer"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12">
-          {/* Brand & Socials */}
           <motion.div
             className="space-y-5 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
@@ -158,7 +150,11 @@ export function Footer() {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <Link href="/" className="flex items-center gap-2.5 group" aria-label="BuddyTickets Home">
+            <Link 
+              href="/" 
+              className="flex items-center gap-2.5 group" 
+              aria-label="BuddyTickets Home"
+            >
               <motion.div whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }}>
                 <Image
                   src={LogoSrc}
@@ -169,29 +165,28 @@ export function Footer() {
                 />
               </motion.div>
               <span
-                className="font-special transition-all duration-500 text-xl text-transparent bg-clip-text
-                  bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))]
-                  bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0]"
+                className="font-special transition-all duration-500 text-xl text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0]"
               >
                 BuddyTickets
               </span>
             </Link>
 
             <p className={`font-secondary ${cn.textMuted} text-sm leading-relaxed`}>
-              Your premier platform for discovering, creating, and managing events in Sri Lanka.
-              Connect with experiences that matter.
+              Your premier platform for discovering, creating, and managing events in Sri Lanka. Connect with experiences that matter.
             </p>
 
-            {/* Social Links */}
-            <div className="flex space-x-3 pt-1 justify-start w-full" role="list" aria-label="Social media links">
+            <div 
+              className="flex space-x-3 pt-1 justify-start w-full" 
+              role="list" 
+              aria-label="Social media links"
+            >
               {SOCIAL_LINKS.map(({ icon: Icon, href, label }, index) => (
                 <motion.a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center
-                    ${cn.textMuted} ${cn.hoverAccent} hover:border-[hsl(270,70%,50%)]/20 transition-colors`}
+                  className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center ${cn.textMuted} ${cn.hoverAccent} hover:border-[hsl(270,70%,50%)]/20 transition-colors`}
                   aria-label={`Follow us on ${label}`}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
@@ -204,11 +199,9 @@ export function Footer() {
             </div>
           </motion.div>
 
-          {/* Nav Groups */}
           <FooterNavGroup title="Quick Links" links={QUICK_LINKS} delay={0.1} />
-          <FooterNavGroup title="Legal"       links={LEGAL_LINKS}  delay={0.2} />
+          <FooterNavGroup title="Legal" links={LEGAL_LINKS} delay={0.2} />
 
-          {/* Contact Info */}
           <motion.div
             className="space-y-4 flex flex-col items-start text-left"
             initial={{ opacity: 0, y: 20 }}
@@ -216,16 +209,17 @@ export function Footer() {
             transition={{ duration: 0.5, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h3 className={`font-primary text-base font-bold ${cn.textPrimary}`}>Contact Info</h3>
+            <h3 className={`font-primary text-base font-bold ${cn.textPrimary}`}>
+              Contact Info
+            </h3>
             <ul className="space-y-3 text-sm w-full" role="list">
               <ContactItem icon={MapPin} text="Buddy Tickets, Matara, Sri Lanka" />
-              <ContactItem icon={Phone}  text="+94 72 33 56 907" href="tel:+94763356907" />
-              <ContactItem icon={Mail}   text="info@buddytickets.lk" href="mailto:info@buddyticket.lk" />
+              <ContactItem icon={Phone} text="+94 72 33 56 907" href="tel:+94763356907" />
+              <ContactItem icon={Mail} text="info@buddytickets.lk" href="mailto:info@buddyticket.lk" />
             </ul>
           </motion.div>
         </div>
 
-        {/* Bottom Bar */}
         <motion.div
           className="border-t border-gray-200/60 pt-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4"
           initial={{ opacity: 0 }}

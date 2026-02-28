@@ -3,8 +3,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
-// ─── Shared Auth Background ───────────────────────────────────────────────────
-
 function AuthBackground() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
@@ -29,8 +27,6 @@ function AuthBackground() {
     </div>
   );
 }
-
-// ─── Layout ───────────────────────────────────────────────────────────────────
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (

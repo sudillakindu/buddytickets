@@ -6,8 +6,6 @@ import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
 
 import { Button } from './button';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type EventStatus =
   | 'DRAFT'
   | 'PUBLISHED'
@@ -36,13 +34,10 @@ interface StatusUI {
   disabled: boolean;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const STATUS_UI: Record<EventStatus, StatusUI> = {
   ON_SALE: {
     text: 'Book Ticket',
-    className:
-      'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500',
+    className: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500',
     disabled: false,
   },
   SOLD_OUT: {
@@ -83,8 +78,6 @@ const FALLBACK_STATUS: StatusUI = {
   disabled: true,
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function getStatusUI(status: EventStatus): StatusUI {
   return STATUS_UI[status] ?? FALLBACK_STATUS;
 }
@@ -97,8 +90,6 @@ function formatEventDate(isoString: string): { date: string; time: string } {
   };
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 interface ImageSectionProps {
   src: string;
   alt: string;
@@ -110,7 +101,13 @@ interface ImageSectionProps {
 }
 
 const ImageSection = ({
-  src, alt, isHovered, category, isVip, onError, hasError,
+  src,
+  alt,
+  isHovered,
+  category,
+  isVip,
+  onError,
+  hasError,
 }: ImageSectionProps) => (
   <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
     {hasError || !src ? (
@@ -147,15 +144,13 @@ const ImageSection = ({
   </div>
 );
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 const EventCard: React.FC<{ event: Event }> = ({ event }) => {
-  const [isHovered, setIsHovered]   = useState(false);
-  const [imgError, setImgError]     = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
-  const handleMouseEnter = useCallback(() => setIsHovered(true),  []);
+  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
   const handleMouseLeave = useCallback(() => setIsHovered(false), []);
-  const handleImgError   = useCallback(() => setImgError(true),   []);
+  const handleImgError = useCallback(() => setImgError(true), []);
 
   const { date: displayDate, time: displayTime } = formatEventDate(event.start_at);
   const ui = getStatusUI(event.status);
@@ -177,7 +172,6 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
       />
 
       <div className="p-4 flex flex-col flex-grow gap-2.5">
-        {/* Date & Time */}
         <div className="event-meta flex items-center justify-between w-full text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
           <div className="flex items-center gap-1 shrink-0">
             <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -189,7 +183,6 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
           </div>
         </div>
 
-        {/* Name & Location */}
         <div className="flex flex-col gap-1">
           <h3 className="event-title text-base font-black text-[hsl(222.2,47.4%,11.2%)] uppercase leading-tight line-clamp-2">
             {event.name}
@@ -200,7 +193,6 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
           </div>
         </div>
 
-        {/* Price */}
         <div className="flex items-end justify-between mt-auto pt-3 border-t-2 border-gray-100">
           <div>
             <p className="event-label text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
@@ -212,17 +204,10 @@ const EventCard: React.FC<{ event: Event }> = ({ event }) => {
           </div>
         </div>
 
-        {/* Action Button */}
         <Button
           aria-label={`${event.name} — ${ui.text}`}
           disabled={ui.disabled}
-          className={[
-            'event-button w-full relative overflow-hidden py-3 h-auto rounded-xl',
-            'text-xs text-white shadow-md mt-2',
-            'transition-all duration-500',
-            'group-hover:shadow-lg group-hover:-translate-y-0.5',
-            ui.className,
-          ].join(' ')}
+          className={`event-button w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md mt-2 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-0.5 ${ui.className}`}
         >
           <span className="flex items-center justify-center gap-1.5 relative z-10">
             {event.status === 'ON_SALE' && (

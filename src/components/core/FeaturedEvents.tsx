@@ -10,28 +10,20 @@ import { Button } from '@/components/ui/button';
 import EventCard, { type Event } from '@/components/ui/event-card';
 import { Toast } from '@/components/ui/toast';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const ACTIVE_STATUSES = ['ON_SALE', 'PUBLISHED', 'ONGOING'] as const;
-type ActiveStatus = typeof ACTIVE_STATUSES[number];
 
 const cn = {
-  textGradient:
-    'bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
+  textGradient: 'bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
   bgGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
   textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
   textMuted: 'text-[hsl(215.4,16.3%,46.9%)]',
 } as const;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SectionHeaderProps {
   highlight: string;
   title: string;
   link: string;
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
   const router = useRouter();
@@ -60,13 +52,14 @@ const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
         <Button
           variant="ghost"
           onClick={() => router.push(link)}
-          className={`font-secondary group flex items-center gap-1 text-sm sm:text-base font-semibold
-            ${cn.textMuted} hover:text-[hsl(270,70%,50%)] hover:bg-transparent
-            transition-colors p-0 h-auto`}
+          className={`font-secondary group flex items-center gap-1 text-sm sm:text-base font-semibold ${cn.textMuted} hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto`}
           aria-label={`View all ${title}`}
         >
           View All
-          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
+          <ChevronRight 
+            className="w-4 h-4 group-hover:translate-x-1 transition-transform" 
+            aria-hidden="true" 
+          />
         </Button>
       </motion.div>
     </div>
@@ -74,8 +67,15 @@ const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
 };
 
 const LoadingState = () => (
-  <div className={`flex flex-col items-center justify-center py-24 ${cn.textMuted}`} aria-label="Loading events" role="status">
-    <Loader2 className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]" aria-hidden="true" />
+  <div 
+    className={`flex flex-col items-center justify-center py-24 ${cn.textMuted}`} 
+    aria-label="Loading events" 
+    role="status"
+  >
+    <Loader2 
+      className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]" 
+      aria-hidden="true" 
+    />
     <span className="sr-only">Loading events...</span>
   </div>
 );
@@ -87,7 +87,10 @@ const EmptyState = () => (
     className="flex flex-col items-center justify-center py-24 text-center px-4"
     role="status"
   >
-    <CalendarX className={`w-16 sm:w-20 h-16 sm:h-20 mb-4 ${cn.textMuted} opacity-50`} aria-hidden="true" />
+    <CalendarX 
+      className={`w-16 sm:w-20 h-16 sm:h-20 mb-4 ${cn.textMuted} opacity-50`} 
+      aria-hidden="true" 
+    />
     <h3 className={`font-primary text-2xl sm:text-3xl font-semibold ${cn.textPrimary} mb-2`}>
       No Events Right Now
     </h3>
@@ -112,8 +115,6 @@ const EventGrid = ({ events }: { events: Event[] }) => (
     ))}
   </div>
 );
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
 
 function useEvents() {
   const [eventsList, setEventsList] = useState<Event[]>([]);
@@ -153,8 +154,6 @@ function useEvents() {
   return { eventsList, isLoading, activeEvents, upcomingEvents };
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function FeaturedEvents() {
   const { eventsList, isLoading, activeEvents, upcomingEvents } = useEvents();
 
@@ -164,18 +163,13 @@ export default function FeaturedEvents() {
       className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]"
       aria-label="Featured Events"
     >
-      {/* Background Decor */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="absolute top-[20%] left-[-5%] w-[300px] h-[300px] bg-[hsl(222.2,47.4%,11.2%)]/5 rounded-full blur-[80px]" />
         <div className="absolute bottom-[20%] right-[-5%] w-[300px] h-[300px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px]" />
       </div>
 
       <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16 sm:space-y-20
-          [&_.event-title]:font-primary [&_.event-category]:font-primary
-          [&_.event-price]:font-primary [&_.event-button]:font-primary
-          [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary
-          [&_.event-location]:font-secondary [&_.event-label]:font-secondary"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16 sm:space-y-20 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary"
       >
         {isLoading ? (
           <LoadingState />
@@ -185,13 +179,21 @@ export default function FeaturedEvents() {
           <>
             {activeEvents.length > 0 && (
               <div>
-                <SectionHeader highlight="Latest" title="Events" link="/events?filter=latest" />
+                <SectionHeader 
+                  highlight="Latest" 
+                  title="Events" 
+                  link="/events?filter=latest" 
+                />
                 <EventGrid events={activeEvents} />
               </div>
             )}
             {upcomingEvents.length > 0 && (
               <div>
-                <SectionHeader highlight="Upcoming" title="Events" link="/events?filter=upcoming" />
+                <SectionHeader 
+                  highlight="Upcoming" 
+                  title="Events" 
+                  link="/events?filter=upcoming" 
+                />
                 <EventGrid events={upcomingEvents} />
               </div>
             )}
