@@ -52,7 +52,7 @@ export async function sendSignUpOtpEmail(
 
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
-          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;border:2px solid rgba(255,255,255,0.25);">
+          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
         </a>
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">One Step to Go! 🎉</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">Verify your email to activate your account</p>
@@ -123,7 +123,7 @@ export async function sendSignInOtpEmail(
 
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
-          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;border:2px solid rgba(255,255,255,0.25);">
+          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
         </a>
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">Sign-In Verification 🔐</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">Confirm your identity to continue</p>
@@ -195,7 +195,7 @@ export async function sendForgotPasswordOtpEmail(
 
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
-          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;border:2px solid rgba(255,255,255,0.25);">
+          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
         </a>
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">Password Reset 🔑</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">Reset your account password</p>
@@ -268,7 +268,7 @@ export async function sendWelcomeEmail(
 
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
-          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;border:2px solid rgba(255,255,255,0.25);">
+          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
         </a>
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">Welcome Aboard! 🎉</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">Your account is ready. Let&rsquo;s explore events</p>
@@ -384,7 +384,7 @@ export async function sendPasswordChangedEmail(
 
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
-          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;border:2px solid rgba(255,255,255,0.25);">
+          <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
         </a>
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">Password Updated ✅</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">Your account password has been changed</p>
