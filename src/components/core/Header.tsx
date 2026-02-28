@@ -197,7 +197,16 @@ export function Header({ user }: { user: UserInfo | null }) {
                   </button>
 
                   {dropdownOpen && (
-                    <div className="absolute right-0 top-full mt-3 w-52 rounded-2xl bg-white/95 backdrop-blur-xl border border-[hsl(222.2,47.4%,11.2%)]/5 shadow-lg py-2 z-50">
+                    <div className="absolute right-0 top-full mt-5 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-[hsl(222.2,47.4%,11.2%)]/5 shadow-lg py-2 z-50">
+                      <div className="px-4 py-3 min-w-0">
+                        <p className={`font-primary text-sm font-semibold ${cn.textPrimary} truncate`}>
+                          {user.name}
+                        </p>
+                        <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                      <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 mb-1 mx-3" />
                       <Link
                         href="/profile"
                         onClick={() => setDropdownOpen(false)}
