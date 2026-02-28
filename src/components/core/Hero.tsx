@@ -1,21 +1,16 @@
 ﻿'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, memo } from 'react';
 import Link from 'next/link';
 import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
 import {
-  SparklesIcon,
-  CalendarIcon,
-  MusicIcon,
-  UsersIcon,
-  TrophyIcon,
-  StarIcon,
-  ZapIcon,
-  LucideIcon,
+  SparklesIcon, CalendarIcon, MusicIcon, UsersIcon,
+  TrophyIcon, StarIcon, ZapIcon, LucideIcon,
 } from 'lucide-react';
 
+import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
-import TargetCursor from '@/components/shared/target-cursor';
+import { TargetCursor } from '@/components/shared/target-cursor';
 
 interface Particle {
   id: number;
@@ -53,7 +48,7 @@ const CATEGORIES: Category[] = [
   { icon: ZapIcon, label: 'Technology', color: '#6366f1', delay: 0.65 },
 ];
 
-const cn = {
+const styles = {
   textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
   textMuted: 'text-[hsl(215.4,16.3%,46.9%)]',
   btnGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]',
@@ -64,7 +59,7 @@ interface HeroBackgroundProps {
   springY: MotionValue<number>;
 }
 
-const HeroBackground = ({ springX, springY }: HeroBackgroundProps) => (
+const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => (
   <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
     <motion.div
       className="absolute top-[-5%] right-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
@@ -107,11 +102,13 @@ const HeroBackground = ({ springX, springY }: HeroBackgroundProps) => (
       />
     ))}
   </div>
-);
+));
 
-const CategoryPill = ({ icon: Icon, label, color, delay }: Category) => (
+HeroBackground.displayName = 'HeroBackground';
+
+const CategoryPill = memo(({ icon: Icon, label, color, delay }: Category) => (
   <motion.div
-    className={`font-secondary flex items-center gap-1.5 text-sm cursor-pointer group px-3 sm:px-4 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]`}
+    className="font-secondary flex items-center gap-1.5 text-sm cursor-pointer group px-3 sm:px-4 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
     whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -124,15 +121,15 @@ const CategoryPill = ({ icon: Icon, label, color, delay }: Category) => (
     />
     <span className="whitespace-nowrap">{label}</span>
   </motion.div>
-);
+));
+
+CategoryPill.displayName = 'CategoryPill';
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Smooth out the motion values for the background components
   const springX = useSpring(useTransform(mouseX, (v) => v * 0.05), SPRING_CONFIG);
   const springY = useSpring(useTransform(mouseY, (v) => v * 0.05), SPRING_CONFIG);
 
@@ -170,7 +167,10 @@ export default function Hero() {
           transition={{ duration: 0.5 }}
         >
           <motion.span
-            className={`font-primary inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-[13px] sm:text-[14px] font-medium mb-5 border border-[hsl(222.2,47.4%,11.2%)]/20 ${cn.textPrimary} shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm`}
+            className={cn(
+              'font-primary inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-[13px] sm:text-[14px] font-medium mb-5 border border-[hsl(222.2,47.4%,11.2%)]/20 shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm',
+              styles.textPrimary
+            )}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
@@ -181,7 +181,10 @@ export default function Hero() {
           </motion.span>
 
           <motion.h1
-            className={`font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6 ${cn.textPrimary}`}
+            className={cn(
+              'font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6',
+              styles.textPrimary
+            )}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -208,7 +211,10 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p
-            className={`font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed ${cn.textMuted} px-2 sm:px-4`}
+            className={cn(
+              'font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed px-2 sm:px-4',
+              styles.textMuted
+            )}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -224,7 +230,10 @@ export default function Hero() {
           >
             <Button
               asChild
-              className={`cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 px-8 w-full sm:w-auto text-[15px] text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none ${cn.btnGradient} bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
+              className={cn(
+                'cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 px-8 w-full sm:w-auto text-[15px] text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]',
+                styles.btnGradient
+              )}
             >
               <Link href="/events">
                 <span className="relative z-10">Explore Events</span>
@@ -234,7 +243,10 @@ export default function Hero() {
             <Button
               asChild
               variant="outline"
-              className={`cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 w-full sm:w-auto px-8 text-[15px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent ${cn.textPrimary} border-[hsl(222.2,47.4%,11.2%)]/20`}
+              className={cn(
+                'cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 w-full sm:w-auto px-8 text-[15px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent border-[hsl(222.2,47.4%,11.2%)]/20',
+                styles.textPrimary
+              )}
             >
               <Link href="/become-an-organizer">
                 <span className="relative z-10">Become an Organizer</span>

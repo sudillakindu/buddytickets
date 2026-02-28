@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+
 import { getSession } from '@/lib/auth/session';
+
 import MainShell from './main-shell';
 
 interface MainLayoutProps {

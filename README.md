@@ -7,11 +7,14 @@ A Next.js 16 (App Router) ticket-selling platform with a complete, custom authen
 ## Project Structure
 
 ```
+public/
+├── email-logo.png                       # Logo used in OTP emails
+└── og-image.png                         # Open Graph social preview image
 src/
-├── middleware.ts                        # Route protection & access control
 ├── proxy.ts                             # (Legacy) maintenance-mode proxy
 ├── app/
 │   ├── globals.css
+│   ├── favicon.ico
 │   ├── layout.tsx                       # Root layout (fonts, metadata, Toaster)
 │   ├── not-found.tsx
 │   ├── (auth)/
@@ -21,40 +24,62 @@ src/
 │   │   ├── verify-email/page.tsx        # OTP verification page
 │   │   └── forget-password/page.tsx     # Forgot/reset password page
 │   ├── (main)/
-│   │   ├── layout.tsx                   # Main layout (Header + Footer + session)
-│   │   └── page.tsx                     # Home page
-│   ├── assets/                          # Fonts, images, icons
-│   ├── maintenance/page.tsx
-│   └── test/page.tsx
+│   │   ├── layout.tsx                   # Main layout (session provider)
+│   │   ├── main-shell.tsx               # Client shell (Header + Footer wrapper)
+│   │   ├── page.tsx                     # Home page
+│   │   └── (account)/
+│   │       ├── profile/
+│   │       │   ├── loading.tsx          # Profile skeleton loader
+│   │       │   └── page.tsx             # User profile page
+│   │       └── tickets/
+│   │           ├── loading.tsx          # Tickets skeleton loader
+│   │           └── page.tsx             # User tickets page
+│   ├── assets/
+│   │   ├── fonts/                       # Custom typefaces (Bagel Fat One, Geom, Montserrat Alternates, etc.)
+│   │   └── images/
+│   │       ├── icons/
+│   │       └── logo/
+│   │           └── upscale_media_logo.png
+│   └── maintenance/
+│       └── page.tsx                     # Maintenance mode page
 ├── components/
 │   ├── core/
+│   │   ├── FeaturedEvents.tsx           # Featured events section
+│   │   ├── Footer.tsx                   # Site footer
 │   │   ├── Header.tsx                   # Dynamic navbar (guest vs authenticated)
-│   │   ├── Footer.tsx
-│   │   ├── Hero.tsx
-│   │   └── FeaturedEvents.tsx
+│   │   └── Hero.tsx                     # Landing hero section
 │   ├── shared/
-│   │   └── target-cursor.tsx
-│   └── ui/                              # Reusable primitives (button, input, toast, etc.)
+│   │   └── target-cursor.tsx            # Custom animated cursor
+│   └── ui/
+│       ├── button.tsx                   # Button component (CVA variants)
+│       ├── event-card.tsx               # Event display card
+│       ├── input.tsx                    # Form input component
+│       ├── label.tsx                    # Form label component
+│       ├── ticket-card.tsx              # Ticket display card
+│       └── toast.tsx                    # Toast notification component
 ├── lib/
 │   ├── actions/
-│   │   └── auth.ts                      # Server Actions — all auth mutations
+│   │   ├── auth.ts                      # Server Actions — auth mutations
+│   │   ├── profile.ts                   # Server Actions — profile mutations
+│   │   └── tickets.ts                   # Server Actions — ticket mutations
 │   ├── auth/
-│   │   ├── session.ts                   # JWT session create/read/destroy (jose)
+│   │   ├── mail.ts                      # Nodemailer OTP email delivery
 │   │   ├── otp.ts                       # OTP generation, hashing, progressive delay
-│   │   └── mail.ts                      # Nodemailer OTP email delivery
+│   │   ├── password.ts                  # Password hashing & comparison (bcryptjs + HMAC)
+│   │   └── session.ts                   # JWT session create/read/destroy (jose)
 │   ├── meta/
-│   │   └── event.ts
+│   │   └── event.ts                     # Event metadata & queries
 │   ├── supabase/
 │   │   ├── admin.ts                     # Service-role Supabase client (server-only)
 │   │   ├── client.ts                    # Browser Supabase client
 │   │   ├── middleware.ts                # (Legacy) Supabase session refresh
 │   │   └── server.ts                    # SSR Supabase client
 │   └── ui/
-│       └── utils.ts                     # Tailwind merge utility
-└── supabase/
-    ├── config.toml
-    └── migrations/
-        └── 20260223191944_initial_schema.sql
+│       └── utils.ts                     # Tailwind merge utility (cn helper)
+supabase/
+├── config.toml
+└── migrations/
+    └── 20260223191944_initial_schema.sql
 ```
 
 ---

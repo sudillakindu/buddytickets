@@ -6,14 +6,13 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
+import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
 import { Toast } from '@/components/ui/toast';
+
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-import {
-  verifyOtp as verifyOtpAction,
-  resendOtp as resendOtpAction,
-  getVerifyEmailData,
-} from '@/lib/actions/auth';
+
+import { verifyOtp as verifyOtpAction, resendOtp as resendOtpAction, getVerifyEmailData } from '@/lib/actions/auth';
 
 function formatTimer(sec: number): string {
   if (sec <= 0) return '0s';
@@ -21,7 +20,6 @@ function formatTimer(sec: number): string {
   const h = Math.floor((sec % 86400) / 3600);
   const m = Math.floor((sec % 3600) / 60);
   const s = Math.floor(sec % 60);
-  
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
@@ -46,7 +44,6 @@ function VerifyEmailForm() {
 
   useEffect(() => {
     if (!token) return;
-    
     getVerifyEmailData(token).then((data) => {
       if (!data) {
         router.replace('/sign-in');
@@ -61,7 +58,6 @@ function VerifyEmailForm() {
 
   useEffect(() => {
     if (countdown <= 0) return;
-    
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -71,20 +67,16 @@ function VerifyEmailForm() {
         return prev - 1;
       });
     }, 1000);
-    
     return () => clearInterval(interval);
   }, [countdown]);
 
   const handleDigitChange = useCallback((index: number, value: string) => {
     const digit = value.replace(/\D/g, '').slice(-1);
-    
     setDigits((prev) => {
       const next = [...prev];
       next[index] = digit;
       return next;
     });
-    
-    // Auto-advance to the next input field
     if (digit && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -114,10 +106,8 @@ function VerifyEmailForm() {
     e.preventDefault();
     const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
     if (!pasted) return;
-    
     const next = Array(6).fill('');
     pasted.split('').forEach((char, i) => { next[i] = char; });
-    
     setDigits(next);
     inputRefs.current[Math.min(pasted.length, 5)]?.focus();
   }, []);
@@ -125,14 +115,11 @@ function VerifyEmailForm() {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join('');
-    
     if (code.length !== 6) {
       Toast('Error', 'Please enter all 6 digits.', 'error');
       return;
     }
-    
     setLoading(true);
-    
     try {
       const result = await verifyOtpAction(token, code);
       if (result.success) {
@@ -159,7 +146,6 @@ function VerifyEmailForm() {
 
   const handleResend = useCallback(async () => {
     setResending(true);
-    
     try {
       const result = await resendOtpAction(token);
       if (result.success) {
@@ -179,7 +165,7 @@ function VerifyEmailForm() {
 
   if (pageLoading) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
+      <div className="w-full min-h-[100dvh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
       </div>
     );
@@ -188,26 +174,18 @@ function VerifyEmailForm() {
   const purposeLabel = purpose === 'forgot-password' ? 'Reset Your Password' : 'Verify Your Email';
 
   return (
-    <div className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10 px-4 sm:px-6">
+    <div className="min-h-[100dvh] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10">
       <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center overflow-hidden my-auto bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
         
         <div className="flex items-center justify-center mb-6">
-          <Image
-            src={LogoSrc}
-            alt="BuddyTickets Logo"
-            width={48}
-            height={48}
-            className="w-12 h-12 object-contain drop-shadow-sm"
-            priority
-          />
+          <Image src={LogoSrc} alt="BuddyTickets Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-sm" priority />
         </div>
 
         <h1 className="font-primary text-3xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
           {purposeLabel}
         </h1>
         <p className="font-secondary text-sm mb-6 text-center text-[hsl(215.4,16.3%,46.9%)]">
-          Enter the 6-digit code sent to
-          <br />
+          Enter the 6-digit code sent to<br />
           <span className="font-primary font-medium text-[hsl(270,70%,50%)] truncate inline-block max-w-[250px] align-bottom">
             {email}
           </span>
@@ -228,23 +206,16 @@ function VerifyEmailForm() {
                 onPaste={handlePaste}
                 onFocus={() => setFocusedIndex(i)}
                 onBlur={() => setFocusedIndex(null)}
-                className={`
-                  w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-primary font-semibold rounded-xl border-2
-                  transition-all duration-200 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)]
-                  outline-none select-none caret-transparent
-                  ${focusedIndex === i ? 'border-[hsl(270,70%,50%)]' : 
-                    digit ? 'border-[hsl(270,70%,50%)] bg-[hsl(270,70%,98%)]' : 'border-[hsl(214.3,31.8%,91.4%)]'}
-                `}
+                className={cn(
+                  'w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-primary font-semibold rounded-xl border-2 transition-all duration-200 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] outline-none select-none caret-transparent',
+                  focusedIndex === i ? 'border-[hsl(270,70%,50%)]' : digit ? 'border-[hsl(270,70%,50%)] bg-[hsl(270,70%,98%)]' : 'border-[hsl(214.3,31.8%,91.4%)]'
+                )}
                 aria-label={`Digit ${i + 1}`}
               />
             ))}
           </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] disabled:opacity-70"
-          >
+          <Button type="submit" disabled={loading} className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] disabled:opacity-70">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (purpose === 'forgot-password' ? 'Verify & Continue' : 'Verify Email')}
           </Button>
 
@@ -252,25 +223,18 @@ function VerifyEmailForm() {
             type="button"
             disabled={countdown > 0 || resending}
             onClick={handleResend}
-            className={`
-              text-xs font-secondary mx-auto mt-0 transition-colors duration-200
-              ${countdown > 0 || resending ? 'text-[hsl(215.4,16.3%,46.9%)]/60 cursor-not-allowed' : 'text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] cursor-pointer'}
-            `}
+            className={cn(
+              'text-xs font-secondary mx-auto mt-0 transition-colors duration-200',
+              countdown > 0 || resending ? 'text-[hsl(215.4,16.3%,46.9%)]/60 cursor-not-allowed' : 'text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] cursor-pointer'
+            )}
           >
-            {resending
-              ? 'Sending...'
-              : countdown > 0
-              ? `Resend code in ${formatTimer(countdown)}`
-              : "Didn\u2019t receive the code? Resend"}
+            {resending ? 'Sending...' : countdown > 0 ? `Resend code in ${formatTimer(countdown)}` : "Didn\u2019t receive the code? Resend"}
           </button>
         </form>
 
         <p className="mt-4 text-sm text-center font-secondary text-[hsl(215.4,16.3%,46.9%)]">
           Already verified?{' '}
-          <Link
-            href="/sign-in"
-            className="font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
-          >
+          <Link href="/sign-in" className="font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200">
             Sign In
           </Link>
         </p>

@@ -1,27 +1,27 @@
-import { createHmac } from "crypto";
-import { hash, compare } from "bcryptjs";
+import { createHmac } from 'crypto';
+import { hash, compare } from 'bcryptjs';
 
 const SALT_ROUNDS = 12;
+let PASSWORD_SECRET_CACHE: string | null = null;
 
 function getSecret(): string {
-    const secret = process.env.PASSWORD_SECRET;
-    if (!secret) {
-        throw new Error(
-            "Missing PASSWORD_SECRET environment variable. Generate one with: openssl rand -base64 32"
-        );
+  if (!PASSWORD_SECRET_CACHE) {
+    PASSWORD_SECRET_CACHE = process.env.PASSWORD_SECRET || '';
+    if (!PASSWORD_SECRET_CACHE) {
+      throw new Error('Missing PASSWORD_SECRET environment variable.');
     }
-    return secret;
+  }
+  return PASSWORD_SECRET_CACHE;
 }
 
-// Applies HMAC-SHA256 pepper before bcrypting to protect against database breaches
 function pepper(value: string): string {
-    return createHmac("sha256", getSecret()).update(value).digest("hex");
+  return createHmac('sha256', getSecret()).update(value).digest('hex');
 }
 
 export async function hashPassword(password: string): Promise<string> {
-    return hash(pepper(password), SALT_ROUNDS);
+  return hash(pepper(password), SALT_ROUNDS);
 }
 
 export async function comparePassword(password: string, hashed: string): Promise<boolean> {
-    return compare(pepper(password), hashed);
+  return compare(pepper(password), hashed);
 }

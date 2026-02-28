@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
-import { Toaster } from '@/components/ui/toast';
+
 import './globals.css';
+
+import { cn } from '@/lib/ui/utils';
+
+import { Toaster } from '@/components/ui/toast';
 
 const primaryFont = localFont({
   src: './assets/fonts/momo-trust-display-regular.ttf',
@@ -68,17 +72,17 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const fontVariables = [
+const fontVariables = cn(
   primaryFont.variable,
   secondaryFont.variable,
   tertiaryFont.variable,
-  specialFont.variable,
-].join(' ');
+  specialFont.variable
+);
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${fontVariables} antialiased bg-white text-zinc-950`}>
+      <body suppressHydrationWarning className={cn(fontVariables, 'antialiased bg-white text-zinc-950')}>
         <div className="flex flex-col min-h-[100dvh] bg-background">
           {children}
         </div>
