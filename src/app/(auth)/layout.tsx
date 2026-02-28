@@ -1,51 +1,38 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
-import Logo from '@/app/assets/images/logo/upscale_media_logo.png';
-
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+function AuthBackground() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[hsl(210,40%,96.1%)] via-white to-[hsl(270,70%,97%)] supports-[min-height:100dvh]:min-h-[100dvh]">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 bg-gradient-to-r from-[hsl(270,70%,50%)] to-[hsl(330,80%,60%)]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 bg-gradient-to-r from-[hsl(210,100%,60%)] to-[hsl(270,70%,50%)]" />
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              'linear-gradient(to right, #80808008 1px, transparent 1px), linear-gradient(to bottom, #80808008 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-      </div>
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+      <motion.div
+        className="absolute top-[-10%] right-[-5%] w-[30vw] h-[30vw] min-w-[300px] min-h-[300px] rounded-full blur-[100px] opacity-30 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]"
+        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="absolute bottom-[-10%] left-[-10%] w-[35vw] h-[35vw] min-w-[250px] min-h-[250px] rounded-full blur-[100px] opacity-30 bg-gradient-to-r from-[hsl(210,100%,60%)] to-[hsl(180,70%,50%)]"
+        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
+        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+    </div>
+  );
+}
 
-      <header className="w-full px-6 py-4">
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="BuddyTickets home">
-            <Image src={Logo} alt="BuddyTickets" width={32} height={32} className="rounded-lg" />
-            <span className="font-special text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)] group-hover:opacity-80 transition-opacity">
-              BuddyTicket.lk
-            </span>
-          </Link>
-        </motion.div>
-      </header>
-
-      <main className="flex-1 flex items-center justify-center px-6 py-8">
-        {children}
-      </main>
-
-      <footer className="text-center py-5 px-6">
-        <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)]">
-          &copy; {new Date().getFullYear()} BuddyTicket.lk — All rights reserved.
-        </p>
-      </footer>
+export default function AuthLayout({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative min-h-[100dvh] bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white">
+      <AuthBackground />
+      {children}
     </div>
   );
 }

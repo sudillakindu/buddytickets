@@ -5,10 +5,8 @@ import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
 import { motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X, LucideIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/ui/utils';
 import { Button } from './button';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ToastVariant = 'default' | 'success' | 'error' | 'warning';
 export type ToastPosition =
@@ -37,40 +35,38 @@ export interface ToasterProps {
   defaultPosition?: ToastPosition;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const VARIANT_CONTAINER: Record<ToastVariant, string> = {
   default: 'bg-white border-gray-200 text-gray-900',
   success: 'bg-white border-green-600/30 text-gray-900',
-  error:   'bg-white border-red-500/30 text-gray-900',
+  error: 'bg-white border-red-500/30 text-gray-900',
   warning: 'bg-white border-amber-500/30 text-gray-900',
 };
 
 const VARIANT_TITLE: Record<ToastVariant, string> = {
   default: 'text-gray-900',
   success: 'text-green-600',
-  error:   'text-red-600',
+  error: 'text-red-600',
   warning: 'text-amber-600',
 };
 
 const VARIANT_ICON: Record<ToastVariant, string> = {
   default: 'text-gray-500',
   success: 'text-green-600',
-  error:   'text-red-500',
+  error: 'text-red-500',
   warning: 'text-amber-500',
 };
 
 const VARIANT_ICONS: Record<ToastVariant, LucideIcon> = {
   default: Info,
   success: CheckCircle,
-  error:   AlertCircle,
+  error: AlertCircle,
   warning: AlertTriangle,
 };
 
 const TOAST_ANIMATION = {
   initial: { opacity: 0, y: -16, scale: 0.96 },
-  animate: { opacity: 1, y:   0, scale: 1    },
-  exit:    { opacity: 0, y: -16, scale: 0.96 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -16, scale: 0.96 },
 } as const;
 
 const TOAST_TRANSITION = {
@@ -79,8 +75,6 @@ const TOAST_TRANSITION = {
   stiffness: 220,
   damping: 22,
 } as const;
-
-// ─── Toaster Provider ─────────────────────────────────────────────────────────
 
 export const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' }) => (
   <SonnerToaster
@@ -95,8 +89,6 @@ export const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' 
     }}
   />
 );
-
-// ─── Toast Trigger ────────────────────────────────────────────────────────────
 
 export const Toast = (
   title: string,
@@ -127,18 +119,14 @@ export const Toast = (
         aria-live="assertive"
         aria-atomic="true"
         className={cn(
-          'flex items-start w-[min(420px,calc(100vw-2rem))]',
-          'p-4 rounded-xl border shadow-xl backdrop-blur-md bg-white/95',
-          'select-none pointer-events-auto',
+          'flex items-start w-[min(420px,calc(100vw-2rem))] p-4 rounded-xl border shadow-xl backdrop-blur-md bg-white/95 select-none pointer-events-auto',
           VARIANT_CONTAINER[variant]
         )}
       >
-        {/* Icon */}
         <div className="flex-shrink-0 pt-0.5" aria-hidden="true">
           <Icon className={cn('h-5 w-5', VARIANT_ICON[variant])} />
         </div>
 
-        {/* Body */}
         <div className="flex-1 ml-3 mr-2 space-y-0.5">
           {title && (
             <h3
@@ -155,7 +143,6 @@ export const Toast = (
           </p>
         </div>
 
-        {/* Actions */}
         <div className="flex flex-col gap-2 items-end flex-shrink-0 ml-1">
           <button
             type="button"
