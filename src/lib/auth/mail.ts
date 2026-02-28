@@ -5,18 +5,17 @@ const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
 // Site URLs & links (change once here, updates every email)
-const BASE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-).replace(/\/$/, "");
-const LOGO_URL = `${BASE_URL}/logo.png`;
+const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+const LOGO_URL = `${BASE_URL}/email-logo.png`;
 const EVENTS_URL = `${BASE_URL}/events`;
 const PRIVACY_URL = `${BASE_URL}/privacy`;
 const SIGN_IN_URL = `${BASE_URL}/sign-in`;
 const FORGOT_PASSWORD_URL = `${BASE_URL}/forget-password`;
-const SUPPORT_EMAIL = "masudillakindu@gmail.com";
-const WHATSAPP_URL = "https://wa.me/94723356907?text=Hi%2C%20I%20received%20a%20notification%20that%20my%20BuddyTickets%20account%20password%20was%20changed.%20I%20did%20not%20make%20this%20change%20and%20need%20immediate%20assistance.";
-/* Hi, I received a notification that my BuddyTickets account password was changed.
-I did not make this change and need immediate assistance. */
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "";
+
+const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? "";
+let msg = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%2C%20I%20received%20a%20notification%20that%20my%20BuddyTickets%20account%20password%20was%20changed.%20I%20did%20not%20make%20this%20change%20and%20need%20immediate%20assistance.`;
+const WHATSAPP_URL = msg;
 
 if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
   throw new Error("Missing Gmail credentials in environment variables.");
