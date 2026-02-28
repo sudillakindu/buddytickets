@@ -8,6 +8,7 @@ import { Lock, Mail, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Toast } from '@/components/ui/toast';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 import { signUp } from '@/lib/actions/auth';
 
@@ -29,7 +30,6 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = useCallback((field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -37,18 +37,18 @@ export default function SignUpPage() {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     
     try {
       const result = await signUp(formData);
       if (result.success && result.token) {
+        Toast('Success', result.message || 'Account created successfully.', 'success');
         router.push(`/verify-email?token=${result.token}`);
       } else {
-        setError(result.error || 'Sign up failed.');
+        Toast('Error', result.message || 'Sign up failed.', 'error');
       }
     } catch {
-      setError('An unexpected error occurred.');
+      Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {
       setLoading(false);
     }
@@ -77,12 +77,6 @@ export default function SignUpPage() {
         <p className="font-secondary text-sm mb-8 text-center text-[hsl(215.4,16.3%,46.9%)]">
           Join BuddyTickets and start exploring events.
         </p>
-
-        {error && (
-          <p className="w-full text-sm text-red-500 text-center font-secondary mb-4 bg-red-50 rounded-xl py-2.5 px-4">
-            {error}
-          </p>
-        )}
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           

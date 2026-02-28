@@ -8,7 +8,7 @@ import { sendOtpEmail } from "@/lib/auth/mail";
 
 interface AuthResult {
     success: boolean;
-    error?: string;
+    message?: string;
     token?: string;
     redirectTo?: string;
     needsVerification?: boolean;
@@ -16,7 +16,7 @@ interface AuthResult {
 
 interface VerifyResult {
     success: boolean;
-    error?: string;
+    message?: string;
     attemptsRemaining?: number;
     redirectTo?: string;
     resetToken?: string;
@@ -32,7 +32,7 @@ interface OtpStatus {
 
 interface ResendResult {
     success: boolean;
-    error?: string;
+    message?: string;
     remainingSeconds?: number;
 }
 
@@ -102,27 +102,27 @@ export async function signUp(data: {
         if (!name || name.trim().length < 3)
             return {
                 success: false,
-                error: "Name must be at least 3 characters."
+                message: "Name must be at least 3 characters."
             };
         if (!username || !/^[a-z0-9_]{3,}$/.test(username))
             return {
                 success: false,
-                error: "Username must be at least 3 characters (lowercase, numbers, underscores)."
+                message: "Username must be at least 3 characters (lowercase, numbers, underscores)."
             };
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
             return {
                 success: false,
-                error: "Invalid email address."
+                message: "Invalid email address."
             };
         if (!mobile || !/^\d{10}$/.test(mobile))
             return {
                 success: false,
-                error: "Mobile must be 10 digits."
+                message: "Mobile must be 10 digits."
             };
         if (!password || password.length < 6)
             return {
                 success: false,
-                error: `Password must be at least 6 characters.`
+                message: `Password must be at least 6 characters.`
             };
 
         const [emailCheck, usernameCheck, mobileCheck] = await Promise.all([
@@ -134,17 +134,17 @@ export async function signUp(data: {
         if (emailCheck.data)
             return {
                 success: false,
-                error: "Email is already registered."
+                message: "Email is already registered."
             };
         if (usernameCheck.data)
             return {
                 success: false,
-                error: "Username is already taken."
+                message: "Username is already taken."
             };
         if (mobileCheck.data)
             return {
                 success: false,
-                error: "Mobile number is already registered."
+                message: "Mobile number is already registered."
             };
 
         const passwordHash = await hashPassword(password);
@@ -164,20 +164,21 @@ export async function signUp(data: {
         if (insertErr || !user) {
             return {
                 success: false,
-                error: "Failed to create account. Please try again."
+                message: "Failed to create account. Please try again."
             };
         }
 
         const token = await createOtpAndToken(user.user_id, email, "signup");
         return {
             success: true,
+            message: "Account created successfully. Please verify your email.",
             token
         };
     } catch (e) {
         console.error("signUp error:", e);
         return {
             success: false,
-            error: "An unexpected error occurred."
+            message: "An unexpected error occurred."
         };
     }
 }
@@ -189,7 +190,7 @@ export async function signIn(data: { email: string; password: string }): Promise
         if (!email || !data.password) {
             return {
                 success: false,
-                error: "Email and password are required."
+                message: "Email and password are required."
             };
         }
 
@@ -202,19 +203,19 @@ export async function signIn(data: { email: string; password: string }): Promise
         if (!user || !user.password_hash)
             return {
                 success: false,
-                error: "Invalid email or password."
+                message: "Invalid email or password."
             };
         if (!user.is_active)
             return {
                 success: false,
-                error: "Your account has been deactivated."
+                message: "Your account has been deactivated."
             };
 
         const match = await comparePassword(data.password, user.password_hash);
         if (!match)
             return {
                 success: false,
-                error: "Invalid email or password."
+                message: "Invalid email or password."
             };
 
         if (!user.is_email_verified) {
@@ -223,7 +224,7 @@ export async function signIn(data: { email: string; password: string }): Promise
                 success: false,
                 needsVerification: true,
                 token,
-                error: "Please verify your email first.",
+                message: "Please verify your email first.",
             };
         }
 
@@ -236,13 +237,14 @@ export async function signIn(data: { email: string; password: string }): Promise
 
         return {
             success: true,
+            message: "Signed in successfully.",
             redirectTo: "/"
         };
     } catch (e) {
         console.error("signIn error:", e);
         return {
             success: false,
-            error: "An unexpected error occurred."
+            message: "An unexpected error occurred."
         };
     }
 }
@@ -253,7 +255,7 @@ export async function forgotPassword(data: { email: string }): Promise<AuthResul
         if (!email)
             return {
                 success: false,
-                error: "Email is required."
+                message: "Email is required."
             };
 
         const { data: user } = await supabaseAdmin
@@ -265,19 +267,20 @@ export async function forgotPassword(data: { email: string }): Promise<AuthResul
         if (!user)
             return {
                 success: false,
-                error: "No account found with this email."
+                message: "No account found with this email."
             };
 
         const token = await createOtpAndToken(user.user_id, email, "forgot-password");
         return {
             success: true,
+            message: "Verification code sent to your email.",
             token
         };
     } catch (e) {
         console.error("forgotPassword error:", e);
         return {
             success: false,
-            error: "An unexpected error occurred."
+            message: "An unexpected error occurred."
         };
     }
 }
@@ -287,7 +290,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
         if (!otp || otp.length !== 6) {
             return {
                 success: false,
-                error: "Please enter a valid 6-digit code."
+                message: "Please enter a valid 6-digit code."
             };
         }
 
@@ -302,7 +305,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
         if (!ft)
             return {
                 success: false,
-                error: "Session expired. Please start over."
+                message: "Session expired. Please start over."
             };
 
         const { data: rec } = await supabaseAdmin
@@ -319,7 +322,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
         if (!rec)
             return {
                 success: false,
-                error: "Code has expired. Please request a new one."
+                message: "Code has expired. Please request a new one."
             };
 
         // Lock out the OTP record if max attempts are exceeded to prevent brute force
@@ -327,7 +330,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
             await supabaseAdmin.from("otp_records").update({ is_used: true }).eq("otp_id", rec.otp_id);
             return {
                 success: false,
-                error: "Too many attempts. Please request a new code."
+                message: "Too many attempts. Please request a new code."
             };
         }
 
@@ -339,7 +342,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
             
             return {
                 success: false,
-                error: "Invalid code.",
+                message: "Invalid code.",
                 attemptsRemaining: MAX_ATTEMPTS - attempts,
             };
         }
@@ -358,6 +361,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
             }
             return {
                 success: true,
+                message: "Email verified successfully.",
                 redirectTo: "/sign-in",
                 purpose: ft.purpose
             };
@@ -375,6 +379,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
             
             return {
                 success: true,
+                message: "Code verified successfully.",
                 purpose: "forgot-password",
                 resetToken
             };
@@ -382,13 +387,14 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
 
         return {
             success: true,
+            message: "Verification successful.",
             redirectTo: "/sign-in"
         };
     } catch (e) {
         console.error("verifyOtp error:", e);
         return {
             success: false,
-            error: "An unexpected error occurred."
+            message: "An unexpected error occurred."
         };
     }
 }
@@ -406,7 +412,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
         if (!ft)
             return {
                 success: false,
-                error: "Session expired. Please start over."
+                message: "Session expired. Please start over."
             };
 
         const { data: rec } = await supabaseAdmin
@@ -422,7 +428,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
         if (!rec)
             return {
                 success: false,
-                error: "No active session found."
+                message: "No active session found."
             };
 
         const delay = resendDelay(rec.resend_count);
@@ -432,7 +438,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
         if (now < canResendAt) {
             return {
                 success: false,
-                error: "Please wait before requesting a new code.",
+                message: "Please wait before requesting a new code.",
                 remainingSeconds: Math.ceil((canResendAt - now) / 1000),
             };
         }
@@ -457,13 +463,14 @@ export async function resendOtp(token: string): Promise<ResendResult> {
 
         return {
             success: true,
+            message: "A new code has been sent to your email.",
             remainingSeconds: resendDelay(newCount)
         };
     } catch (e) {
         console.error("resendOtp error:", e);
         return {
             success: false,
-            error: "An unexpected error occurred."
+            message: "An unexpected error occurred."
         };
     }
 }
@@ -476,14 +483,14 @@ export async function resetPassword(
         if (!data.password || data.password.length < 6) {
             return {
                 success: false,
-                error: `Password must be at least 6 characters.`
+                message: `Password must be at least 6 characters.`
             };
         }
         
         if (data.password !== data.confirmPassword) {
             return {
                 success: false,
-                error: "Passwords do not match."
+                message: "Passwords do not match."
             };
         }
 
@@ -499,7 +506,7 @@ export async function resetPassword(
         if (!ft)
             return {
                 success: false,
-                error: "Reset link expired. Please try again."
+                message: "Reset link expired. Please try again."
             };
 
         const passwordHash = await hashPassword(data.password);
@@ -512,19 +519,20 @@ export async function resetPassword(
         if (error)
             return {
                 success: false,
-                error: "Failed to reset password."
+                message: "Failed to reset password."
             };
 
         await supabaseAdmin.from("auth_flow_tokens").update({ is_used: true }).eq("token_id", ft.token_id);
 
         return {
-            success: true
+            success: true,
+            message: "Password reset successfully."
         };
     } catch (e) {
         console.error("resetPassword error:", e);
         return {
             success: false,
-            error: "An unexpected error occurred."
+            message: "An unexpected error occurred."
         };
     }
 }

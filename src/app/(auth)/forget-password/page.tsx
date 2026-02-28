@@ -8,6 +8,7 @@ import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Toast } from '@/components/ui/toast';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 import {
   forgotPassword as forgotPasswordAction,
@@ -40,7 +41,6 @@ function ForgotPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [pageLoading, setPageLoading] = useState(false);
 
   useEffect(() => {
@@ -65,18 +65,18 @@ function ForgotPasswordForm() {
 
   const handleSendOtp = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     
     try {
       const result = await forgotPasswordAction({ email: email.trim().toLowerCase() });
       if (result.success && result.token) {
+        Toast('Success', result.message || 'Verification code sent to your email.', 'success');
         router.push(`/verify-email?token=${result.token}`);
       } else {
-        setError(result.error || 'Failed to send reset code.');
+        Toast('Error', result.message || 'Failed to send reset code.', 'error');
       }
     } catch {
-      setError('An unexpected error occurred.');
+      Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,6 @@ function ForgotPasswordForm() {
 
   const handleResetPassword = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     
     try {
@@ -93,12 +92,13 @@ function ForgotPasswordForm() {
         confirmPassword,
       });
       if (result.success) {
+        Toast('Success', result.message || 'Password reset successfully.', 'success');
         router.push('/sign-in');
       } else {
-        setError(result.error || 'Failed to reset password.');
+        Toast('Error', result.message || 'Failed to reset password.', 'error');
       }
     } catch {
-      setError('An unexpected error occurred.');
+      Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {
       setLoading(false);
     }
@@ -135,12 +135,6 @@ function ForgotPasswordForm() {
         <p className="font-secondary text-sm mb-8 text-center text-[hsl(215.4,16.3%,46.9%)]">
           {STEP_DESCRIPTIONS[step]}
         </p>
-
-        {error && (
-          <p className="w-full text-sm text-red-500 text-center font-secondary mb-4 bg-red-50 rounded-xl py-2.5 px-4">
-            {error}
-          </p>
-        )}
 
         {step === 'email' && (
           <form onSubmit={handleSendOtp} className="w-full flex flex-col gap-4">
