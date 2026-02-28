@@ -1,24 +1,17 @@
 import type { ReactNode } from 'react';
 
-import { Header } from '@/components/core/Header';
-import { Footer } from '@/components/core/Footer';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { getSession } from '@/lib/auth/session';
+import MainShell from './main-shell';
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
-
-export default function MainLayout({ children }: MainLayoutProps) {
+export default async function MainLayout({ children }: MainLayoutProps) {
+  const user = await getSession();
   return (
-    <>
-      <Header />
-      <main className="flex-1 w-full relative flex flex-col">
-        {children}
-      </main>
-      <Footer />
-    </>
+    <MainShell user={user}>
+      {children}
+    </MainShell>
   );
 }

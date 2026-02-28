@@ -4,12 +4,12 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Lock, Mail, User, Phone, Eye, EyeOff, LucideIcon } from 'lucide-react';
+import { Lock, Mail, User, Phone, Eye, EyeOff, Loader2, LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { signUp } from '@/lib/actions/auth';
 
 type FormData = {
   name: string;
@@ -78,13 +78,14 @@ function inputCls(isFocused: boolean, extra = '') {
   ].join(' ');
 }
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, loading }: { label: string; loading?: boolean }) {
   return (
     <Button
       type="submit"
-      className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+      disabled={loading}
+      className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] disabled:opacity-70"
     >
-      {label}
+      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : label}
     </Button>
   );
 }
@@ -104,16 +105,16 @@ function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => voi
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function SignUpPage() {
   const router = useRouter();
 
   const [formData, setFormData] = useState<FormData>({
     name: '', username: '', email: '', mobile: '', password: '',
   });
-  const [showPassword, setShowPassword]   = useState(false);
-  const [focusedField, setFocusedField]   = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = useCallback(
     (field: keyof FormData, value: string) =>
@@ -122,16 +123,29 @@ export default function SignUpPage() {
   );
 
   const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      router.push(`/verify-email?email=${encodeURIComponent(formData.email.trim())}&reason=signup`);
+      setError('');
+      setLoading(true);
+      try {
+        const result = await signUp(formData);
+        if (result.success && result.token) {
+          router.push(`/verify-email?token=${result.token}`);
+        } else {
+          setError(result.error || 'Sign up failed.');
+        }
+      } catch {
+        setError('An unexpected error occurred.');
+      } finally {
+        setLoading(false);
+      }
     },
-    [router, formData.email]
+    [formData, router]
   );
 
-  const focused  = (field: string) => focusedField === field;
-  const onFocus  = (field: string) => () => setFocusedField(field);
-  const onBlur   = () => setFocusedField(null);
+  const focused = (field: string) => focusedField === field;
+  const onFocus = (field: string) => () => setFocusedField(field);
+  const onBlur = () => setFocusedField(null);
 
   return (
     <section className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-12 px-4 sm:px-6">
@@ -142,8 +156,13 @@ export default function SignUpPage() {
           subtitle="Join BuddyTickets and start exploring events."
         />
 
+        {error && (
+          <p className="w-full text-sm text-red-500 text-center font-secondary mb-4 bg-red-50 rounded-xl py-2.5 px-4">
+            {error}
+          </p>
+        )}
+
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-          {/* Full Name */}
           <div className="relative">
             <InputIcon icon={User} isFocused={focused('name')} />
             <Input
@@ -158,7 +177,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Username */}
           <div className="relative">
             <span
               className={[
@@ -183,7 +201,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Email */}
           <div className="relative">
             <InputIcon icon={Mail} isFocused={focused('email')} />
             <Input
@@ -198,7 +215,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Mobile */}
           <div className="relative">
             <InputIcon icon={Phone} isFocused={focused('mobile')} />
             <Input
@@ -214,7 +230,6 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Password */}
           <div className="relative">
             <InputIcon icon={Lock} isFocused={focused('password')} />
             <Input
@@ -230,7 +245,7 @@ export default function SignUpPage() {
             <PasswordToggle show={showPassword} onToggle={() => setShowPassword((p) => !p)} />
           </div>
 
-          <SubmitButton label="Create Account" />
+          <SubmitButton label="Create Account" loading={loading} />
         </form>
 
         <p className="mt-5 text-sm text-center font-secondary text-[hsl(215.4,16.3%,46.9%)]">

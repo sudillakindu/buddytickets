@@ -4,17 +4,18 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Lock, Eye, EyeOff, LucideIcon } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import {
+  forgotPassword as forgotPasswordAction,
+  resetPassword as resetPasswordAction,
+  validateResetToken,
+} from '@/lib/actions/auth';
 
 type Step = 'email' | 'resetPassword';
-
-// ─── Shared Auth Primitives (co-located) ──────────────────────────────────────
 
 function AuthCard({ children }: { children: React.ReactNode }) {
   return (
@@ -47,13 +48,14 @@ function inputCls(isFocused: boolean, extra = '') {
   ].join(' ');
 }
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({ label, loading }: { label: string; loading?: boolean }) {
   return (
     <Button
       type="submit"
-      className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+      disabled={loading}
+      className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] disabled:opacity-70"
     >
-      {label}
+      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : label}
     </Button>
   );
 }
@@ -73,8 +75,6 @@ function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => voi
   );
 }
 
-// ─── Step content maps ────────────────────────────────────────────────────────
-
 const STEP_TITLES: Record<Step, string> = {
   email:         'Forgot Password?',
   resetPassword: 'New Password',
@@ -85,50 +85,96 @@ const STEP_DESCRIPTIONS: Record<Step, string> = {
   resetPassword: 'Your identity is verified. Set your new password below.',
 };
 
-// ─── Inner Form (needs useSearchParams — wrapped in Suspense) ─────────────────
-
 function ForgotPasswordForm() {
-  const router       = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [step, setStep]                     = useState<Step>('email');
-  const [email, setEmail]                   = useState('');
-  const [newPassword, setNewPassword]       = useState('');
+  const [step, setStep] = useState<Step>('email');
+  const [email, setEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showNewPassword, setShowNewPassword]       = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [focusedField, setFocusedField]     = useState<string | null>(null);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [pageLoading, setPageLoading] = useState(false);
 
   useEffect(() => {
-    const stepParam  = searchParams.get('step');
-    const emailParam = searchParams.get('email');
-    if (stepParam === 'reset' && emailParam) {
-      setEmail(emailParam);
-      setStep('resetPassword');
+    const stepParam = searchParams.get('step');
+    const tokenParam = searchParams.get('token');
+    if (stepParam === 'reset' && tokenParam) {
+      setPageLoading(true);
+      setResetToken(tokenParam);
+      validateResetToken(tokenParam).then((data) => {
+        if (data) {
+          setEmail(data.email);
+          setStep('resetPassword');
+        } else {
+          router.replace('/sign-in');
+        }
+        setPageLoading(false);
+      });
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleSendOtp = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      router.push(
-        `/verify-email?email=${encodeURIComponent(email.trim().toLowerCase())}&reason=forgot-password`
-      );
+      setError('');
+      setLoading(true);
+      try {
+        const result = await forgotPasswordAction({ email: email.trim().toLowerCase() });
+        if (result.success && result.token) {
+          router.push(`/verify-email?token=${result.token}`);
+        } else {
+          setError(result.error || 'Failed to send reset code.');
+        }
+      } catch {
+        setError('An unexpected error occurred.');
+      } finally {
+        setLoading(false);
+      }
     },
-    [router, email]
+    [email, router]
   );
 
   const handleResetPassword = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      router.push('/sign-in');
+      setError('');
+      setLoading(true);
+      try {
+        const result = await resetPasswordAction(resetToken, {
+          password: newPassword,
+          confirmPassword,
+        });
+        if (result.success) {
+          router.push('/sign-in');
+        } else {
+          setError(result.error || 'Failed to reset password.');
+        }
+      } catch {
+        setError('An unexpected error occurred.');
+      } finally {
+        setLoading(false);
+      }
     },
-    [router]
+    [resetToken, newPassword, confirmPassword, router]
   );
 
   const focused = (field: string) => focusedField === field;
   const onFocus = (field: string) => () => setFocusedField(field);
-  const onBlur  = () => setFocusedField(null);
+  const onBlur = () => setFocusedField(null);
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh] w-full flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10 px-4 sm:px-6">
@@ -151,6 +197,12 @@ function ForgotPasswordForm() {
           {STEP_DESCRIPTIONS[step]}
         </p>
 
+        {error && (
+          <p className="w-full text-sm text-red-500 text-center font-secondary mb-4 bg-red-50 rounded-xl py-2.5 px-4">
+            {error}
+          </p>
+        )}
+
         {step === 'email' && (
           <form onSubmit={handleSendOtp} className="w-full flex flex-col gap-4">
             <div className="relative">
@@ -166,13 +218,12 @@ function ForgotPasswordForm() {
                 className={inputCls(focused('email'))}
               />
             </div>
-            <SubmitButton label="Send Reset Code" />
+            <SubmitButton label="Send Reset Code" loading={loading} />
           </form>
         )}
 
         {step === 'resetPassword' && (
           <form onSubmit={handleResetPassword} className="w-full flex flex-col gap-4">
-            {/* New Password */}
             <div className="relative">
               <InputIcon icon={Lock} isFocused={focused('newPassword')} />
               <Input
@@ -191,7 +242,6 @@ function ForgotPasswordForm() {
               />
             </div>
 
-            {/* Confirm Password */}
             <div className="relative">
               <InputIcon icon={Lock} isFocused={focused('confirmPassword')} />
               <Input
@@ -210,7 +260,7 @@ function ForgotPasswordForm() {
               />
             </div>
 
-            <SubmitButton label="Reset Password" />
+            <SubmitButton label="Reset Password" loading={loading} />
           </form>
         )}
 
@@ -227,8 +277,6 @@ function ForgotPasswordForm() {
     </div>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ForgotPasswordPage() {
   return (
