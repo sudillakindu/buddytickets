@@ -59,6 +59,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
     gsap.to(cursorRef.current, { x, y, duration: 0.1, ease: 'power3.out' });
   }, [containerRef]);
 
+  // Main GSAP cursor initialization and event orchestration
   useEffect(() => {
     if (isMobile || !cursorRef.current) return;
 
@@ -67,6 +68,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
     }
 
     const originalCursor = document.body.style.cursor;
+    
     if (hideDefaultCursor) {
       document.body.style.cursor = 'none';
     }
@@ -101,8 +103,10 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
 
     createSpinTimeline();
 
+    // Custom GSAP ticker to calculate and animate interpolation of active target corners
     const tickerFn = () => {
       if (!targetCornerPositionsRef.current || !cursorRef.current || !cornersRef.current) return;
+      
       const strength = activeStrengthRef.current.current;
       if (strength === 0) return;
 
@@ -114,9 +118,11 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
         const currentY = gsap.getProperty(corner, 'y') as number;
         const targetX = targetCornerPositionsRef.current![i].x - cursorX;
         const targetY = targetCornerPositionsRef.current![i].y - cursorY;
+        
         const finalX = currentX + (targetX - currentX) * strength;
         const finalY = currentY + (targetY - currentY) * strength;
         const duration = strength >= 0.99 ? (parallaxOn ? 0.2 : 0) : 0.05;
+        
         gsap.to(corner, {
           x: finalX,
           y: finalY,
@@ -138,10 +144,12 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
       const mouseY = gsap.getProperty(cursorRef.current, 'y') as number;
       const el = document.elementFromPoint(mouseX, mouseY);
       const isStillOver = el && (el === activeTarget || el.closest(targetSelector) === activeTarget);
+      
       if (!isStillOver) {
         currentLeaveHandler?.();
       }
     };
+    
     window.addEventListener('scroll', scrollHandler, { passive: true });
 
     const mouseDownHandler = () => {
@@ -210,6 +218,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
 
       const leaveHandler = () => {
         if (tickerFnRef.current) gsap.ticker.remove(tickerFnRef.current);
+        
         isActiveRef.current = false;
         targetCornerPositionsRef.current = null;
         gsap.set(activeStrengthRef.current, { current: 0, overwrite: true });
@@ -226,6 +235,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
             { x: -cornerSize * 1.5, y: cornerSize * 0.5 },
           ];
           const tl = gsap.timeline();
+          
           currentCorners.forEach((corner, index) => {
             tl.to(corner, { x: positions[index].x, y: positions[index].y, duration: 0.3, ease: 'power3.out' }, 0);
           });
@@ -235,10 +245,12 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
           if (!activeTarget && cursorRef.current && spinTl.current) {
             const currentRotation = gsap.getProperty(cursorRef.current, 'rotation') as number;
             const normalizedRotation = currentRotation % 360;
+            
             spinTl.current.kill();
             spinTl.current = gsap
               .timeline({ repeat: -1 })
               .to(cursorRef.current, { rotation: '+=360', duration: spinDuration, ease: 'none' });
+              
             gsap.to(cursorRef.current, {
               rotation: normalizedRotation + 360,
               duration: spinDuration * (1 - normalizedRotation / 360),
@@ -274,8 +286,10 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
     };
   }, [targetSelector, spinDuration, moveCursor, hideDefaultCursor, isMobile, hoverDuration, parallaxOn, containerRef]);
 
+  // Handle spin resetting upon prop updates
   useEffect(() => {
     if (isMobile || !cursorRef.current || !spinTl.current) return;
+    
     if (spinTl.current.isActive()) {
       spinTl.current.kill();
       spinTl.current = gsap

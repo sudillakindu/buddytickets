@@ -5,34 +5,55 @@ import { createClient } from "@supabase/supabase-js";
 const COOKIE = "bt_session";
 const AUTH_PAGES = new Set(["/sign-in", "/sign-up", "/forget-password"]);
 
-function secret() {
-    return new TextEncoder().encode(process.env.SESSION_SECRET!);
-}
+let cachedSecret: Uint8Array | undefined;
 
-let _db: ReturnType<typeof createClient> | undefined;
-function db() {
-    if (!_db) {
-        _db = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            { auth: { autoRefreshToken: false, persistSession: false } }
-        );
+function getSecret(): Uint8Array {
+    if (!cachedSecret) {
+        const secret = process.env.SESSION_SECRET;
+        if (!secret) {
+            throw new Error(
+                "Missing SESSION_SECRET environment variable. Generate one with: openssl rand -base64 32"
+            );
+        }
+        cachedSecret = new TextEncoder().encode(secret);
     }
-    return _db;
+    return cachedSecret;
 }
 
-async function isTokenValid(
-    token: string,
-    purpose?: string
-): Promise<boolean> {
-    let query = db()
+let supabaseClient: ReturnType<typeof createClient> | undefined;
+
+function getDb() {
+    if (!supabaseClient) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        if (!url) {
+            throw new Error(
+                "Missing NEXT_PUBLIC_SUPABASE_URL environment variable. Set it to your Supabase project URL."
+            );
+        }
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!key) {
+            throw new Error(
+                "Missing SUPABASE_SERVICE_ROLE_KEY environment variable. Find it in your Supabase project settings."
+            );
+        }
+        supabaseClient = createClient(url, key, {
+            auth: { autoRefreshToken: false, persistSession: false },
+        });
+    }
+    return supabaseClient;
+}
+
+async function isTokenValid(token: string, purpose?: string): Promise<boolean> {
+    let query = getDb()
         .from("auth_flow_tokens")
         .select("token_id")
         .eq("token", token)
         .eq("is_used", false)
         .gt("expires_at", new Date().toISOString());
 
-    if (purpose) query = query.eq("purpose", purpose);
+    if (purpose) {
+        query = query.eq("purpose", purpose);
+    }
 
     const { data } = await query.maybeSingle();
     return !!data;
@@ -40,30 +61,35 @@ async function isTokenValid(
 
 export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
-    const path = url.pathname;
+    const { pathname, searchParams } = url;
 
-    if (process.env.MAINTENANCE_MODE === "true" && path !== "/maintenance") {
+    // Handle maintenance mode routing
+    const isMaintenance = process.env.MAINTENANCE_MODE === "true";
+    if (isMaintenance && pathname !== "/maintenance") {
         url.pathname = "/maintenance";
         return NextResponse.redirect(url);
     }
-    if (process.env.MAINTENANCE_MODE !== "true" && path === "/maintenance") {
+    if (!isMaintenance && pathname === "/maintenance") {
         url.pathname = "/";
         return NextResponse.redirect(url);
     }
 
+    // Validate current session token
     const jwt = request.cookies.get(COOKIE)?.value;
-    let authed = false;
+    let isAuthenticated = false;
+
     if (jwt) {
         try {
-            await jwtVerify(jwt, secret());
-            authed = true;
+            await jwtVerify(jwt, getSecret());
+            isAuthenticated = true;
         } catch {
-            /* expired or invalid */
+            // Invalid or expired token is safely ignored
         }
     }
 
-    if (path === "/verify-email") {
-        const token = url.searchParams.get("token");
+    // Enforce valid database token for email verification
+    if (pathname === "/verify-email") {
+        const token = searchParams.get("token");
         if (!token || !(await isTokenValid(token))) {
             url.pathname = "/sign-in";
             url.search = "";
@@ -72,22 +98,18 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    if (
-        path === "/forget-password" &&
-        url.searchParams.get("step") === "reset"
-    ) {
-        const token = url.searchParams.get("token");
-        if (
-            !token ||
-            !(await isTokenValid(token, "forgot-password"))
-        ) {
+    // Enforce valid database token for password resets
+    if (pathname === "/forget-password" && searchParams.get("step") === "reset") {
+        const token = searchParams.get("token");
+        if (!token || !(await isTokenValid(token, "forgot-password"))) {
             url.pathname = "/sign-in";
             url.search = "";
             return NextResponse.redirect(url);
         }
     }
 
-    if (AUTH_PAGES.has(path) && authed) {
+    // Redirect authenticated users away from authentication pages
+    if (AUTH_PAGES.has(pathname) && isAuthenticated) {
         url.pathname = "/";
         url.search = "";
         return NextResponse.redirect(url);

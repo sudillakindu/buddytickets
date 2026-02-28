@@ -8,8 +8,7 @@ function getSecret(): Uint8Array {
     const secret = process.env.SESSION_SECRET;
     if (!secret) {
         throw new Error(
-            "Missing SESSION_SECRET environment variable. " +
-                "Generate one with: openssl rand -base64 32"
+            "Missing SESSION_SECRET environment variable. Generate one with: openssl rand -base64 32"
         );
     }
     return new TextEncoder().encode(secret);
@@ -54,6 +53,7 @@ export async function createSession(user: {
 export async function getSession(): Promise<SessionUser | null> {
     const token = (await cookies()).get(COOKIE_NAME)?.value;
     if (!token) return null;
+    
     try {
         const { payload } = await jwtVerify(token, getSecret());
         return payload as SessionUser;
@@ -66,9 +66,7 @@ export async function destroySession(): Promise<void> {
     (await cookies()).delete(COOKIE_NAME);
 }
 
-export async function verifySessionToken(
-    token: string
-): Promise<SessionUser | null> {
+export async function verifySessionToken(token: string): Promise<SessionUser | null> {
     try {
         const { payload } = await jwtVerify(token, getSecret());
         return payload as SessionUser;

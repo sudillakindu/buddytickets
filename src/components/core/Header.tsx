@@ -32,12 +32,11 @@ const cn = {
   textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
   textAccent: 'text-[hsl(270,70%,50%)]',
   hoverAccent: 'hover:text-[hsl(270,70%,50%)]',
-  btnGradient:
-    'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]',
-  gradientText:
-    'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] bg-clip-text text-transparent',
+  btnGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]',
+  gradientText: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] bg-clip-text text-transparent',
 } as const;
 
+// Simple hook to prevent hydration mismatch for UI components dependent on browser APIs
 function useMounted(): boolean {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -80,10 +79,7 @@ const BrandLogo = ({ size = 'md' }: BrandLogoProps) => {
         />
       </div>
       <span
-        className="font-special text-base tracking-tight text-transparent bg-clip-text
-          bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))]
-          bg-[length:200%_auto] bg-[position:0_0]
-          group-hover:bg-[position:100%_0] transition-all duration-500"
+        className="font-special text-base tracking-tight text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0] transition-all duration-500"
       >
         BuddyTickets
       </span>
@@ -117,6 +113,7 @@ export function Header({ user }: { user: UserInfo | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const isMounted = useMounted();
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -166,10 +163,7 @@ export function Header({ user }: { user: UserInfo | null }) {
     <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-4 px-4 sm:px-6">
       <nav className="relative w-full max-w-7xl mx-auto" aria-label="Main navigation">
         <div
-          className={`flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border
-            bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm
-            transition-all duration-500 ease-out w-full
-            ${isMounted ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'}`}
+          className={`flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full ${isMounted ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'}`}
         >
           <BrandLogo />
 
@@ -198,9 +192,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                       {user.name.split(' ')[0]}
                     </span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-[hsl(215.4,16.3%,46.9%)] transition-transform duration-200 ${
-                        dropdownOpen ? 'rotate-180' : ''
-                      }`}
+                      className={`w-3.5 h-3.5 text-[hsl(215.4,16.3%,46.9%)] transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
 
@@ -237,19 +229,13 @@ export function Header({ user }: { user: UserInfo | null }) {
                 <>
                   <Link
                     href="/sign-in"
-                    className={`font-primary text-base transition-all duration-500
-                      text-transparent bg-clip-text
-                      bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))]
-                      bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
+                    className={`font-primary text-base transition-all duration-500 text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
                   >
                     Sign In
                   </Link>
                   <Button
                     asChild
-                    className={`font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white
-                      shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] hover:shadow-xl
-                      transition-all duration-500 hover:scale-105 h-auto border-none
-                      ${cn.btnGradient} bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
+                    className={`font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] hover:shadow-xl transition-all duration-500 hover:scale-105 h-auto border-none ${cn.btnGradient} bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
                   >
                     <Link href="/sign-up">Get Started</Link>
                   </Button>
@@ -333,10 +319,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                 <Link
                   href="/sign-in"
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`font-primary text-base py-1.5 transition-all duration-500
-                    text-transparent bg-clip-text
-                    bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))]
-                    bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
+                  className={`font-primary text-base py-1.5 transition-all duration-500 text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
                 >
                   Sign In
                 </Link>
@@ -344,7 +327,9 @@ export function Header({ user }: { user: UserInfo | null }) {
                   asChild
                   className={`font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-md hover:shadow-xl transition-all duration-500 h-auto border-none w-full ${cn.btnGradient} bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
                 >
-                  <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>Get Started</Link>
+                  <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                    Get Started
+                  </Link>
                 </Button>
               </>
             )}
