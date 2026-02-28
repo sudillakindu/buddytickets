@@ -7,8 +7,8 @@ function getMailCredentials(): { gmailUsername: string; gmailPassword: string } 
             "Missing GMAIL_USER environment variable. Set it to your Gmail address."
         );
     }
-    const pass = process.env.GMAIL_APP_PASSWORD;
-    if (!pass) {
+    const gmailPassword = process.env.GMAIL_APP_PASSWORD;
+    if (!gmailPassword) {
         throw new Error(
             "Missing GMAIL_APP_PASSWORD environment variable. Generate one at: https://myaccount.google.com/apppasswords"
         );

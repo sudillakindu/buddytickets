@@ -8,6 +8,7 @@ import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Toast } from '@/components/ui/toast';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 import { signIn } from '@/lib/actions/auth';
 
@@ -23,7 +24,6 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = useCallback((field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -31,20 +31,21 @@ export default function SignInPage() {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
     
     try {
       const result = await signIn(formData);
       if (result.success) {
+        Toast('Success', result.message || 'Signed in successfully.', 'success');
         window.location.href = result.redirectTo || '/';
       } else if (result.needsVerification && result.token) {
+        Toast('Verification Required', result.message || 'Please verify your email first.', 'warning');
         router.push(`/verify-email?token=${result.token}`);
       } else {
-        setError(result.error || 'Sign in failed.');
+        Toast('Error', result.message || 'Sign in failed.', 'error');
       }
     } catch {
-      setError('An unexpected error occurred.');
+      Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {
       setLoading(false);
     }
@@ -73,12 +74,6 @@ export default function SignInPage() {
         <p className="font-secondary text-sm mb-8 text-center text-[hsl(215.4,16.3%,46.9%)]">
           Sign in to access your dashboard and events.
         </p>
-
-        {error && (
-          <p className="w-full text-sm text-red-500 text-center font-secondary mb-4 bg-red-50 rounded-xl py-2.5 px-4">
-            {error}
-          </p>
-        )}
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           

@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Toast } from '@/components/ui/toast';
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 import {
   verifyOtp as verifyOtpAction,
@@ -38,8 +39,6 @@ function VerifyEmailForm() {
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [countdown, setCountdown] = useState(0);
   const [resending, setResending] = useState(false);
   
@@ -128,32 +127,31 @@ function VerifyEmailForm() {
     const code = digits.join('');
     
     if (code.length !== 6) {
-      setError('Please enter all 6 digits.');
+      Toast('Error', 'Please enter all 6 digits.', 'error');
       return;
     }
     
-    setError('');
-    setSuccess('');
     setLoading(true);
     
     try {
       const result = await verifyOtpAction(token, code);
       if (result.success) {
         if (result.purpose === 'forgot-password' && result.resetToken) {
+          Toast('Success', result.message || 'Code verified successfully.', 'success');
           router.push(`/forget-password?step=reset&token=${result.resetToken}`);
         } else {
-          setSuccess('Email verified successfully! Redirecting...');
+          Toast('Success', result.message || 'Email verified successfully!', 'success');
           setTimeout(() => router.push(result.redirectTo || '/sign-in'), 1500);
         }
       } else {
-        let msg = result.error || 'Verification failed.';
+        let msg = result.message || 'Verification failed.';
         if (result.attemptsRemaining !== undefined && result.attemptsRemaining > 0) {
           msg += ` (${result.attemptsRemaining} attempt${result.attemptsRemaining === 1 ? '' : 's'} remaining)`;
         }
-        setError(msg);
+        Toast('Error', msg, 'error');
       }
     } catch {
-      setError('An unexpected error occurred.');
+      Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {
       setLoading(false);
     }
@@ -161,22 +159,19 @@ function VerifyEmailForm() {
 
   const handleResend = useCallback(async () => {
     setResending(true);
-    setError('');
-    setSuccess('');
     
     try {
       const result = await resendOtpAction(token);
       if (result.success) {
         setDigits(Array(6).fill(''));
         setCountdown(result.remainingSeconds || 60);
-        setSuccess('A new code has been sent to your email.');
-        setTimeout(() => setSuccess(''), 4000);
+        Toast('Success', result.message || 'A new code has been sent to your email.', 'success');
       } else {
         if (result.remainingSeconds) setCountdown(result.remainingSeconds);
-        setError(result.error || 'Failed to resend code.');
+        Toast('Error', result.message || 'Failed to resend code.', 'error');
       }
     } catch {
-      setError('Failed to resend code.');
+      Toast('Error', 'Failed to resend code.', 'error');
     } finally {
       setResending(false);
     }
@@ -218,18 +213,6 @@ function VerifyEmailForm() {
           </span>
         </p>
 
-        {error && (
-          <p className="w-full text-sm text-red-500 text-center font-secondary mb-4 bg-red-50 rounded-xl py-2.5 px-4">
-            {error}
-          </p>
-        )}
-
-        {success && (
-          <p className="w-full text-sm text-green-600 text-center font-secondary mb-4 bg-green-50 rounded-xl py-2.5 px-4">
-            {success}
-          </p>
-        )}
-
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
           <div className="flex gap-2 sm:gap-3 justify-center w-full" role="group" aria-label="One-time password">
             {digits.map((digit, i) => (
@@ -249,7 +232,7 @@ function VerifyEmailForm() {
                   w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-primary font-semibold rounded-xl border-2
                   transition-all duration-200 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)]
                   outline-none select-none caret-transparent
-                  ${focusedIndex === i ? 'border-[hsl(270,70%,50%)] shadow-[0_0_0_3px_hsl(270,70%,50%,0.15)]' : 
+                  ${focusedIndex === i ? 'border-[hsl(270,70%,50%)]' : 
                     digit ? 'border-[hsl(270,70%,50%)] bg-[hsl(270,70%,98%)]' : 'border-[hsl(214.3,31.8%,91.4%)]'}
                 `}
                 aria-label={`Digit ${i + 1}`}
