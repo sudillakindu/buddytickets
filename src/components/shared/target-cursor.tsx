@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { gsap } from 'gsap';
 
-interface TargetCursorProps {
+export interface TargetCursorProps {
   targetSelector?: string;
   spinDuration?: number;
   hideDefaultCursor?: boolean;
@@ -23,7 +23,7 @@ const getIsMobile = (): boolean => {
   return (hasTouchScreen && isSmallScreen) || mobileRegex.test(userAgent.toLowerCase());
 };
 
-const TargetCursor: React.FC<TargetCursorProps> = ({
+const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
   targetSelector = '.cursor-target',
   spinDuration = 2,
   hideDefaultCursor = true,
@@ -59,7 +59,6 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
     gsap.to(cursorRef.current, { x, y, duration: 0.1, ease: 'power3.out' });
   }, [containerRef]);
 
-  // Main GSAP cursor initialization and event orchestration
   useEffect(() => {
     if (isMobile || !cursorRef.current) return;
 
@@ -103,7 +102,7 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
 
     createSpinTimeline();
 
-    // Custom GSAP ticker to calculate and animate interpolation of active target corners
+    // Calculate and animate interpolation
     const tickerFn = () => {
       if (!targetCornerPositionsRef.current || !cursorRef.current || !cornersRef.current) return;
       
@@ -286,7 +285,6 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
     };
   }, [targetSelector, spinDuration, moveCursor, hideDefaultCursor, isMobile, hoverDuration, parallaxOn, containerRef]);
 
-  // Handle spin resetting upon prop updates
   useEffect(() => {
     if (isMobile || !cursorRef.current || !spinTl.current) return;
     
@@ -317,9 +315,8 @@ const TargetCursor: React.FC<TargetCursorProps> = ({
       <div className="target-cursor-corner absolute top-1/2 left-1/2 w-[12px] h-[12px] border-[3px] border-[hsl(222.2,47.4%,11.2%)] -translate-x-[150%] translate-y-1/2 border-r-0 border-t-0" />
     </div>
   );
-};
+});
 
 TargetCursor.displayName = 'TargetCursor';
 
 export { TargetCursor };
-export type { TargetCursorProps };

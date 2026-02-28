@@ -8,7 +8,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-
   --font-primary: var(--font-primary);
   --font-secondary: var(--font-secondary);
   --font-tertiary: var(--font-tertiary);
@@ -32,4 +31,3 @@ html {
 *::after {
   box-sizing: border-box;
 }
-

@@ -19,8 +19,7 @@ function AuthBackground() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage:
-            'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       />
@@ -30,8 +29,9 @@ function AuthBackground() {
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-[100dvh] bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white">
+    <div className="relative min-h-[100dvh] w-full bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white">
       <AuthBackground />
+      {/* Container sizing logic pushed strictly into individual auth pages */}
       {children}
     </div>
   );

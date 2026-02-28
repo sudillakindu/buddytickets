@@ -1,101 +1,101 @@
 export type EventStatus =
-    | 'DRAFT'
-    | 'PUBLISHED'
-    | 'ON_SALE'
-    | 'SOLD_OUT'
-    | 'ONGOING'
-    | 'COMPLETED'
-    | 'CANCELLED';
+  | 'DRAFT'
+  | 'PUBLISHED'
+  | 'ON_SALE'
+  | 'SOLD_OUT'
+  | 'ONGOING'
+  | 'COMPLETED'
+  | 'CANCELLED';
 
 export interface Event {
-    event_id: string;
-    name: string;
-    start_at: string;
-    end_at: string;
-    location: string;
-    primary_image: string;
-    category: string;
-    start_ticket_price: string;
-    status: EventStatus;
-    is_vip: boolean;
+  event_id: string;
+  name: string;
+  start_at: string;
+  end_at: string;
+  location: string;
+  primary_image: string;
+  category: string;
+  start_ticket_price: string;
+  status: EventStatus;
+  is_vip: boolean;
 }
 
 export const MOCK_EVENTS: Event[] = [
-    {
-        event_id: '1',
-        name: 'Neon Dreams Music Festival',
-        start_at: new Date('2026-08-15T18:00:00').toISOString(),
-        end_at: new Date('2026-08-15T23:59:59').toISOString(),
-        location: 'Downtown Arena, NY',
-        primary_image: 'https://www.ticketsministry.com/_next/image?url=https%3A%2F%2Fticketsministry.s3.ap-south-1.amazonaws.com%2Fpublic%2Fevents%2F8FgGaaGVeCf9LEJGRx84cwSH6hOYYR93aP0qkHTV.jpg&w=1920&q=75',
-        category: 'Music',
-        start_ticket_price: '149',
-        status: 'ON_SALE',
-        is_vip: true,
-    },
-    {
-        event_id: '2',
-        name: 'Tech Innovation Summit',
-        start_at: new Date('2026-09-02T09:00:00').toISOString(),
-        end_at: new Date('2026-09-03T17:00:00').toISOString(),
-        location: 'Moscone Center, SF',
-        primary_image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800&auto=format&fit=crop',
-        category: 'Conference',
-        start_ticket_price: '299',
-        status: 'ON_SALE',
-        is_vip: false,
-    },
-    {
-        event_id: '3',
-        name: 'Championship Finals 2026',
-        start_at: new Date('2026-10-20T19:30:00').toISOString(),
-        end_at: new Date('2026-10-20T22:30:00').toISOString(),
-        location: 'Grand Stadium, UK',
-        primary_image: 'https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=800&auto=format&fit=crop',
-        category: 'Sports',
-        start_ticket_price: '199',
-        status: 'ON_SALE',
-        is_vip: true,
-    },
-    {
-        event_id: '4',
-        name: 'Broadways Magic: The Musical',
-        start_at: new Date('2026-11-05T20:00:00').toISOString(),
-        end_at: new Date('2026-11-05T23:00:00').toISOString(),
-        location: 'Majestic Theatre, NY',
-        primary_image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop',
-        category: 'Arts & Theatre',
-        start_ticket_price: '89',
-        status: 'ON_SALE',
-        is_vip: false,
-    },
-    {
-        event_id: '5',
-        name: 'Startup Pitch Night',
-        start_at: new Date('2026-12-12T18:00:00').toISOString(),
-        end_at: new Date('2026-12-12T21:00:00').toISOString(),
-        location: 'Innovation Hub, ATX',
-        primary_image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?q=80&w=800&auto=format&fit=crop',
-        category: 'Networking',
-        start_ticket_price: 'Free',
-        status: 'ON_SALE',
-        is_vip: false,
-    },
-    {
-        event_id: '6',
-        name: 'Winter Jazz Festival',
-        start_at: new Date('2027-01-10T19:00:00').toISOString(),
-        end_at: new Date('2027-01-11T23:00:00').toISOString(),
-        location: 'Blue Note, CHI',
-        primary_image: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=800&auto=format&fit=crop',
-        category: 'Music',
-        start_ticket_price: '65',
-        status: 'PUBLISHED',
-        is_vip: true,
-    },
+  {
+    event_id: '1',
+    name: 'Neon Dreams Music Festival',
+    start_at: new Date('2026-08-15T18:00:00').toISOString(),
+    end_at: new Date('2026-08-15T23:59:59').toISOString(),
+    location: 'Downtown Arena, NY',
+    primary_image:
+      'https://www.ticketsministry.com/_next/image?url=https%3A%2F%2Fticketsministry.s3.ap-south-1.amazonaws.com%2Fpublic%2Fevents%2F8FgGaaGVeCf9LEJGRx84cwSH6hOYYR93aP0qkHTV.jpg&w=1920&q=75',
+    category: 'Music',
+    start_ticket_price: '149',
+    status: 'ON_SALE',
+    is_vip: true,
+  },
+  {
+    event_id: '2',
+    name: 'Tech Innovation Summit',
+    start_at: new Date('2026-09-02T09:00:00').toISOString(),
+    end_at: new Date('2026-09-03T17:00:00').toISOString(),
+    location: 'Moscone Center, SF',
+    primary_image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?q=80&w=800&auto=format&fit=crop',
+    category: 'Conference',
+    start_ticket_price: '299',
+    status: 'ON_SALE',
+    is_vip: false,
+  },
+  {
+    event_id: '3',
+    name: 'Championship Finals 2026',
+    start_at: new Date('2026-10-20T19:30:00').toISOString(),
+    end_at: new Date('2026-10-20T22:30:00').toISOString(),
+    location: 'Grand Stadium, UK',
+    primary_image: 'https://images.unsplash.com/photo-1459865264687-595d652de67e?q=80&w=800&auto=format&fit=crop',
+    category: 'Sports',
+    start_ticket_price: '199',
+    status: 'ON_SALE',
+    is_vip: true,
+  },
+  {
+    event_id: '4',
+    name: 'Broadways Magic: The Musical',
+    start_at: new Date('2026-11-05T20:00:00').toISOString(),
+    end_at: new Date('2026-11-05T23:00:00').toISOString(),
+    location: 'Majestic Theatre, NY',
+    primary_image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop',
+    category: 'Arts & Theatre',
+    start_ticket_price: '89',
+    status: 'ON_SALE',
+    is_vip: false,
+  },
+  {
+    event_id: '5',
+    name: 'Startup Pitch Night',
+    start_at: new Date('2026-12-12T18:00:00').toISOString(),
+    end_at: new Date('2026-12-12T21:00:00').toISOString(),
+    location: 'Innovation Hub, ATX',
+    primary_image: 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?q=80&w=800&auto=format&fit=crop',
+    category: 'Networking',
+    start_ticket_price: 'Free',
+    status: 'ON_SALE',
+    is_vip: false,
+  },
+  {
+    event_id: '6',
+    name: 'Winter Jazz Festival',
+    start_at: new Date('2027-01-10T19:00:00').toISOString(),
+    end_at: new Date('2027-01-11T23:00:00').toISOString(),
+    location: 'Blue Note, CHI',
+    primary_image: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=800&auto=format&fit=crop',
+    category: 'Music',
+    start_ticket_price: '65',
+    status: 'PUBLISHED',
+    is_vip: true,
+  },
 ];
 
 export async function getEventsMock(): Promise<Event[]> {
-    return MOCK_EVENTS;
+  return MOCK_EVENTS;
 }
-

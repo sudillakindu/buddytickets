@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+
 import { Header } from '@/components/core/Header';
 import { Footer } from '@/components/core/Footer';
 
@@ -19,7 +20,8 @@ export default function MainShell({ user, children }: Props) {
   return (
     <>
       <Header user={user} />
-      <main className="flex-1 w-full relative flex flex-col">
+      {/* Global centered wrapper explicitly applied at the layout root */}
+      <main className="flex-1 w-full flex flex-col relative bg-transparent">
         {children}
       </main>
       <Footer />

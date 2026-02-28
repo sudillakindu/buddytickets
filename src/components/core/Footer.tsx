@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import { memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -9,6 +9,8 @@ import {
   Facebook, Twitter, Instagram, Linkedin,
   ArrowRight, LucideIcon,
 } from 'lucide-react';
+
+import { cn } from '@/lib/ui/utils';
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 
@@ -57,23 +59,23 @@ const LEGAL_LINKS: NavLink[] = [
   { href: '/refunds', label: 'Refund Policy'    },
 ];
 
-const cn = {
+const styles = {
   textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
   textMuted:   'text-[hsl(215.4,16.3%,46.9%)]',
   textAccent:  'text-[hsl(270,70%,50%)]',
   hoverAccent: 'hover:text-[hsl(270,70%,50%)]',
 } as const;
 
-const FooterNavGroup = ({ title, links, delay }: FooterNavGroupProps) => (
+const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => (
   <motion.nav
-    className="space-y-4 flex flex-col items-start text-left"
+    className="space-y-4 flex flex-col items-start text-left w-full"
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, delay }}
     viewport={{ once: true }}
     aria-label={`${title} links`}
   >
-    <h3 className={`font-primary text-base font-bold ${cn.textPrimary}`}>{title}</h3>
+    <h3 className={cn('font-primary text-base font-bold', styles.textPrimary)}>{title}</h3>
     <ul className="space-y-2.5 text-sm w-full" role="list">
       {links.map(({ href, label }) => (
         <motion.li
@@ -84,10 +86,17 @@ const FooterNavGroup = ({ title, links, delay }: FooterNavGroupProps) => (
         >
           <Link
             href={href}
-            className={`font-secondary ${cn.textMuted} ${cn.hoverAccent} transition-colors flex items-center gap-2 group`}
+            className={cn(
+              'font-secondary transition-colors flex items-center gap-2 group',
+              styles.textMuted,
+              styles.hoverAccent
+            )}
           >
             <ArrowRight
-              className={`w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 ${cn.textAccent}`}
+              className={cn(
+                'w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300',
+                styles.textAccent
+              )}
               aria-hidden="true"
             />
             {label}
@@ -96,55 +105,59 @@ const FooterNavGroup = ({ title, links, delay }: FooterNavGroupProps) => (
       ))}
     </ul>
   </motion.nav>
-);
+));
 
-const ContactItem = ({ icon: Icon, text, href }: ContactItemProps) => {
+FooterNavGroup.displayName = 'FooterNavGroup';
+
+const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
   const iconEl = (
     <div className="w-8 h-8 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
       <Icon 
-        className={`w-4 h-4 ${cn.textPrimary} group-hover:text-[hsl(270,70%,50%)] transition-colors`} 
+        className={cn('w-4 h-4 group-hover:text-[hsl(270,70%,50%)] transition-colors', styles.textPrimary)} 
         aria-hidden="true" 
       />
     </div>
   );
 
   const textEl = (
-    <span className={`font-secondary ${cn.textMuted} ${href ? cn.hoverAccent : ''} transition-colors text-left text-sm`}>
+    <span className={cn('font-secondary transition-colors text-left text-sm', styles.textMuted, href ? styles.hoverAccent : '')}>
       {text}
     </span>
   );
 
   return (
     <motion.li
-      className="flex flex-row items-center justify-start gap-3 group"
+      className="flex flex-row items-center justify-start gap-3 group w-full"
       whileHover={{ x: 5 }}
       transition={{ type: 'spring', stiffness: 300 }}
     >
       {href ? (
-        <a href={href} className="flex items-center gap-3">
+        <a href={href} className="flex items-center gap-3 w-full">
           {iconEl}
           {textEl}
         </a>
       ) : (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full">
           {iconEl}
           {textEl}
         </div>
       )}
     </motion.li>
   );
-};
+});
+
+ContactItem.displayName = 'ContactItem';
 
 export function Footer() {
   return (
     <footer
-      className="bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-12 sm:pt-16 pb-8 border-t border-[hsl(222.2,47.4%,11.2%)]/5"
+      className="bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-12 sm:pt-16 pb-8 border-t border-[hsl(222.2,47.4%,11.2%)]/5 w-full"
       aria-label="Site footer"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1.5fr] gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12">
           <motion.div
-            className="space-y-5 flex flex-col items-start text-left"
+            className="space-y-5 flex flex-col items-start text-left w-full"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -164,29 +177,28 @@ export function Footer() {
                   className="w-10 h-10 object-contain drop-shadow-sm"
                 />
               </motion.div>
-              <span
-                className="font-special transition-all duration-500 text-xl text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0]"
-              >
+              <span className="font-special transition-all duration-500 text-xl text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0]">
                 BuddyTickets
               </span>
             </Link>
 
-            <p className={`font-secondary ${cn.textMuted} text-sm leading-relaxed`}>
+            <p className={cn('font-secondary text-sm leading-relaxed', styles.textMuted)}>
               Your premier platform for discovering, creating, and managing events in Sri Lanka. Connect with experiences that matter.
             </p>
 
-            <div 
-              className="flex space-x-3 pt-1 justify-start w-full" 
-              role="list" 
-              aria-label="Social media links"
-            >
+            <div className="flex space-x-3 pt-1 justify-start w-full" role="list" aria-label="Social media links">
               {SOCIAL_LINKS.map(({ icon: Icon, href, label }, index) => (
                 <motion.a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center ${cn.textMuted} ${cn.hoverAccent} hover:border-[hsl(270,70%,50%)]/20 transition-colors`}
+                  className={cn(
+                    'w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-colors',
+                    styles.textMuted,
+                    styles.hoverAccent,
+                    'hover:border-[hsl(270,70%,50%)]/20'
+                  )}
                   aria-label={`Follow us on ${label}`}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
@@ -203,13 +215,13 @@ export function Footer() {
           <FooterNavGroup title="Legal" links={LEGAL_LINKS} delay={0.2} />
 
           <motion.div
-            className="space-y-4 flex flex-col items-start text-left"
+            className="space-y-4 flex flex-col items-start text-left w-full"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h3 className={`font-primary text-base font-bold ${cn.textPrimary}`}>
+            <h3 className={cn('font-primary text-base font-bold', styles.textPrimary)}>
               Contact Info
             </h3>
             <ul className="space-y-3 text-sm w-full" role="list">
@@ -221,22 +233,22 @@ export function Footer() {
         </div>
 
         <motion.div
-          className="border-t border-gray-200/60 pt-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4"
+          className="border-t border-gray-200/60 pt-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 w-full"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <p className={`font-secondary text-sm ${cn.textMuted} text-center sm:text-left`}>
+          <p className={cn('font-secondary text-sm text-center sm:text-left', styles.textMuted)}>
             © {CURRENT_YEAR} BuddyTickets. All rights reserved.
           </p>
-          <p className={`font-secondary text-sm ${cn.textMuted} text-center sm:text-right flex flex-row items-center justify-center sm:justify-end gap-1`}>
+          <p className={cn('font-secondary text-sm flex flex-row items-center justify-center sm:justify-end gap-1 text-center sm:text-right', styles.textMuted)}>
             Digitally crafted by{' '}
             <a
               href="https://sudillakindu.online"
               target="_blank"
               rel="noopener noreferrer"
-              className={`font-semibold ${cn.textPrimary} ${cn.hoverAccent} transition-colors`}
+              className={cn('font-semibold transition-colors', styles.textPrimary, styles.hoverAccent)}
             >
               Sudil Lakindu M. Arachchi
             </a>

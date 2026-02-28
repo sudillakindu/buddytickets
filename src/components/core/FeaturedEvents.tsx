@@ -1,19 +1,21 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ChevronRight, CalendarX } from 'lucide-react';
 
-import { MOCK_EVENTS, type Event } from '@/lib/meta/event';
+import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/shared/event/event-card';
 import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
 import { Toast } from '@/components/ui/toast';
 
+import { MOCK_EVENTS, type Event } from '@/lib/meta/event';
+
 const ACTIVE_STATUSES = ['ON_SALE', 'PUBLISHED', 'ONGOING'] as const;
 
-const cn = {
+const styles = {
   textGradient: 'bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
   bgGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
   textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
@@ -26,21 +28,21 @@ interface SectionHeaderProps {
   link: string;
 }
 
-const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
+const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
   const router = useRouter();
 
   return (
-    <div className="flex flex-row items-center justify-between mb-8 sm:mb-10">
+    <div className="flex flex-row items-center justify-between mb-8 sm:mb-10 w-full">
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className={`font-primary font-semibold text-2xl sm:text-[32px] ${cn.textPrimary}`}>
-          <span className={cn.textGradient}>{highlight}</span> {title}
+        <h2 className={cn('font-primary font-semibold text-2xl sm:text-[32px]', styles.textPrimary)}>
+          <span className={styles.textGradient}>{highlight}</span> {title}
         </h2>
-        <div className={`h-1.5 w-24 sm:w-28 rounded-full mt-2 ${cn.bgGradient}`} />
+        <div className={cn('h-1.5 w-24 sm:w-28 rounded-full mt-2', styles.bgGradient)} />
       </motion.div>
 
       <motion.div
@@ -53,7 +55,11 @@ const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
         <Button
           variant="ghost"
           onClick={() => router.push(link)}
-          className={`font-secondary group flex items-center gap-1 text-sm sm:text-base font-semibold ${cn.textMuted} hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto`}
+          className={cn(
+            'font-secondary group flex items-center gap-1 text-sm sm:text-base font-semibold',
+            styles.textMuted,
+            'hover:text-[hsl(270,70%,50%)] hover:bg-transparent transition-colors p-0 h-auto'
+          )}
           aria-label={`View all ${title}`}
         >
           View All
@@ -65,32 +71,34 @@ const SectionHeader = ({ highlight, title, link }: SectionHeaderProps) => {
       </motion.div>
     </div>
   );
-};
+});
 
-const LoadingState = () => <EventGridSkeleton />;
+SectionHeader.displayName = 'SectionHeader';
 
-const EmptyState = () => (
+const EmptyState = memo(() => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className="flex flex-col items-center justify-center py-24 text-center px-4"
+    className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
     role="status"
   >
     <CalendarX 
-      className={`w-16 sm:w-20 h-16 sm:h-20 mb-4 ${cn.textMuted} opacity-50`} 
+      className={cn('w-16 sm:w-20 h-16 sm:h-20 mb-4 opacity-50', styles.textMuted)} 
       aria-hidden="true" 
     />
-    <h3 className={`font-primary text-2xl sm:text-3xl font-semibold ${cn.textPrimary} mb-2`}>
+    <h3 className={cn('font-primary text-2xl sm:text-3xl font-semibold mb-2', styles.textPrimary)}>
       No Events Right Now
     </h3>
-    <p className={`font-secondary text-base sm:text-lg ${cn.textMuted} max-w-md mx-auto`}>
+    <p className={cn('font-secondary text-base sm:text-lg max-w-md mx-auto', styles.textMuted)}>
       We&apos;re currently planning our next exciting events. Check back soon!
     </p>
   </motion.div>
-);
+));
 
-const EventGrid = ({ events }: { events: Event[] }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
+EmptyState.displayName = 'EmptyState';
+
+const EventGrid = memo(({ events }: { events: Event[] }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
     {events.map((event, index) => (
       <motion.div
         key={event.event_id ?? index}
@@ -103,7 +111,9 @@ const EventGrid = ({ events }: { events: Event[] }) => (
       </motion.div>
     ))}
   </div>
-);
+));
+
+EventGrid.displayName = 'EventGrid';
 
 function useEvents() {
   const [eventsList, setEventsList] = useState<Event[]>([]);
@@ -149,7 +159,7 @@ export default function FeaturedEvents() {
   return (
     <section
       id="events"
-      className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]"
+      className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] w-full"
       aria-label="Featured Events"
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -157,32 +167,22 @@ export default function FeaturedEvents() {
         <div className="absolute bottom-[20%] right-[-5%] w-[300px] h-[300px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px]" />
       </div>
 
-      <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16 sm:space-y-20 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary"
-      >
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16 sm:space-y-20 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary">
         {isLoading ? (
-          <LoadingState />
+          <EventGridSkeleton />
         ) : eventsList.length === 0 ? (
           <EmptyState />
         ) : (
           <>
             {activeEvents.length > 0 && (
-              <div>
-                <SectionHeader 
-                  highlight="Latest" 
-                  title="Events" 
-                  link="/events?filter=latest" 
-                />
+              <div className="w-full">
+                <SectionHeader highlight="Latest" title="Events" link="/events?filter=latest" />
                 <EventGrid events={activeEvents} />
               </div>
             )}
             {upcomingEvents.length > 0 && (
-              <div>
-                <SectionHeader 
-                  highlight="Upcoming" 
-                  title="Events" 
-                  link="/events?filter=upcoming" 
-                />
+              <div className="w-full">
+                <SectionHeader highlight="Upcoming" title="Events" link="/events?filter=upcoming" />
                 <EventGrid events={upcomingEvents} />
               </div>
             )}

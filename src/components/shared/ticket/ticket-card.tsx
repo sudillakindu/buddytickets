@@ -1,11 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, QrCode, Tag } from 'lucide-react';
-import type { UserTicket } from '@/lib/meta/ticket';
 
-type TicketStatus = UserTicket['status'];
+import { cn } from '@/lib/ui/utils';
+
+import type { MyTickets } from '@/lib/meta/ticket';
+
+type TicketStatus = MyTickets['status'];
 
 interface StatusUI {
   text: string;
@@ -41,29 +44,29 @@ const STATUS_UI: Record<TicketStatus, StatusUI> = {
   },
 };
 
-function formatDate(isoString: string): string {
+const formatDate = (isoString: string): string => {
   if (!isoString) return '—';
   return new Date(isoString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
   });
-}
+};
 
-function formatTime(isoString: string): string {
+const formatTime = (isoString: string): string => {
   if (!isoString) return '—';
   return new Date(isoString).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
+};
 
-interface TicketCardProps {
-  ticket: UserTicket;
+export interface TicketCardProps {
+  ticket: MyTickets;
   index?: number;
 }
 
-function TicketCard({ ticket, index = 0 }: TicketCardProps) {
+const TicketCard: React.FC<TicketCardProps> = memo(({ ticket, index = 0 }) => {
   const status = STATUS_UI[ticket.status] ?? STATUS_UI.ACTIVE;
   const qrShort = ticket.qr_hash ? `${ticket.qr_hash.slice(0, 8)}...${ticket.qr_hash.slice(-4)}` : '—';
 
@@ -74,12 +77,10 @@ function TicketCard({ ticket, index = 0 }: TicketCardProps) {
       transition={{ duration: 0.4, delay: index * 0.06 }}
       className="group relative w-full rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white shadow-sm hover:shadow-md hover:border-[hsl(270,70%,50%)]/20 transition-all duration-300"
     >
-      {/* Dashed cutout decoration */}
       <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-[hsl(210,40%,96.1%)] border border-[hsl(214.3,31.8%,91.4%)]" />
       <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-5 rounded-full bg-[hsl(210,40%,96.1%)] border border-[hsl(214.3,31.8%,91.4%)]" />
 
       <div className="px-5 sm:px-6 py-5">
-        {/* Top row — event name + status */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0 flex-1">
             <h3 className="font-primary text-base sm:text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)] truncate">
@@ -91,17 +92,19 @@ function TicketCard({ ticket, index = 0 }: TicketCardProps) {
           </div>
 
           <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0 ${status.bgClass} ${status.textClass}`}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0',
+              status.bgClass,
+              status.textClass
+            )}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${status.dotClass}`} />
+            <span className={cn('w-1.5 h-1.5 rounded-full', status.dotClass)} />
             {status.text}
           </span>
         </div>
 
-        {/* Divider */}
         <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
 
-        {/* Info grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0" aria-hidden="true" />
@@ -125,10 +128,8 @@ function TicketCard({ ticket, index = 0 }: TicketCardProps) {
           </div>
         </div>
 
-        {/* Divider */}
         <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
 
-        {/* Bottom row — QR hash + price */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <QrCode className="w-3.5 h-3.5 text-[hsl(215.4,16.3%,46.9%)] shrink-0" aria-hidden="true" />
@@ -147,7 +148,7 @@ function TicketCard({ ticket, index = 0 }: TicketCardProps) {
       </div>
     </motion.div>
   );
-}
+});
 
 TicketCard.displayName = 'TicketCard';
 

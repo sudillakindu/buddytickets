@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
-import type { Event } from '@/lib/meta/event';
 
-import { Button } from '../../ui/button';
+import { cn } from '@/lib/ui/utils';
+import { Button } from '@/components/ui/button';
+
+import type { Event } from '@/lib/meta/event';
 
 type EventStatusKey = Event['status'];
 
@@ -53,29 +55,29 @@ const STATUS_UI: Record<EventStatusKey, StatusUI> = {
   },
 };
 
-function formatDate(isoString: string): string {
+const formatDate = (isoString: string): string => {
   if (!isoString) return '—';
   return new Date(isoString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
   });
-}
+};
 
-function formatTime(isoString: string): string {
+const formatTime = (isoString: string): string => {
   if (!isoString) return '—';
   return new Date(isoString).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
+};
 
-interface EventCardProps {
+export interface EventCardProps {
   event: Event;
   index?: number;
 }
 
-function EventCard({ event, index = 0 }: EventCardProps) {
+const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
   const status = STATUS_UI[event.status] ?? STATUS_UI.ON_SALE;
   const [imgError, setImgError] = useState(false);
 
@@ -84,9 +86,8 @@ function EventCard({ event, index = 0 }: EventCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.06 }}
-      className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative"
+      className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative w-full"
     >
-      {/* Image area */}
       <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
         {imgError || !event.primary_image ? (
           <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 bg-gray-50">
@@ -119,7 +120,6 @@ function EventCard({ event, index = 0 }: EventCardProps) {
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-4 flex flex-col flex-grow gap-2.5">
         <div className="event-meta flex items-center justify-between w-full text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
           <div className="flex items-center gap-1 shrink-0">
@@ -156,19 +156,20 @@ function EventCard({ event, index = 0 }: EventCardProps) {
         <Button
           aria-label={`${event.name} — ${status.text}`}
           disabled={status.disabled}
-          className={`event-button w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md mt-2 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-0.5 ${status.className}`}
+          className={cn(
+            'event-button w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md mt-2 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-0.5',
+            status.className
+          )}
         >
           <span className="flex items-center justify-center gap-1.5 relative z-10">
-            {event.status === 'ON_SALE' && (
-              <Ticket className="w-3.5 h-3.5" aria-hidden="true" />
-            )}
+            {event.status === 'ON_SALE' && <Ticket className="w-3.5 h-3.5" aria-hidden="true" />}
             {status.text}
           </span>
         </Button>
       </div>
     </motion.article>
   );
-}
+});
 
 EventCard.displayName = 'EventCard';
 

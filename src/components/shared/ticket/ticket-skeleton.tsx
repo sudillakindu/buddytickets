@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 
-const TicketCardSkeleton = () => (
-  <div className="animate-pulse rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white p-5 sm:p-6 space-y-4">
+const TicketCardSkeleton: React.FC = memo(() => (
+  <div className="animate-pulse rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white p-5 sm:p-6 space-y-4 w-full">
     <div className="flex items-start justify-between">
       <div className="space-y-2 flex-1">
         <div className="h-5 w-3/4 rounded bg-gray-200" />
@@ -23,20 +23,25 @@ const TicketCardSkeleton = () => (
       <div className="h-4 w-20 rounded bg-gray-200" />
     </div>
   </div>
-);
+));
 
-const TicketGridSkeleton = ({ count = 4 }: { count?: number }) => (
-  <div aria-label="Loading tickets" role="status">
+TicketCardSkeleton.displayName = 'TicketCardSkeleton';
+
+export interface TicketGridSkeletonProps {
+  count?: number;
+}
+
+const TicketGridSkeleton: React.FC<TicketGridSkeletonProps> = memo(({ count = 4 }) => (
+  <div aria-label="Loading tickets" role="status" className="w-full">
     <span className="sr-only">Loading tickets...</span>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-      {[...Array(count)].map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <TicketCardSkeleton key={i} />
       ))}
     </div>
   </div>
-);
+));
 
-TicketCardSkeleton.displayName = 'TicketCardSkeleton';
 TicketGridSkeleton.displayName = 'TicketGridSkeleton';
 
 export { TicketCardSkeleton, TicketGridSkeleton };

@@ -2,71 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Loader2, CalendarX } from 'lucide-react';
+import { Calendar, CalendarX } from 'lucide-react';
 
 import { EventCard } from '@/components/shared/event/event-card';
 import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
 import { Toast } from '@/components/ui/toast';
+
 import { MOCK_EVENTS, type Event } from '@/lib/meta/event';
-
-// ─── Shared color tokens ────────────────────────────────────────────────────
-
-const cn = {
-  textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
-  textMuted: 'text-[hsl(215.4,16.3%,46.9%)]',
-  textGradient:
-    'bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
-  bgGradient:
-    'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
-} as const;
-
-// ─── Loading state ──────────────────────────────────────────────────────────
-
-function EventsLoading() {
-  return (
-    <div
-      className={`flex flex-col items-center justify-center py-24 ${cn.textMuted}`}
-      aria-label="Loading events"
-      role="status"
-    >
-      <Loader2
-        className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]"
-        aria-hidden="true"
-      />
-      <span className="sr-only">Loading events...</span>
-    </div>
-  );
-}
-
-// ─── Empty state ────────────────────────────────────────────────────────────
-
-function EventsEmpty() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-24 text-center px-4"
-      role="status"
-    >
-      <CalendarX
-        className={`w-16 sm:w-20 h-16 sm:h-20 mb-4 ${cn.textMuted} opacity-50`}
-        aria-hidden="true"
-      />
-      <h3
-        className={`font-primary text-2xl sm:text-3xl font-semibold ${cn.textPrimary} mb-2`}
-      >
-        No Events Right Now
-      </h3>
-      <p
-        className={`font-secondary text-base sm:text-lg ${cn.textMuted} max-w-md mx-auto`}
-      >
-        We&apos;re currently planning our next exciting events. Check back soon!
-      </p>
-    </motion.div>
-  );
-}
-
-// ─── Main page ──────────────────────────────────────────────────────────────
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -78,7 +20,6 @@ export default function EventsPage() {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        // TODO: Replace with real API call when ready
         await new Promise<void>((resolve) => setTimeout(resolve, 400));
         if (!cancelled) setEvents(MOCK_EVENTS);
       } catch {
@@ -96,28 +37,20 @@ export default function EventsPage() {
 
   return (
     <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-28 sm:pt-32 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page header */}
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 sm:mb-10">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             <div>
-              <h1
-                className={`font-primary text-2xl sm:text-3xl font-semibold ${cn.textPrimary}`}
-              >
-                All <span className={cn.textGradient}>Events</span>
+              <h1 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+                All <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">Events</span>
               </h1>
-              <div
-                className={`h-1.5 w-20 rounded-full mt-2 ${cn.bgGradient}`}
-              />
+              <div className="h-1.5 w-20 rounded-full mt-2 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
             </div>
 
             {!loading && events.length > 0 && (
               <div className="flex items-center gap-2">
-                <Calendar
-                  className="w-4 h-4 text-[hsl(270,70%,50%)]"
-                  aria-hidden="true"
-                />
-                <span className={`font-secondary text-sm ${cn.textMuted}`}>
+                <Calendar className="w-4 h-4 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                <span className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
                   {events.length} event{events.length !== 1 ? 's' : ''}
                 </span>
               </div>
@@ -125,13 +58,25 @@ export default function EventsPage() {
           </div>
         </div>
 
-        {/* Content */}
         {loading ? (
           <EventGridSkeleton />
         ) : events.length === 0 ? (
-          <EventsEmpty />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
+            role="status"
+          >
+            <CalendarX className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" aria-hidden="true" />
+            <h3 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">
+              No Events Right Now
+            </h3>
+            <p className="font-secondary text-base sm:text-lg text-[hsl(215.4,16.3%,46.9%)] max-w-md mx-auto">
+              We&apos;re currently planning our next exciting events. Check back soon!
+            </p>
+          </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
             {events.map((event, index) => (
               <motion.div
                 key={event.event_id}

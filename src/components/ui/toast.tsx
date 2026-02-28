@@ -9,6 +9,7 @@ import { cn } from '@/lib/ui/utils';
 import { Button } from './button';
 
 export type ToastVariant = 'default' | 'success' | 'error' | 'warning';
+
 export type ToastPosition =
   | 'top-left'
   | 'top-center'
@@ -76,7 +77,7 @@ const TOAST_TRANSITION = {
   damping: 22,
 } as const;
 
-const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' }) => (
+const Toaster: React.FC<ToasterProps> = React.memo(({ defaultPosition = 'top-right' }) => (
   <SonnerToaster
     position={defaultPosition}
     expand={false}
@@ -88,7 +89,9 @@ const Toaster: React.FC<ToasterProps> = ({ defaultPosition = 'top-right' }) => (
       className: 'flex justify-end w-full mb-2',
     }}
   />
-);
+));
+
+Toaster.displayName = 'Toaster';
 
 const Toast = (
   title: string,
@@ -176,7 +179,5 @@ const Toast = (
     { duration, position }
   );
 };
-
-Toaster.displayName = 'Toaster';
 
 export { Toaster, Toast };
