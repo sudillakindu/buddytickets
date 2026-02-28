@@ -39,12 +39,6 @@ const styles = {
   gradientText: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] bg-clip-text text-transparent',
 } as const;
 
-function useMounted(): boolean {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
-}
-
 interface NavButtonProps {
   name: string;
   onClick: () => void;
@@ -119,7 +113,6 @@ UserAvatar.displayName = 'UserAvatar';
 export function Header({ user }: { user: UserInfo | null }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isMounted = useMounted();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -140,11 +133,6 @@ export function Header({ user }: { user: UserInfo | null }) {
       }
     }
   }, [pathname, router]);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-    setDropdownOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -169,8 +157,7 @@ export function Header({ user }: { user: UserInfo | null }) {
         <nav className="relative w-full" aria-label="Main navigation">
           <div
             className={cn(
-              'flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full',
-              isMounted ? 'translate-y-0 opacity-100 blur-0' : '-translate-y-full opacity-0 blur-sm'
+              'flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full translate-y-0 opacity-100 blur-0'
             )}
           >
             <BrandLogo />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { gsap } from 'gsap';
 
 export interface TargetCursorProps {
@@ -41,11 +41,7 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
   const tickerFnRef = useRef<(() => void) | null>(null);
   const activeStrengthRef = useRef({ current: 0 });
 
-  const [isMobile, setIsMobile] = useState(true);
-
-  useEffect(() => {
-    setIsMobile(getIsMobile());
-  }, []);
+  const isMobile = React.useMemo(() => getIsMobile(), []);
 
   const moveCursor = useCallback((x: number, y: number) => {
     if (!cursorRef.current) return;
@@ -61,6 +57,8 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
 
   useEffect(() => {
     if (isMobile || !cursorRef.current) return;
+
+    const activeStrength = activeStrengthRef.current;
 
     if (containerRef) {
       gsap.set(cursorRef.current, { autoAlpha: 0 });
@@ -281,7 +279,7 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
       if (hideDefaultCursor) document.body.style.cursor = originalCursor;
       isActiveRef.current = false;
       targetCornerPositionsRef.current = null;
-      activeStrengthRef.current.current = 0;
+      activeStrength.current = 0;
     };
   }, [targetSelector, spinDuration, moveCursor, hideDefaultCursor, isMobile, hoverDuration, parallaxOn, containerRef]);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, memo } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
 
@@ -95,11 +96,13 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
             <span className="text-[10px] font-secondary">Image unavailable</span>
           </div>
         ) : (
-          <img
+          <Image
             src={event.primary_image}
             alt={`${event.name} cover`}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            unoptimized
             className="w-full h-full object-cover transition-transform duration-600 ease-out group-hover:scale-105"
-            loading="lazy"
             onError={() => setImgError(true)}
           />
         )}

@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Repo-local non-runtime/demo artifacts:
+    "example/**",
+    "supabase/.temp/**",
+    "tsconfig.tsbuildinfo",
   ]),
 ]);
 
