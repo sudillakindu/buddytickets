@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/shared/event/event-card";
 import { EventGridSkeleton } from "@/components/shared/event/event-skeleton";
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import { getFeaturedEvents } from "@/lib/actions/event";
 import type { Event } from "@/lib/types/event";
@@ -126,7 +127,12 @@ function useFeaturedEvents() {
             Toast("Error", result.message || "Failed to load events.", "error");
           }
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "FeaturedEvents.useFeaturedEvents.load",
+          message: "Failed to load featured events",
+          meta: error,
+        });
         if (!cancelled)
           Toast(
             "Connection Error",

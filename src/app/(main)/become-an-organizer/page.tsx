@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toast } from "@/components/ui/toast";
 import { cn } from "@/lib/ui/utils";
+import { logger } from "@/lib/logger";
 
 import {
   getOrganizerOnboardingState,
@@ -207,7 +208,12 @@ export default function BecomeAnOrganizerPage() {
       } else {
         Toast("Error", result.message, "error");
       }
-    } catch {
+    } catch (error) {
+      logger.error({
+        fn: "BecomeAnOrganizerPage.loadState",
+        message: "Failed to load organizer onboarding state",
+        meta: error,
+      });
       Toast("Error", "Failed to load organizer onboarding state.", "error");
     } finally {
       setLoading(false);
@@ -314,7 +320,12 @@ export default function BecomeAnOrganizerPage() {
         setForm(INITIAL_FORM_STATE);
         setFieldErrors({});
         await loadState();
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "BecomeAnOrganizerPage.handleSubmit",
+          message: "Failed to submit organizer details",
+          meta: error,
+        });
         Toast("Error", "Failed to submit organizer details.", "error");
       } finally {
         setSubmitting(false);

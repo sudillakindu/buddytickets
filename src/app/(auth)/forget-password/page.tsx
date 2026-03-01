@@ -11,6 +11,7 @@ import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 import { forgotPassword as forgotPasswordAction } from "@/lib/actions/auth";
@@ -93,7 +94,12 @@ export default function ForgotPasswordPage() {
           return;
         }
         Toast("Error", result.message, "error");
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "ForgotPasswordPage.handleSubmit",
+          message: "Failed to request password reset",
+          meta: error,
+        });
         Toast("Error", "An unexpected error occurred.", "error");
       } finally {
         setLoading(false);

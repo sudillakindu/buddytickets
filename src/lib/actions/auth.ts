@@ -2,6 +2,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import {
   generateOtp,
   hashOtp,
@@ -94,12 +95,24 @@ async function createOtpSession(
   ]);
 
   if (otpErr)
-    console.error("[createOtpSession] OTP insert error:", otpErr.message);
+    logger.error({
+      fn: "createOtpSession",
+      message: "OTP insert error",
+      meta: otpErr.message,
+    });
   if (tokenErr)
-    console.error("[createOtpSession] Token insert error:", tokenErr.message);
+    logger.error({
+      fn: "createOtpSession",
+      message: "Token insert error",
+      meta: tokenErr.message,
+    });
 
   sendOtpEmail(email, otp, purpose).catch((err) =>
-    console.error(`[createOtpSession] Email send failed (${purpose}):`, err),
+    logger.error({
+      fn: "createOtpSession",
+      message: `Email send failed (${purpose})`,
+      meta: err,
+    }),
   );
 
   return token;
@@ -123,7 +136,16 @@ async function autoLogin(userId: string): Promise<boolean> {
     .eq("user_id", userId)
     .single();
 
-  if (error || !user) return false;
+  if (error || !user) {
+    if (error) {
+      logger.error({
+        fn: "autoLogin",
+        message: "User fetch error",
+        meta: error.message,
+      });
+    }
+    return false;
+  }
 
   await createSession(user);
   await supabaseAdmin
@@ -149,7 +171,11 @@ export async function getVerifyEmailData(
       .maybeSingle();
 
     if (ftErr) {
-      console.error("[getVerifyEmailData] Token lookup error:", ftErr.message);
+      logger.error({
+        fn: "getVerifyEmailData",
+        message: "Token lookup error",
+        meta: ftErr.message,
+      });
       return {
         success: false,
         message: "Failed to validate session. Please try again.",
@@ -170,7 +196,11 @@ export async function getVerifyEmailData(
       .maybeSingle();
 
     if (recErr)
-      console.error("[getVerifyEmailData] OTP lookup error:", recErr.message);
+      logger.error({
+        fn: "getVerifyEmailData",
+        message: "OTP lookup error",
+        meta: recErr.message,
+      });
 
     let canResend = true;
     let remainingSeconds = 0;
@@ -196,7 +226,11 @@ export async function getVerifyEmailData(
       },
     };
   } catch (err) {
-    console.error("[getVerifyEmailData]", err);
+    logger.error({
+      fn: "getVerifyEmailData",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -222,7 +256,11 @@ export async function validateResetToken(
 
     return { success: true, message: "Valid reset token.", data };
   } catch (err) {
-    console.error("[validateResetToken]", err);
+    logger.error({
+      fn: "validateResetToken",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -232,7 +270,12 @@ export async function getSessionUser(): Promise<DataFetchResult<SessionUser>> {
     const session = await getSession();
     if (!session) return { success: false, message: "No active session." };
     return { success: true, message: "Session loaded.", data: session };
-  } catch {
+  } catch (err) {
+    logger.error({
+      fn: "getSessionUser",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "Failed to load session." };
   }
 }
@@ -300,16 +343,28 @@ export async function signUp(data: {
       .select("user_id")
       .single();
 
-    if (insertErr || !user)
+    if (insertErr || !user) {
+      if (insertErr) {
+        logger.error({
+          fn: "signUp",
+          message: "User insert error",
+          meta: insertErr.message,
+        });
+      }
       return {
         success: false,
         message: "Failed to create account. Please try again.",
       };
+    }
 
     const token = await createOtpSession(user.user_id, email, "signup");
 
     sendWelcomeEmail(email, name.trim()).catch((err) =>
-      console.error("[signUp] Welcome email failed:", err),
+      logger.error({
+        fn: "signUp",
+        message: "Welcome email failed",
+        meta: err,
+      }),
     );
 
     return {
@@ -318,7 +373,7 @@ export async function signUp(data: {
       token,
     };
   } catch (err) {
-    console.error("[signUp]", err);
+    logger.error({ fn: "signUp", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -341,7 +396,8 @@ export async function signIn(data: {
       .eq("email", email)
       .maybeSingle();
 
-    if (error) console.error("[signIn] DB error:", error.message);
+    if (error)
+      logger.error({ fn: "signIn", message: "DB error", meta: error.message });
 
     if (!user || !user.password_hash)
       return { success: false, message: "Invalid email or password." };
@@ -380,7 +436,7 @@ export async function signIn(data: {
       redirectTo: "/",
     };
   } catch (err) {
-    console.error("[signIn]", err);
+    logger.error({ fn: "signIn", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -394,11 +450,23 @@ export async function forgotPassword(data: {
     if (!email)
       return { success: false, message: "Email address is required." };
 
-    const { data: user } = await supabaseAdmin
+    const { data: user, error } = await supabaseAdmin
       .from("users")
       .select("user_id")
       .eq("email", email)
       .maybeSingle();
+
+    if (error) {
+      logger.error({
+        fn: "forgotPassword",
+        message: "User lookup error",
+        meta: error.message,
+      });
+      return {
+        success: false,
+        message: "Failed to process request. Please try again.",
+      };
+    }
 
     if (!user)
       return {
@@ -418,7 +486,11 @@ export async function forgotPassword(data: {
       token,
     };
   } catch (err) {
-    console.error("[forgotPassword]", err);
+    logger.error({
+      fn: "forgotPassword",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -537,7 +609,7 @@ export async function verifyOtp(
       redirectTo: "/sign-in",
     };
   } catch (err) {
-    console.error("[verifyOtp]", err);
+    logger.error({ fn: "verifyOtp", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -602,7 +674,11 @@ export async function resendOtp(token: string): Promise<ResendResult> {
       .eq("otp_id", rec.otp_id);
 
     sendOtpEmail(ft.email, newOtp, ft.purpose).catch((err) =>
-      console.error(`[resendOtp] Email resend failed (${ft.purpose}):`, err),
+      logger.error({
+        fn: "resendOtp",
+        message: `Email resend failed (${ft.purpose})`,
+        meta: err,
+      }),
     );
 
     return {
@@ -611,7 +687,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
       remainingSeconds: resendDelay(newCount),
     };
   } catch (err) {
-    console.error("[resendOtp]", err);
+    logger.error({ fn: "resendOtp", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -650,11 +726,17 @@ export async function resetPassword(
       .update({ password_hash: passwordHash })
       .eq("email", ft.email);
 
-    if (error)
+    if (error) {
+      logger.error({
+        fn: "resetPassword",
+        message: "Failed to update password",
+        meta: error,
+      });
       return {
         success: false,
         message: "Failed to update password. Please try again.",
       };
+    }
 
     await supabaseAdmin
       .from("auth_flow_tokens")
@@ -671,7 +753,11 @@ export async function resetPassword(
 
     if (u?.name) {
       sendPasswordChangedEmail(ft.email, u.name).catch((err) =>
-        console.error("[resetPassword] Security email failed:", err),
+        logger.error({
+          fn: "resetPassword",
+          message: "Security email failed",
+          meta: err,
+        }),
       );
     }
 
@@ -680,7 +766,11 @@ export async function resetPassword(
       message: "Password reset successfully. You can now sign in.",
     };
   } catch (err) {
-    console.error("[resetPassword]", err);
+    logger.error({
+      fn: "resetPassword",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -692,7 +782,8 @@ export async function signOut(): Promise<{
   try {
     await destroySession();
     return { success: true, message: "Signed out successfully." };
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "signOut", message: "Unexpected error", meta: err });
     return { success: false, message: "Failed to sign out. Please try again." };
   }
 }

@@ -2,6 +2,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import { getSession } from "@/lib/utils/session";
 import {
   uploadOrganizerDocumentToStorage,
@@ -73,10 +74,11 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
 
     if (userError || !user) {
       if (userError)
-        console.error(
-          "[getOrganizerOnboardingState] User fetch error:",
-          userError.message,
-        );
+        logger.error({
+          fn: "getOrganizerOnboardingState",
+          message: "User fetch error",
+          meta: userError.message,
+        });
       return {
         success: false,
         message: "Failed to load user account details.",
@@ -97,10 +99,11 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
 
     // Ignore PGRST116 (No rows found) as it's expected for new organizers
     if (organizerError && organizerError.code !== "PGRST116") {
-      console.error(
-        "[getOrganizerOnboardingState] Organizer details fetch error:",
-        organizerError.message,
-      );
+      logger.error({
+        fn: "getOrganizerOnboardingState",
+        message: "Organizer details fetch error",
+        meta: organizerError.message,
+      });
       return {
         success: false,
         message: "Failed to load organizer details.",
@@ -118,7 +121,11 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
       whatsappNumber: getWhatsappNumber(),
     };
   } catch (err) {
-    console.error("[getOrganizerOnboardingState]", err);
+    logger.error({
+      fn: "getOrganizerOnboardingState",
+      message: "Unexpected error",
+      meta: err,
+    });
     return {
       success: false,
       message:
@@ -148,10 +155,11 @@ export async function submitOrganizerDetails(
 
     if (userError || !user) {
       if (userError)
-        console.error(
-          "[submitOrganizerDetails] User fetch error:",
-          userError.message,
-        );
+        logger.error({
+          fn: "submitOrganizerDetails",
+          message: "User fetch error",
+          meta: userError.message,
+        });
       return { success: false, message: "Failed to validate account." };
     }
 
@@ -262,10 +270,11 @@ export async function submitOrganizerDetails(
       );
 
     if (upsertError) {
-      console.error(
-        "[submitOrganizerDetails] Upsert error:",
-        upsertError.message,
-      );
+      logger.error({
+        fn: "submitOrganizerDetails",
+        message: "Upsert error",
+        meta: upsertError.message,
+      });
       if (upsertError.code === "23505") {
         return {
           success: false,
@@ -282,7 +291,11 @@ export async function submitOrganizerDetails(
         "Organizer details submitted successfully. Your account is now pending review.",
     };
   } catch (err) {
-    console.error("[submitOrganizerDetails]", err);
+    logger.error({
+      fn: "submitOrganizerDetails",
+      message: "Unexpected error",
+      meta: err,
+    });
     return {
       success: false,
       message:

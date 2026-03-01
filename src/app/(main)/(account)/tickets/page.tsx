@@ -8,6 +8,7 @@ import { Ticket, TicketX } from "lucide-react";
 import { TicketCard } from "@/components/shared/ticket/ticket-card";
 import { TicketGridSkeleton } from "@/components/shared/ticket/ticket-skeleton";
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import { getUserTickets } from "@/lib/actions/ticket";
 import type { Ticket as TicketType } from "@/lib/types/ticket";
@@ -30,7 +31,12 @@ export default function TicketsPage() {
             Toast("Error", result.message, "error");
           }
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "TicketsPage.load",
+          message: "Failed to load tickets",
+          meta: error,
+        });
         if (!cancelled) {
           Toast(
             "Error",

@@ -2,6 +2,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
@@ -34,8 +35,16 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error || !data)
+    if (error || !data) {
+      if (error) {
+        logger.error({
+          fn: "getUserProfile",
+          message: "DB fetch error",
+          meta: error.message,
+        });
+      }
       return { success: false, message: "Failed to load profile." };
+    }
 
     return {
       success: true,
@@ -43,7 +52,7 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
       profile: data as UserProfile,
     };
   } catch (err) {
-    console.error("[getUserProfile]", err);
+    logger.error({ fn: "getUserProfile", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -71,7 +80,11 @@ export async function uploadProfileImage(
       .eq("user_id", userId);
 
     if (error) {
-      console.error("[uploadProfileImage] DB update error:", error.message);
+      logger.error({
+        fn: "uploadProfileImage",
+        message: "DB update error",
+        meta: error.message,
+      });
       return {
         success: false,
         message: "Image uploaded but failed to update profile.",
@@ -84,7 +97,7 @@ export async function uploadProfileImage(
       imageUrl: upload.imageUrl,
     };
   } catch (err) {
-    console.error("[uploadProfileImage]", err);
+    logger.error({ fn: "uploadProfileImage", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -120,8 +133,16 @@ export async function updateProfile(data: {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (fetchErr || !current)
+    if (fetchErr || !current) {
+      if (fetchErr) {
+        logger.error({
+          fn: "updateProfile",
+          message: "DB fetch current user error",
+          meta: fetchErr.message,
+        });
+      }
       return { success: false, message: "Unable to validate profile update." };
+    }
 
     const [{ data: takenUsername }, { data: takenMobile }] = await Promise.all([
       supabaseAdmin
@@ -159,12 +180,18 @@ export async function updateProfile(data: {
       .update(payload)
       .eq("user_id", userId);
 
-    if (updateErr)
+    if (updateErr) {
+      logger.error({
+        fn: "updateProfile",
+        message: "DB update error",
+        meta: updateErr.message,
+      });
       return { success: false, message: "Failed to update profile." };
+    }
 
     return { success: true, message: "Profile updated successfully." };
   } catch (err) {
-    console.error("[updateProfile]", err);
+    logger.error({ fn: "updateProfile", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -198,11 +225,19 @@ export async function changePassword(data: {
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (error || !user?.password_hash)
+    if (error || !user?.password_hash) {
+      if (error) {
+        logger.error({
+          fn: "changePassword",
+          message: "DB fetch password hash error",
+          meta: error.message,
+        });
+      }
       return {
         success: false,
         message: "Failed to validate current password.",
       };
+    }
 
     const isValid = await comparePassword(currentPassword, user.password_hash);
     if (!isValid)
@@ -214,12 +249,18 @@ export async function changePassword(data: {
       .update({ password_hash: newHash })
       .eq("user_id", userId);
 
-    if (updateErr)
+    if (updateErr) {
+      logger.error({
+        fn: "changePassword",
+        message: "DB update password error",
+        meta: updateErr.message,
+      });
       return { success: false, message: "Failed to change password." };
+    }
 
     return { success: true, message: "Password changed successfully." };
   } catch (err) {
-    console.error("[changePassword]", err);
+    logger.error({ fn: "changePassword", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
