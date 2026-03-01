@@ -1,6 +1,6 @@
 // app/(main)/page.tsx
-import Hero from '@/components/core/Hero';
-import FeaturedEvents from '@/components/core/FeaturedEvents';
+import Hero from "@/components/core/Hero";
+import FeaturedEvents from "@/components/core/FeaturedEvents";
 
 export default function HomePage() {
   return (

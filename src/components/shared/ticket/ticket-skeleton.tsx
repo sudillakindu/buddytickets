@@ -1,7 +1,7 @@
 // components/shared/ticket/ticket-skeleton.tsx
-'use client';
+"use client";
 
-import React, { memo } from 'react';
+import React, { memo } from "react";
 
 export const TicketCardSkeleton: React.FC = memo(() => {
   return (
@@ -28,23 +28,25 @@ export const TicketCardSkeleton: React.FC = memo(() => {
   );
 });
 
-TicketCardSkeleton.displayName = 'TicketCardSkeleton';
+TicketCardSkeleton.displayName = "TicketCardSkeleton";
 
 export interface TicketGridSkeletonProps {
   count?: number;
 }
 
-export const TicketGridSkeleton: React.FC<TicketGridSkeletonProps> = memo(({ count = 4 }) => {
-  return (
-    <div aria-label="Loading tickets" role="status" className="w-full">
-      <span className="sr-only">Loading tickets...</span>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-        {Array.from({ length: count }).map((_, i) => (
-          <TicketCardSkeleton key={i} />
-        ))}
+export const TicketGridSkeleton: React.FC<TicketGridSkeletonProps> = memo(
+  ({ count = 4 }) => {
+    return (
+      <div aria-label="Loading tickets" role="status" className="w-full">
+        <span className="sr-only">Loading tickets...</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+          {Array.from({ length: count }).map((_, i) => (
+            <TicketCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
-TicketGridSkeleton.displayName = 'TicketGridSkeleton';
+TicketGridSkeleton.displayName = "TicketGridSkeleton";

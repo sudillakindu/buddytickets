@@ -1,40 +1,40 @@
 // app/layout.tsx
-import type { Metadata, Viewport } from 'next';
-import localFont from 'next/font/local';
+import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 
-import './globals.css';
+import "./globals.css";
 
-import { cn } from '@/lib/ui/utils';
-import { Toaster } from '@/components/ui/toast';
+import { cn } from "@/lib/ui/utils";
+import { Toaster } from "@/components/ui/toast";
 
 const primaryFont = localFont({
-  src: './assets/fonts/momo-trust-display-regular.ttf',
-  variable: '--font-primary',
-  display: 'swap',
+  src: "./assets/fonts/momo-trust-display-regular.ttf",
+  variable: "--font-primary",
+  display: "swap",
 });
 
 const secondaryFont = localFont({
-  src: './assets/fonts/geom-regular.ttf',
-  variable: '--font-secondary',
-  display: 'swap',
+  src: "./assets/fonts/geom-regular.ttf",
+  variable: "--font-secondary",
+  display: "swap",
 });
 
 const tertiaryFont = localFont({
-  src: './assets/fonts/bagel-fat-one-regular.ttf',
-  variable: '--font-tertiary',
-  display: 'swap',
+  src: "./assets/fonts/bagel-fat-one-regular.ttf",
+  variable: "--font-tertiary",
+  display: "swap",
 });
 
 const specialFont = localFont({
-  src: './assets/fonts/tanheadline-regular.ttf',
-  variable: '--font-special',
-  display: 'swap',
+  src: "./assets/fonts/tanheadline-regular.ttf",
+  variable: "--font-special",
+  display: "swap",
 });
 
-const BASE_URL = 'https://buddyticket.store';
-const SITE_NAME = 'BuddyTickets';
-const DESCRIPTION = 'Complete production-grade ticket-selling web application';
-const OG_IMAGE = '/og-image.png';
+const BASE_URL = "https://buddyticket.store";
+const SITE_NAME = "BuddyTickets";
+const DESCRIPTION = "Complete production-grade ticket-selling web application";
+const OG_IMAGE = "/og-image.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -48,8 +48,8 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
     url: BASE_URL,
     siteName: SITE_NAME,
-    locale: 'en_US',
-    type: 'website',
+    locale: "en_US",
+    type: "website",
     images: [
       {
         url: OG_IMAGE,
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     ],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: "summary_large_image",
     title: `${SITE_NAME} | Secure Ticket Selling Platform`,
     description: DESCRIPTION,
     images: [OG_IMAGE],
@@ -68,11 +68,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -82,7 +84,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           secondaryFont.variable,
           tertiaryFont.variable,
           specialFont.variable,
-          'antialiased bg-white text-zinc-950'
+          "antialiased bg-white text-zinc-950",
         )}
       >
         <div className="flex flex-col min-h-[100dvh] bg-background">

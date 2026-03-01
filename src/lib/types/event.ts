@@ -1,12 +1,12 @@
 // lib/types/event.ts
 export type EventStatus =
-  | 'DRAFT'
-  | 'PUBLISHED'
-  | 'ON_SALE'
-  | 'SOLD_OUT'
-  | 'ONGOING'
-  | 'COMPLETED'
-  | 'CANCELLED';
+  | "DRAFT"
+  | "PUBLISHED"
+  | "ON_SALE"
+  | "SOLD_OUT"
+  | "ONGOING"
+  | "COMPLETED"
+  | "CANCELLED";
 
 export interface Event {
   event_id: string;

@@ -1,7 +1,7 @@
 // components/shared/event/event-skeleton.tsx
-'use client';
+"use client";
 
-import React, { memo } from 'react';
+import React, { memo } from "react";
 
 export const EventCardSkeleton: React.FC = memo(() => {
   return (
@@ -33,23 +33,25 @@ export const EventCardSkeleton: React.FC = memo(() => {
   );
 });
 
-EventCardSkeleton.displayName = 'EventCardSkeleton';
+EventCardSkeleton.displayName = "EventCardSkeleton";
 
 export interface EventGridSkeletonProps {
   count?: number;
 }
 
-export const EventGridSkeleton: React.FC<EventGridSkeletonProps> = memo(({ count = 4 }) => {
-  return (
-    <div aria-label="Loading events" role="status" className="w-full">
-      <span className="sr-only">Loading events...</span>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
-        {Array.from({ length: count }).map((_, i) => (
-          <EventCardSkeleton key={i} />
-        ))}
+export const EventGridSkeleton: React.FC<EventGridSkeletonProps> = memo(
+  ({ count = 4 }) => {
+    return (
+      <div aria-label="Loading events" role="status" className="w-full">
+        <span className="sr-only">Loading events...</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8">
+          {Array.from({ length: count }).map((_, i) => (
+            <EventCardSkeleton key={i} />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
-EventGridSkeleton.displayName = 'EventGridSkeleton';
+EventGridSkeleton.displayName = "EventGridSkeleton";

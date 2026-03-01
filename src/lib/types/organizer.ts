@@ -1,7 +1,12 @@
 // lib/types/organizer.ts
-export type OrganizerStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type OrganizerStatus = "PENDING" | "APPROVED" | "REJECTED";
 
-export type UserRole = 'SYSTEM' | 'ORGANIZER' | 'CO_ORGANIZER' | 'STAFF' | 'USER';
+export type UserRole =
+  | "SYSTEM"
+  | "ORGANIZER"
+  | "CO_ORGANIZER"
+  | "STAFF"
+  | "USER";
 
 export interface OrganizerOnboardingUser {
   user_id: string;
