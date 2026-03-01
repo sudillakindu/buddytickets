@@ -306,7 +306,7 @@ CREATE TABLE IF NOT EXISTS otp_records (
     user_id         UUID REFERENCES users(user_id) ON DELETE CASCADE,
     email           VARCHAR(150) NOT NULL,
     otp_hash        VARCHAR(255) NOT NULL,
-    purpose         VARCHAR(50) NOT NULL CHECK (purpose IN ('signup', 'signin', 'forgot-password')),
+    purpose         VARCHAR(50) NOT NULL CHECK (purpose IN ('signup', 'signin', 'forgot-password', 'reset-password')),
     resend_count    INTEGER DEFAULT 0,
     last_sent_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     expires_at      TIMESTAMPTZ NOT NULL,
@@ -322,7 +322,7 @@ CREATE INDEX IF NOT EXISTS idx_otp_expires ON otp_records (expires_at);
 CREATE TABLE IF NOT EXISTS auth_flow_tokens (
     token_id    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email       VARCHAR(150) NOT NULL,
-    purpose     VARCHAR(50) NOT NULL CHECK (purpose IN ('signup', 'signin', 'forgot-password')),
+    purpose     VARCHAR(50) NOT NULL CHECK (purpose IN ('signup', 'signin', 'forgot-password', 'reset-password')),
     token       VARCHAR(255) NOT NULL UNIQUE,
     expires_at  TIMESTAMPTZ NOT NULL,
     is_used     BOOLEAN DEFAULT FALSE,

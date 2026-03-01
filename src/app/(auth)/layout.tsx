@@ -1,3 +1,4 @@
+// app/(auth)/layout.tsx
 'use client';
 
 import type { ReactNode } from 'react';
@@ -30,7 +31,7 @@ function AuthBackground() {
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="relative min-h-[100dvh] bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white">
+    <div className="relative min-h-[100dvh] w-full bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white">
       <AuthBackground />
       {children}
     </div>

@@ -1,21 +1,13 @@
-﻿'use client';
+﻿// components/core/Hero.tsx
+'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, memo } from 'react';
 import Link from 'next/link';
 import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
-import {
-  SparklesIcon,
-  CalendarIcon,
-  MusicIcon,
-  UsersIcon,
-  TrophyIcon,
-  StarIcon,
-  ZapIcon,
-  LucideIcon,
-} from 'lucide-react';
+import { SparklesIcon, CalendarIcon, MusicIcon, UsersIcon, TrophyIcon, StarIcon, ZapIcon, LucideIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import TargetCursor from '@/components/shared/target-cursor';
+import { TargetCursor } from '@/components/shared/target-cursor';
 
 interface Particle {
   id: number;
@@ -53,86 +45,86 @@ const CATEGORIES: Category[] = [
   { icon: ZapIcon, label: 'Technology', color: '#6366f1', delay: 0.65 },
 ];
 
-const cn = {
-  textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
-  textMuted: 'text-[hsl(215.4,16.3%,46.9%)]',
-  btnGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]',
-} as const;
-
 interface HeroBackgroundProps {
   springX: MotionValue<number>;
   springY: MotionValue<number>;
 }
 
-const HeroBackground = ({ springX, springY }: HeroBackgroundProps) => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-    <motion.div
-      className="absolute top-[-5%] right-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
-      style={{
-        background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
-        x: springX,
-        y: springY,
-      }}
-      animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-    <motion.div
-      className="absolute bottom-[-10%] left-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
-      style={{
-        background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
-        x: springX,
-        y: springY,
-      }}
-      animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
-
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }}
-    />
-
-    {PARTICLES.map((p) => (
+const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       <motion.div
-        key={p.id}
-        className="absolute w-2 h-2 rounded-full"
-        style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
-        animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
-        transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        className="absolute top-[-5%] right-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
+        style={{
+          background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
+          x: springX,
+          y: springY,
+        }}
+        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
-    ))}
-  </div>
-);
+      <motion.div
+        className="absolute bottom-[-10%] left-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
+        style={{
+          background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
+          x: springX,
+          y: springY,
+        }}
+        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      />
 
-const CategoryPill = ({ icon: Icon, label, color, delay }: Category) => (
-  <motion.div
-    className={`font-secondary flex items-center gap-1.5 text-sm cursor-pointer group px-3 sm:px-4 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]`}
-    whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay }}
-  >
-    <Icon 
-      size={14} 
-      style={{ color }} 
-      className="w-3.5 h-3.5 flex-shrink-0 group-hover:scale-110 transition-transform" 
-    />
-    <span className="whitespace-nowrap">{label}</span>
-  </motion.div>
-);
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
+
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
+      {PARTICLES.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute w-2 h-2 rounded-full"
+          style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
+          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  );
+});
+
+HeroBackground.displayName = 'HeroBackground';
+
+const CategoryPill = memo(({ icon: Icon, label, color, delay }: Category) => {
+  return (
+    <motion.div
+      className="font-secondary flex items-center gap-1.5 text-sm cursor-pointer group px-3 sm:px-4 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
+      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+    >
+      <Icon 
+        size={14} 
+        style={{ color }} 
+        className="w-3.5 h-3.5 flex-shrink-0 group-hover:scale-110 transition-transform" 
+      />
+      <span className="whitespace-nowrap">{label}</span>
+    </motion.div>
+  );
+});
+
+CategoryPill.displayName = 'CategoryPill';
 
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Smooth out the motion values for the background components
   const springX = useSpring(useTransform(mouseX, (v) => v * 0.05), SPRING_CONFIG);
   const springY = useSpring(useTransform(mouseY, (v) => v * 0.05), SPRING_CONFIG);
 
@@ -170,7 +162,7 @@ export default function Hero() {
           transition={{ duration: 0.5 }}
         >
           <motion.span
-            className={`font-primary inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-[13px] sm:text-[14px] font-medium mb-5 border border-[hsl(222.2,47.4%,11.2%)]/20 ${cn.textPrimary} shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm`}
+            className="font-primary inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-[13px] sm:text-[14px] font-medium mb-5 border border-[hsl(222.2,47.4%,11.2%)]/20 shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm text-[hsl(222.2,47.4%,11.2%)]"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
@@ -181,7 +173,7 @@ export default function Hero() {
           </motion.span>
 
           <motion.h1
-            className={`font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6 ${cn.textPrimary}`}
+            className="font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6 text-[hsl(222.2,47.4%,11.2%)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -208,7 +200,7 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p
-            className={`font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed ${cn.textMuted} px-2 sm:px-4`}
+            className="font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed px-2 sm:px-4 text-[hsl(215.4,16.3%,46.9%)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -224,7 +216,7 @@ export default function Hero() {
           >
             <Button
               asChild
-              className={`cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 px-8 w-full sm:w-auto text-[15px] text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none ${cn.btnGradient} bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]`}
+              className="cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 px-8 w-full sm:w-auto text-[15px] text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]"
             >
               <Link href="/events">
                 <span className="relative z-10">Explore Events</span>
@@ -234,7 +226,7 @@ export default function Hero() {
             <Button
               asChild
               variant="outline"
-              className={`cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 w-full sm:w-auto px-8 text-[15px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent ${cn.textPrimary} border-[hsl(222.2,47.4%,11.2%)]/20`}
+              className="cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 w-full sm:w-auto px-8 text-[15px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)]"
             >
               <Link href="/become-an-organizer">
                 <span className="relative z-10">Become an Organizer</span>
