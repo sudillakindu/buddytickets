@@ -1,3 +1,4 @@
+// components/shared/ticket/ticket-card.tsx
 'use client';
 
 import React, { memo } from 'react';
@@ -5,70 +6,43 @@ import { motion } from 'framer-motion';
 import { Calendar, Clock, MapPin, QrCode, Tag } from 'lucide-react';
 
 import { cn } from '@/lib/ui/utils';
+import type { Ticket } from '@/lib/types/ticket';
 
-import type { Tickets } from '@/lib/meta/ticket';
-
-type TicketStatus = Tickets['status'];
-
-interface StatusUI {
-  text: string;
-  dotClass: string;
-  bgClass: string;
-  textClass: string;
+export interface TicketCardProps {
+  ticket: Ticket;
+  index?: number;
 }
 
-const STATUS_UI: Record<TicketStatus, StatusUI> = {
-  ACTIVE: {
-    text: 'Active',
-    dotClass: 'bg-emerald-500',
-    bgClass: 'bg-emerald-50',
-    textClass: 'text-emerald-700',
-  },
-  ONGATE_PENDING: {
-    text: 'Pending',
-    dotClass: 'bg-amber-500',
-    bgClass: 'bg-amber-50',
-    textClass: 'text-amber-700',
-  },
-  USED: {
-    text: 'Used',
-    dotClass: 'bg-gray-400',
-    bgClass: 'bg-gray-100',
-    textClass: 'text-gray-600',
-  },
-  CANCELLED: {
-    text: 'Cancelled',
-    dotClass: 'bg-red-500',
-    bgClass: 'bg-red-50',
-    textClass: 'text-red-700',
-  },
-};
-
-const formatDate = (isoString: string): string => {
-  if (!isoString) return '—';
-  return new Date(isoString).toLocaleDateString('en-US', {
+const formatDate = (iso: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: '2-digit',
   });
 };
 
-const formatTime = (isoString: string): string => {
-  if (!isoString) return '—';
-  return new Date(isoString).toLocaleTimeString('en-US', {
+const formatTime = (iso: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
 };
 
-export interface TicketCardProps {
-  ticket: Tickets;
-  index?: number;
-}
+export const TicketCard: React.FC<TicketCardProps> = memo(({ ticket, index = 0 }) => {
+  const getStatusUI = () => {
+    switch (ticket.status) {
+      case 'ACTIVE': return { text: 'Active', dotClass: 'bg-emerald-500', bgClass: 'bg-emerald-50', textClass: 'text-emerald-700' };
+      case 'ONGATE_PENDING': return { text: 'Pending', dotClass: 'bg-amber-500', bgClass: 'bg-amber-50', textClass: 'text-amber-700' };
+      case 'USED': return { text: 'Used', dotClass: 'bg-gray-400', bgClass: 'bg-gray-100', textClass: 'text-gray-600' };
+      case 'CANCELLED': return { text: 'Cancelled', dotClass: 'bg-red-500', bgClass: 'bg-red-50', textClass: 'text-red-700' };
+      default: return { text: 'Active', dotClass: 'bg-emerald-500', bgClass: 'bg-emerald-50', textClass: 'text-emerald-700' };
+    }
+  };
 
-const TicketCard: React.FC<TicketCardProps> = memo(({ ticket, index = 0 }) => {
-  const status = STATUS_UI[ticket.status] ?? STATUS_UI.ACTIVE;
-  const qrShort = ticket.qr_hash ? `${ticket.qr_hash.slice(0, 8)}...${ticket.qr_hash.slice(-4)}` : '—';
+  const status = getStatusUI();
+  const qrShort = ticket.qr_hash ? `${ticket.qr_hash.slice(0, 8)}…${ticket.qr_hash.slice(-4)}` : '—';
 
   return (
     <motion.div
@@ -151,5 +125,3 @@ const TicketCard: React.FC<TicketCardProps> = memo(({ ticket, index = 0 }) => {
 });
 
 TicketCard.displayName = 'TicketCard';
-
-export { TicketCard };

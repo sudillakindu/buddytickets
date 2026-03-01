@@ -1,3 +1,4 @@
+// app/maintenance/page.tsx
 'use client';
 
 import React, { useCallback, memo } from 'react';
@@ -124,15 +125,15 @@ export default function MaintenancePage() {
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
           >
-            <Settings 
-              className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]" 
-              aria-hidden="true" 
+            <Settings
+              className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]"
+              aria-hidden="true"
             />
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.8 }}
           >
             <motion.span
@@ -160,9 +161,9 @@ export default function MaintenancePage() {
                 onClick={handleRefresh}
                 className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
               >
-                <RefreshCw 
-                  className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" 
-                  aria-hidden="true" 
+                <RefreshCw
+                  className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500"
+                  aria-hidden="true"
                 />
                 <span>Refresh Page</span>
               </Button>

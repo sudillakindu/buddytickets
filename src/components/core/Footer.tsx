@@ -1,3 +1,4 @@
+// components/core/Footer.tsx
 'use client';
 
 import { memo } from 'react';
@@ -11,7 +12,6 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/lib/ui/utils';
-
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 
 interface SocialLink {
@@ -37,7 +37,7 @@ interface FooterNavGroupProps {
   delay: number;
 }
 
-interface FooterProps {
+export interface FooterProps {
   whatsappNumber: string;
   supportEmail: string;
 }
@@ -64,13 +64,6 @@ const LEGAL_LINKS: NavLink[] = [
   { href: '/refunds', label: 'Refund Policy'    },
 ];
 
-const styles = {
-  textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
-  textMuted:   'text-[hsl(215.4,16.3%,46.9%)]',
-  textAccent:  'text-[hsl(270,70%,50%)]',
-  hoverAccent: 'hover:text-[hsl(270,70%,50%)]',
-} as const;
-
 const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
   return (
     <motion.nav
@@ -81,7 +74,9 @@ const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
       viewport={{ once: true }}
       aria-label={`${title} links`}
     >
-      <h3 className={cn('font-primary text-base font-bold', styles.textPrimary)}>{title}</h3>
+      <h3 className="font-primary text-base font-bold text-[hsl(222.2,47.4%,11.2%)]">
+        {title}
+      </h3>
       <ul className="space-y-2.5 text-sm w-full" role="list">
         {links.map(({ href, label }) => (
           <motion.li
@@ -92,17 +87,10 @@ const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
           >
             <Link
               href={href}
-              className={cn(
-                'font-secondary transition-colors flex items-center gap-2 group',
-                styles.textMuted,
-                styles.hoverAccent
-              )}
+              className="font-secondary transition-colors flex items-center gap-2 group text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)]"
             >
               <ArrowRight
-                className={cn(
-                  'w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300',
-                  styles.textAccent
-                )}
+                className="w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300 text-[hsl(270,70%,50%)]"
                 aria-hidden="true"
               />
               {label}
@@ -119,15 +107,12 @@ FooterNavGroup.displayName = 'FooterNavGroup';
 const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
   const iconEl = (
     <div className="w-8 h-8 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
-      <Icon 
-        className={cn('w-4 h-4 group-hover:text-[hsl(270,70%,50%)] transition-colors', styles.textPrimary)} 
-        aria-hidden="true" 
-      />
+      <Icon className="w-4 h-4 group-hover:text-[hsl(270,70%,50%)] transition-colors text-[hsl(222.2,47.4%,11.2%)]" aria-hidden="true" />
     </div>
   );
 
   const textEl = (
-    <span className={cn('font-secondary transition-colors text-left text-sm', styles.textMuted, href ? styles.hoverAccent : '')}>
+    <span className={cn('font-secondary transition-colors text-left text-sm text-[hsl(215.4,16.3%,46.9%)]', href && 'hover:text-[hsl(270,70%,50%)]')}>
       {text}
     </span>
   );
@@ -174,11 +159,7 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <Link 
-              href="/" 
-              className="flex items-center gap-2.5 group" 
-              aria-label="BuddyTickets Home"
-            >
+            <Link href="/" className="flex items-center gap-2.5 group" aria-label="BuddyTickets Home">
               <motion.div whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }}>
                 <Image
                   src={LogoSrc}
@@ -193,7 +174,7 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
               </span>
             </Link>
 
-            <p className={cn('font-secondary text-sm leading-relaxed', styles.textMuted)}>
+            <p className="font-secondary text-sm leading-relaxed text-[hsl(215.4,16.3%,46.9%)]">
               Your premier platform for discovering, creating, and managing events in Sri Lanka. Connect with experiences that matter.
             </p>
 
@@ -204,12 +185,7 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={cn(
-                    'w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-colors',
-                    styles.textMuted,
-                    styles.hoverAccent,
-                    'hover:border-[hsl(270,70%,50%)]/20'
-                  )}
+                  className="w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center transition-colors text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] hover:border-[hsl(270,70%,50%)]/20"
                   aria-label={`Follow us on ${label}`}
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
@@ -232,7 +208,7 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
             transition={{ duration: 0.5, delay: 0.3 }}
             viewport={{ once: true }}
           >
-            <h3 className={cn('font-primary text-base font-bold', styles.textPrimary)}>
+            <h3 className="font-primary text-base font-bold text-[hsl(222.2,47.4%,11.2%)]">
               Contact Info
             </h3>
             <ul className="space-y-3 text-sm w-full" role="list">
@@ -250,16 +226,16 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
           transition={{ duration: 0.5, delay: 0.4 }}
           viewport={{ once: true }}
         >
-          <p className={cn('font-secondary text-sm text-center sm:text-left', styles.textMuted)}>
+          <p className="font-secondary text-sm text-center sm:text-left text-[hsl(215.4,16.3%,46.9%)]">
             © {CURRENT_YEAR} BuddyTickets. All rights reserved.
           </p>
-          <p className={cn('font-secondary text-sm flex flex-row items-center justify-center sm:justify-end gap-1 text-center sm:text-right', styles.textMuted)}>
+          <p className="font-secondary text-sm flex flex-row items-center justify-center sm:justify-end gap-1 text-center sm:text-right text-[hsl(215.4,16.3%,46.9%)]">
             Digitally crafted by{' '}
             <a
               href="https://sudillakindu.online"
               target="_blank"
               rel="noopener noreferrer"
-              className={cn('font-semibold transition-colors', styles.textPrimary, styles.hoverAccent)}
+              className="font-semibold transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
             >
               Sudil Lakindu M. Arachchi
             </a>

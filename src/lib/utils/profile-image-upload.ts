@@ -1,3 +1,4 @@
+// lib/utils/profile-image-upload.ts
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -24,7 +25,6 @@ function extensionFromFile(file: File): string {
   if (byMime[file.type]) return byMime[file.type];
   const fromName = file.name.split('.').pop()?.toLowerCase();
   
-  // Fallback to jpg if the extension is invalid
   return fromName && /^[a-z0-9]+$/.test(fromName) ? fromName : 'jpg';
 }
 
@@ -70,7 +70,7 @@ export async function uploadProfileImageToStorage(file: File, userId: string): P
       objectPath,
     };
   } catch (error) {
-    console.error('uploadProfileImageToStorage error:', error);
+    console.error('[uploadProfileImageToStorage] error:', error);
     return { success: false, message: 'Image upload failed due to an unexpected error.' };
   }
 }

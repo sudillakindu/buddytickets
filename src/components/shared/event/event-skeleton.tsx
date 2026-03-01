@@ -1,8 +1,9 @@
+// components/shared/event/event-skeleton.tsx
 'use client';
 
 import React, { memo } from 'react';
 
-const EventCardSkeleton: React.FC = memo(() => {
+export const EventCardSkeleton: React.FC = memo(() => {
   return (
     <div className="animate-pulse flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm w-full">
       <div className="relative w-full aspect-square bg-gray-200">
@@ -38,7 +39,7 @@ export interface EventGridSkeletonProps {
   count?: number;
 }
 
-const EventGridSkeleton: React.FC<EventGridSkeletonProps> = memo(({ count = 4 }) => {
+export const EventGridSkeleton: React.FC<EventGridSkeletonProps> = memo(({ count = 4 }) => {
   return (
     <div aria-label="Loading events" role="status" className="w-full">
       <span className="sr-only">Loading events...</span>
@@ -52,5 +53,3 @@ const EventGridSkeleton: React.FC<EventGridSkeletonProps> = memo(({ count = 4 })
 });
 
 EventGridSkeleton.displayName = 'EventGridSkeleton';
-
-export { EventCardSkeleton, EventGridSkeleton };

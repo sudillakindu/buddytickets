@@ -1,8 +1,15 @@
+// lib/actions/auth.ts
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
-
-import { generateOtp, hashOtp, compareOtp, expiresAt, resendDelay, MAX_ATTEMPTS } from '@/lib/utils/otp';
+import {
+  generateOtp,
+  hashOtp,
+  compareOtp,
+  expiresAt,
+  resendDelay,
+  MAX_ATTEMPTS,
+} from '@/lib/utils/otp';
 import { hashPassword, comparePassword } from '@/lib/utils/password';
 import {
   sendSignUpOtpEmail,
@@ -11,46 +18,23 @@ import {
   sendWelcomeEmail,
   sendPasswordChangedEmail,
 } from '@/lib/utils/mail';
+import {
+  createSession,
+  getSession,
+  destroySession,
+  type SessionUser,
+} from '@/lib/utils/session';
+import type {
+  AuthResult,
+  VerifyResult,
+  ResendResult,
+  OtpStatus,
+  DataFetchResult,
+} from '@/lib/types/auth';
 
-import { createSession, getSession, destroySession, type SessionUser } from '@/lib/utils/session';
+// ─── Internal Helpers ────────────────────────────────────────────────────────
 
-export interface AuthResult {
-  success: boolean;
-  message: string;
-  token?: string;
-  redirectTo?: string;
-  needsVerification?: boolean;
-}
-
-export interface VerifyResult {
-  success: boolean;
-  message: string;
-  attemptsRemaining?: number;
-  redirectTo?: string;
-  resetToken?: string;
-  purpose?: string;
-}
-
-export interface ResendResult {
-  success: boolean;
-  message: string;
-  remainingSeconds?: number;
-}
-
-export interface OtpStatus {
-  email: string;
-  purpose: string;
-  canResend: boolean;
-  remainingSeconds: number;
-}
-
-export interface DataFetchResult<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-}
-
-function flowToken(): string {
+function newToken(): string {
   return crypto.randomUUID();
 }
 
@@ -58,8 +42,11 @@ function flowExpiry(): string {
   return new Date(Date.now() + 30 * 60_000).toISOString();
 }
 
-// Invalidate previously active OTP and tokens to prevent replay attacks
-async function invalidateOld(email: string, purpose: string): Promise<void> {
+function resetExpiry(): string {
+  return new Date(Date.now() + 15 * 60_000).toISOString();
+}
+
+async function invalidateActiveRecords(email: string, purpose: string): Promise<void> {
   await Promise.all([
     supabaseAdmin
       .from('otp_records')
@@ -76,46 +63,149 @@ async function invalidateOld(email: string, purpose: string): Promise<void> {
   ]);
 }
 
-async function createOtpAndToken(userId: string, email: string, purpose: string): Promise<string> {
-  await invalidateOld(email, purpose);
+async function createOtpSession(userId: string, email: string, purpose: string): Promise<string> {
+  await invalidateActiveRecords(email, purpose);
 
   const otp = generateOtp();
-  const hashed = await hashOtp(otp);
+  const otpHash = await hashOtp(otp);
+  const token = newToken();
 
-  await supabaseAdmin.from('otp_records').insert({
-    user_id: userId,
-    email,
-    otp_hash: hashed,
-    purpose,
-    expires_at: expiresAt(),
-  });
+  const [{ error: otpErr }, { error: tokenErr }] = await Promise.all([
+    supabaseAdmin.from('otp_records').insert({
+      user_id: userId,
+      email,
+      otp_hash: otpHash,
+      purpose,
+      expires_at: expiresAt(),
+    }),
+    supabaseAdmin.from('auth_flow_tokens').insert({
+      email,
+      purpose,
+      token,
+      expires_at: flowExpiry(),
+    }),
+  ]);
 
-  const token = flowToken();
+  if (otpErr) console.error('[createOtpSession] OTP insert error:', otpErr.message);
+  if (tokenErr) console.error('[createOtpSession] Token insert error:', tokenErr.message);
 
-  await supabaseAdmin.from('auth_flow_tokens').insert({
-    email,
-    purpose,
-    token,
-    expires_at: flowExpiry(),
-  });
+  sendOtpEmail(email, otp, purpose).catch((err) =>
+    console.error(`[createOtpSession] Email send failed (${purpose}):`, err)
+  );
 
-  await sendOtpByPurpose(email, otp, purpose);
   return token;
 }
 
-async function sendOtpByPurpose(email: string, otp: string, purpose: string): Promise<void> {
-  switch (purpose) {
-    case 'signup':
-      await sendSignUpOtpEmail(email, otp);
-      break;
-    case 'signin':
-      await sendSignInOtpEmail(email, otp);
-      break;
-    case 'forgot-password':
-      await sendForgotPasswordOtpEmail(email, otp);
-      break;
+async function sendOtpEmail(email: string, otp: string, purpose: string): Promise<void> {
+  if (purpose === 'signup') return sendSignUpOtpEmail(email, otp);
+  if (purpose === 'signin') return sendSignInOtpEmail(email, otp);
+  if (purpose === 'forgot-password') return sendForgotPasswordOtpEmail(email, otp);
+}
+
+async function autoLogin(userId: string): Promise<boolean> {
+  const { data: user, error } = await supabaseAdmin
+    .from('users')
+    .select('user_id, name, email, role, image_url')
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !user) return false;
+
+  await createSession(user);
+  await supabaseAdmin
+    .from('users')
+    .update({ last_login_at: new Date().toISOString() })
+    .eq('user_id', userId);
+
+  return true;
+}
+
+// ─── Queries (GET) ───────────────────────────────────────────────────────────
+
+export async function getVerifyEmailData(token: string): Promise<DataFetchResult<OtpStatus>> {
+  try {
+    const { data: ft, error: ftErr } = await supabaseAdmin
+      .from('auth_flow_tokens')
+      .select('email, purpose')
+      .eq('token', token)
+      .eq('is_used', false)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (ftErr) {
+      console.error('[getVerifyEmailData] Token lookup error:', ftErr.message);
+      return { success: false, message: 'Failed to validate session. Please try again.' };
+    }
+
+    if (!ft) return { success: false, message: 'Session expired. Please start over.' };
+
+    const { data: rec, error: recErr } = await supabaseAdmin
+      .from('otp_records')
+      .select('resend_count, last_sent_at')
+      .eq('email', ft.email)
+      .eq('purpose', ft.purpose)
+      .eq('is_used', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recErr) console.error('[getVerifyEmailData] OTP lookup error:', recErr.message);
+
+    let canResend = true;
+    let remainingSeconds = 0;
+
+    if (rec) {
+      const cooldownMs = resendDelay(rec.resend_count) * 1000;
+      const canResendAt = new Date(rec.last_sent_at).getTime() + cooldownMs;
+      const now = Date.now();
+      if (now < canResendAt) {
+        canResend = false;
+        remainingSeconds = Math.ceil((canResendAt - now) / 1000);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Session data loaded.',
+      data: { email: ft.email, purpose: ft.purpose, canResend, remainingSeconds },
+    };
+  } catch (err) {
+    console.error('[getVerifyEmailData]', err);
+    return { success: false, message: 'An unexpected error occurred.' };
   }
 }
+
+export async function validateResetToken(token: string): Promise<DataFetchResult<{ email: string }>> {
+  try {
+    const { data } = await supabaseAdmin
+      .from('auth_flow_tokens')
+      .select('email')
+      .eq('token', token)
+      .eq('purpose', 'reset-password')
+      .eq('is_used', false)
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle();
+
+    if (!data) return { success: false, message: 'Reset link is invalid or has expired.' };
+
+    return { success: true, message: 'Valid reset token.', data };
+  } catch (err) {
+    console.error('[validateResetToken]', err);
+    return { success: false, message: 'An unexpected error occurred.' };
+  }
+}
+
+export async function getSessionUser(): Promise<DataFetchResult<SessionUser>> {
+  try {
+    const session = await getSession();
+    if (!session) return { success: false, message: 'No active session.' };
+    return { success: true, message: 'Session loaded.', data: session };
+  } catch {
+    return { success: false, message: 'Failed to load session.' };
+  }
+}
+
+// ─── Mutations (POST/PUT/DELETE) ─────────────────────────────────────────────
 
 export async function signUp(data: {
   name: string;
@@ -125,25 +215,26 @@ export async function signUp(data: {
   password: string;
 }): Promise<AuthResult> {
   try {
-    const { name, username, email: rawEmail, mobile, password } = data;
-    const email = rawEmail.toLowerCase().trim();
+    const { name, username, password } = data;
+    const email = data.email.toLowerCase().trim();
+    const mobile = data.mobile.trim();
 
     if (!name || name.trim().length < 3) return { success: false, message: 'Name must be at least 3 characters.' };
-    if (!username || !/^[a-z0-9_]{3,}$/.test(username)) return { success: false, message: 'Username must be at least 3 characters (lowercase, numbers, underscores).' };
+    if (!username || !/^[a-z0-9_]{3,}$/.test(username)) return { success: false, message: 'Username must be at least 3 characters (a–z, 0–9, _).' };
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { success: false, message: 'Invalid email address.' };
-    if (!mobile || !/^\d{10}$/.test(mobile)) return { success: false, message: 'Mobile must be 10 digits.' };
+    if (!mobile || !/^\d{10}$/.test(mobile)) return { success: false, message: 'Mobile number must be 10 digits.' };
     if (!password || password.length < 6) return { success: false, message: 'Password must be at least 6 characters.' };
 
-    const { data: existingUser } = await supabaseAdmin
+    const { data: existing } = await supabaseAdmin
       .from('users')
-      .select('user_id, email, username, mobile')
+      .select('email, username, mobile')
       .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`)
       .maybeSingle();
 
-    if (existingUser) {
-      if (existingUser.email === email) return { success: false, message: 'Email is already registered.' };
-      if (existingUser.username === username) return { success: false, message: 'Username is already taken.' };
-      if (existingUser.mobile === mobile) return { success: false, message: 'Mobile number is already registered.' };
+    if (existing) {
+      if (existing.email === email) return { success: false, message: 'Email is already registered.' };
+      if (existing.username === username) return { success: false, message: 'Username is already taken.' };
+      if (existing.mobile === mobile) return { success: false, message: 'Mobile number is already registered.' };
     }
 
     const passwordHash = await hashPassword(password);
@@ -154,18 +245,17 @@ export async function signUp(data: {
       .select('user_id')
       .single();
 
-    if (insertErr || !user) {
-      return { success: false, message: 'Failed to create account. Please try again.' };
-    }
+    if (insertErr || !user) return { success: false, message: 'Failed to create account. Please try again.' };
 
-    const token = await createOtpAndToken(user.user_id, email, 'signup');
-    
-    // Send welcome email asynchronously to not block user flow
-    sendWelcomeEmail(email, name.trim()).catch(() => {});
+    const token = await createOtpSession(user.user_id, email, 'signup');
 
-    return { success: true, message: 'Account created successfully. Please verify your email.', token };
-  } catch (error) {
-    console.error('signUp error:', error);
+    sendWelcomeEmail(email, name.trim()).catch((err) =>
+      console.error('[signUp] Welcome email failed:', err)
+    );
+
+    return { success: true, message: 'Account created. Please verify your email to continue.', token };
+  } catch (err) {
+    console.error('[signUp]', err);
     return { success: false, message: 'An unexpected error occurred.' };
   }
 }
@@ -174,33 +264,36 @@ export async function signIn(data: { email: string; password: string }): Promise
   try {
     const email = data.email.toLowerCase().trim();
 
-    if (!email || !data.password) {
-      return { success: false, message: 'Email and password are required.' };
-    }
+    if (!email || !data.password) return { success: false, message: 'Email and password are required.' };
 
-    const { data: user } = await supabaseAdmin
+    const { data: user, error } = await supabaseAdmin
       .from('users')
-      .select('*')
+      .select('user_id, name, email, role, image_url, password_hash, is_active, is_email_verified')
       .eq('email', email)
       .maybeSingle();
 
-    if (!user || !user.password_hash) return { success: false, message: 'Invalid email or password.' };
-    if (!user.is_active) return { success: false, message: 'Your account has been deactivated.' };
+    if (error) console.error('[signIn] DB error:', error.message);
 
-    const match = await comparePassword(data.password, user.password_hash);
-    if (!match) return { success: false, message: 'Invalid email or password.' };
+    if (!user || !user.password_hash) return { success: false, message: 'Invalid email or password.' };
+    if (!user.is_active) return { success: false, message: 'Your account has been deactivated. Contact support.' };
+
+    const passwordMatch = await comparePassword(data.password, user.password_hash);
+    if (!passwordMatch) return { success: false, message: 'Invalid email or password.' };
 
     if (!user.is_email_verified) {
-      const token = await createOtpAndToken(user.user_id, email, 'signin');
-      return { success: false, message: 'Please verify your email first.', needsVerification: true, token };
+      const token = await createOtpSession(user.user_id, email, 'signin');
+      return { success: false, needsVerification: true, message: 'Please verify your email before signing in.', token };
     }
 
     await createSession(user);
-    await supabaseAdmin.from('users').update({ last_login_at: new Date().toISOString() }).eq('user_id', user.user_id);
+    await supabaseAdmin
+      .from('users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('user_id', user.user_id);
 
     return { success: true, message: 'Signed in successfully.', redirectTo: '/' };
-  } catch (error) {
-    console.error('signIn error:', error);
+  } catch (err) {
+    console.error('[signIn]', err);
     return { success: false, message: 'An unexpected error occurred.' };
   }
 }
@@ -208,15 +301,22 @@ export async function signIn(data: { email: string; password: string }): Promise
 export async function forgotPassword(data: { email: string }): Promise<AuthResult> {
   try {
     const email = data.email.toLowerCase().trim();
-    if (!email) return { success: false, message: 'Email is required.' };
 
-    const { data: user } = await supabaseAdmin.from('users').select('user_id, email').eq('email', email).maybeSingle();
-    if (!user) return { success: false, message: 'No account found with this email.' };
+    if (!email) return { success: false, message: 'Email address is required.' };
 
-    const token = await createOtpAndToken(user.user_id, email, 'forgot-password');
-    return { success: true, message: 'Verification code sent to your email.', token };
-  } catch (error) {
-    console.error('forgotPassword error:', error);
+    const { data: user } = await supabaseAdmin
+      .from('users')
+      .select('user_id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (!user) return { success: false, message: 'No account found with this email address.' };
+
+    const token = await createOtpSession(user.user_id, email, 'forgot-password');
+
+    return { success: true, message: 'A verification code has been sent to your email.', token };
+  } catch (err) {
+    console.error('[forgotPassword]', err);
     return { success: false, message: 'An unexpected error occurred.' };
   }
 }
@@ -233,7 +333,7 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
-    if (!ft) return { success: false, message: 'Session expired. Please start over.' };
+    if (!ft) return { success: false, message: 'Session expired. Please start the process again.' };
 
     const { data: rec } = await supabaseAdmin
       .from('otp_records')
@@ -250,15 +350,15 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
 
     if (rec.verify_attempts >= MAX_ATTEMPTS) {
       await supabaseAdmin.from('otp_records').update({ is_used: true }).eq('otp_id', rec.otp_id);
-      return { success: false, message: 'Too many attempts. Please request a new code.' };
+      return { success: false, message: 'Too many failed attempts. Please request a new code.' };
     }
 
-    const valid = await compareOtp(otp, rec.otp_hash);
+    const isValid = await compareOtp(otp, rec.otp_hash);
 
-    if (!valid) {
-      const attempts = rec.verify_attempts + 1;
-      await supabaseAdmin.from('otp_records').update({ verify_attempts: attempts }).eq('otp_id', rec.otp_id);
-      return { success: false, message: 'Invalid code.', attemptsRemaining: MAX_ATTEMPTS - attempts };
+    if (!isValid) {
+      const newAttempts = rec.verify_attempts + 1;
+      await supabaseAdmin.from('otp_records').update({ verify_attempts: newAttempts }).eq('otp_id', rec.otp_id);
+      return { success: false, message: 'Invalid code. Please try again.', attemptsRemaining: MAX_ATTEMPTS - newAttempts };
     }
 
     await Promise.all([
@@ -267,24 +367,27 @@ export async function verifyOtp(token: string, otp: string): Promise<VerifyResul
     ]);
 
     if (ft.purpose === 'signup' || ft.purpose === 'signin') {
-      if (rec.user_id) await supabaseAdmin.from('users').update({ is_email_verified: true }).eq('user_id', rec.user_id);
-      return { success: true, message: 'Email verified successfully.', redirectTo: '/sign-in', purpose: ft.purpose };
+      if (rec.user_id) {
+        await supabaseAdmin.from('users').update({ is_email_verified: true }).eq('user_id', rec.user_id);
+        await autoLogin(rec.user_id);
+      }
+      return { success: true, message: 'Email verified successfully.', purpose: ft.purpose, redirectTo: '/' };
     }
 
     if (ft.purpose === 'forgot-password') {
-      const resetToken = flowToken();
+      const resetToken = newToken();
       await supabaseAdmin.from('auth_flow_tokens').insert({
         email: ft.email,
-        purpose: 'forgot-password',
+        purpose: 'reset-password',
         token: resetToken,
-        expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+        expires_at: resetExpiry(),
       });
-      return { success: true, message: 'Code verified successfully.', purpose: 'forgot-password', resetToken };
+      return { success: true, message: 'Code verified. Please set your new password.', purpose: 'forgot-password', resetToken };
     }
 
     return { success: true, message: 'Verification successful.', redirectTo: '/sign-in' };
-  } catch (error) {
-    console.error('verifyOtp error:', error);
+  } catch (err) {
+    console.error('[verifyOtp]', err);
     return { success: false, message: 'An unexpected error occurred.' };
   }
 }
@@ -299,7 +402,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
-    if (!ft) return { success: false, message: 'Session expired. Please start over.' };
+    if (!ft) return { success: false, message: 'Session expired. Please start the process again.' };
 
     const { data: rec } = await supabaseAdmin
       .from('otp_records')
@@ -311,24 +414,28 @@ export async function resendOtp(token: string): Promise<ResendResult> {
       .limit(1)
       .maybeSingle();
 
-    if (!rec) return { success: false, message: 'No active session found.' };
+    if (!rec) return { success: false, message: 'No active session found. Please start over.' };
 
-    const delay = resendDelay(rec.resend_count);
-    const canResendAt = new Date(rec.last_sent_at).getTime() + delay * 1000;
+    const cooldownMs = resendDelay(rec.resend_count) * 1000;
+    const canResendAt = new Date(rec.last_sent_at).getTime() + cooldownMs;
     const now = Date.now();
 
     if (now < canResendAt) {
-      return { success: false, message: 'Please wait before requesting a new code.', remainingSeconds: Math.ceil((canResendAt - now) / 1000) };
+      return {
+        success: false,
+        message: 'Please wait before requesting a new code.',
+        remainingSeconds: Math.ceil((canResendAt - now) / 1000),
+      };
     }
 
-    const otp = generateOtp();
-    const hashed = await hashOtp(otp);
+    const newOtp = generateOtp();
+    const newOtpHash = await hashOtp(newOtp);
     const newCount = rec.resend_count + 1;
 
     await supabaseAdmin
       .from('otp_records')
       .update({
-        otp_hash: hashed,
+        otp_hash: newOtpHash,
         resend_count: newCount,
         last_sent_at: new Date().toISOString(),
         expires_at: expiresAt(),
@@ -336,16 +443,21 @@ export async function resendOtp(token: string): Promise<ResendResult> {
       })
       .eq('otp_id', rec.otp_id);
 
-    await sendOtpByPurpose(ft.email, otp, ft.purpose);
+    sendOtpEmail(ft.email, newOtp, ft.purpose).catch((err) =>
+      console.error(`[resendOtp] Email resend failed (${ft.purpose}):`, err)
+    );
 
     return { success: true, message: 'A new code has been sent to your email.', remainingSeconds: resendDelay(newCount) };
-  } catch (error) {
-    console.error('resendOtp error:', error);
+  } catch (err) {
+    console.error('[resendOtp]', err);
     return { success: false, message: 'An unexpected error occurred.' };
   }
 }
 
-export async function resetPassword(resetToken: string, data: { password: string; confirmPassword: string }): Promise<AuthResult> {
+export async function resetPassword(
+  resetToken: string,
+  data: { password: string; confirmPassword: string }
+): Promise<AuthResult> {
   try {
     if (!data.password || data.password.length < 6) return { success: false, message: 'Password must be at least 6 characters.' };
     if (data.password !== data.confirmPassword) return { success: false, message: 'Passwords do not match.' };
@@ -354,115 +466,36 @@ export async function resetPassword(resetToken: string, data: { password: string
       .from('auth_flow_tokens')
       .select('token_id, email')
       .eq('token', resetToken)
-      .eq('purpose', 'forgot-password')
+      .eq('purpose', 'reset-password')
       .eq('is_used', false)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
-    if (!ft) return { success: false, message: 'Reset link expired. Please try again.' };
-
-    const { data: activeOtp } = await supabaseAdmin
-      .from('otp_records')
-      .select('otp_id')
-      .eq('email', ft.email)
-      .eq('purpose', 'forgot-password')
-      .eq('is_used', false)
-      .gt('expires_at', new Date().toISOString())
-      .limit(1)
-      .maybeSingle();
-
-    if (activeOtp) return { success: false, message: 'Verification required before resetting password.' };
+    if (!ft) return { success: false, message: 'Reset link has expired. Please request a new one.' };
 
     const passwordHash = await hashPassword(data.password);
     const { error } = await supabaseAdmin.from('users').update({ password_hash: passwordHash }).eq('email', ft.email);
 
-    if (error) return { success: false, message: 'Failed to reset password.' };
+    if (error) return { success: false, message: 'Failed to update password. Please try again.' };
 
-    await supabaseAdmin.from('auth_flow_tokens').update({ is_used: true }).eq('token_id', ft.token_id);
-
-    const { data: resetUser } = await supabaseAdmin.from('users').select('name').eq('email', ft.email).single();
-    if (resetUser?.name) sendPasswordChangedEmail(ft.email, resetUser.name).catch(() => {});
-
-    return { success: true, message: 'Password reset successfully.' };
-  } catch (error) {
-    console.error('resetPassword error:', error);
-    return { success: false, message: 'An unexpected error occurred.' };
-  }
-}
-
-export async function getVerifyEmailData(token: string): Promise<DataFetchResult<OtpStatus>> {
-  try {
-    const { data: ft } = await supabaseAdmin
+    await supabaseAdmin
       .from('auth_flow_tokens')
-      .select('email, purpose')
-      .eq('token', token)
-      .eq('is_used', false)
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
-
-    if (!ft) return { success: false, message: 'Token invalid or expired.' };
-
-    const { data: rec } = await supabaseAdmin
-      .from('otp_records')
-      .select('resend_count, last_sent_at')
+      .update({ is_used: true })
       .eq('email', ft.email)
-      .eq('purpose', ft.purpose)
-      .eq('is_used', false)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq('purpose', 'reset-password')
+      .eq('is_used', false);
 
-    let canResend = true;
-    let remainingSeconds = 0;
+    const { data: u } = await supabaseAdmin.from('users').select('name').eq('email', ft.email).single();
 
-    if (rec) {
-      const canResendAt = new Date(rec.last_sent_at).getTime() + resendDelay(rec.resend_count) * 1000;
-      const now = Date.now();
-      if (now < canResendAt) {
-        canResend = false;
-        remainingSeconds = Math.ceil((canResendAt - now) / 1000);
-      }
+    if (u?.name) {
+      sendPasswordChangedEmail(ft.email, u.name).catch((err) =>
+        console.error('[resetPassword] Security email failed:', err)
+      );
     }
 
-    return { 
-      success: true, 
-      message: 'OTP status fetched.', 
-      data: { email: ft.email, purpose: ft.purpose, canResend, remainingSeconds } 
-    };
-  } catch (error) {
-    console.error('getVerifyEmailData error:', error);
-    return { success: false, message: 'An unexpected error occurred.' };
-  }
-}
-
-export async function validateResetToken(t: string): Promise<DataFetchResult<{ email: string }>> {
-  try {
-    const { data } = await supabaseAdmin
-      .from('auth_flow_tokens')
-      .select('email')
-      .eq('token', t)
-      .eq('purpose', 'forgot-password')
-      .eq('is_used', false)
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle();
-
-    if (!data) return { success: false, message: 'Invalid or expired reset token.' };
-
-    const { data: activeOtp } = await supabaseAdmin
-      .from('otp_records')
-      .select('otp_id')
-      .eq('email', data.email)
-      .eq('purpose', 'forgot-password')
-      .eq('is_used', false)
-      .gt('expires_at', new Date().toISOString())
-      .limit(1)
-      .maybeSingle();
-
-    if (activeOtp) return { success: false, message: 'Token not verified yet.' };
-
-    return { success: true, message: 'Valid token.', data };
-  } catch (error) {
-    console.error('validateResetToken error:', error);
+    return { success: true, message: 'Password reset successfully. You can now sign in.' };
+  } catch (err) {
+    console.error('[resetPassword]', err);
     return { success: false, message: 'An unexpected error occurred.' };
   }
 }
@@ -471,17 +504,7 @@ export async function signOut(): Promise<{ success: boolean; message: string }> 
   try {
     await destroySession();
     return { success: true, message: 'Signed out successfully.' };
-  } catch (error) {
-    return { success: false, message: 'Failed to sign out properly.' };
-  }
-}
-
-export async function getSessionUser(): Promise<DataFetchResult<SessionUser>> {
-  try {
-    const session = await getSession();
-    if (!session) return { success: false, message: 'No active session.' };
-    return { success: true, message: 'Session loaded.', data: session };
-  } catch (error) {
-    return { success: false, message: 'Failed to load session.' };
+  } catch {
+    return { success: false, message: 'Failed to sign out. Please try again.' };
   }
 }

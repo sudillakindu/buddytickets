@@ -1,8 +1,9 @@
+// components/shared/ticket/ticket-skeleton.tsx
 'use client';
 
 import React, { memo } from 'react';
 
-const TicketCardSkeleton: React.FC = memo(() => {
+export const TicketCardSkeleton: React.FC = memo(() => {
   return (
     <div className="animate-pulse rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white p-5 sm:p-6 space-y-4 w-full">
       <div className="flex items-start justify-between">
@@ -33,7 +34,7 @@ export interface TicketGridSkeletonProps {
   count?: number;
 }
 
-const TicketGridSkeleton: React.FC<TicketGridSkeletonProps> = memo(({ count = 4 }) => {
+export const TicketGridSkeleton: React.FC<TicketGridSkeletonProps> = memo(({ count = 4 }) => {
   return (
     <div aria-label="Loading tickets" role="status" className="w-full">
       <span className="sr-only">Loading tickets...</span>
@@ -47,5 +48,3 @@ const TicketGridSkeleton: React.FC<TicketGridSkeletonProps> = memo(({ count = 4 
 });
 
 TicketGridSkeleton.displayName = 'TicketGridSkeleton';
-
-export { TicketCardSkeleton, TicketGridSkeleton };

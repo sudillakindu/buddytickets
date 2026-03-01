@@ -1,27 +1,34 @@
+// lib/utils/mail.ts
 import nodemailer from 'nodemailer';
 
-const GMAIL_USER = process.env.GMAIL_USER;
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
-
-const BASE_URL = (process.env.PUBLIC_SITE_URL ?? '').replace(/\/$/, '');
+const BASE_URL = (process.env.PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const LOGO_URL = `${BASE_URL}/email-logo.png`;
 const EVENTS_URL = `${BASE_URL}/events`;
 const PRIVACY_URL = `${BASE_URL}/privacy`;
 const SIGN_IN_URL = `${BASE_URL}/sign-in`;
 const FORGOT_PASSWORD_URL = `${BASE_URL}/forget-password`;
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? '';
-
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? '';
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%2C%20I%20received%20a%20notification%20that%20my%20BuddyTickets%20account%20password%20was%20changed.%20I%20did%20not%20make%20this%20change%20and%20need%20immediate%20assistance.`;
 
-if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-  throw new Error('Missing Gmail credentials in environment variables.');
+function getMailerCredentials(): { user: string; pass: string } {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!user || !pass) {
+    throw new Error('Missing Gmail credentials in environment variables.');
+  }
+
+  return { user, pass };
 }
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
-});
+function getTransporter() {
+  const credentials = getMailerCredentials();
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: credentials.user, pass: credentials.pass },
+  });
+}
 
 function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: string, contentHtml: string): string {
   const year = new Date().getFullYear();
@@ -35,7 +42,6 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="padding:32px 16px;">
     <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.10);border:1px solid #e2e8f0;">
-
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
           <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
@@ -43,11 +49,9 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">${headerTitle}</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">${headerSubtitle}</p>
       </div>
-
       <div style="padding:36px 32px;">
         ${contentHtml}
       </div>
-
       <div style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
@@ -68,7 +72,6 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
           </tr>
         </table>
       </div>
-
     </div>
   </div>
 </body>
@@ -76,6 +79,8 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
 }
 
 export async function sendSignUpOtpEmail(to: string, otp: string): Promise<void> {
+  const credentials = getMailerCredentials();
+  const transporter = getTransporter();
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">You&rsquo;re almost there! Enter the verification code below to confirm your email address and activate your <strong style="color:#1e293b;">BuddyTickets</strong> account.</p>
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
@@ -87,7 +92,7 @@ export async function sendSignUpOtpEmail(to: string, otp: string): Promise<void>
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Didn&rsquo;t create an account? You can safely ignore this email.</p>`;
 
   await transporter.sendMail({
-    from: `"BuddyTickets" <${GMAIL_USER}>`,
+    from: `"BuddyTickets" <${credentials.user}>`,
     to,
     subject: 'Verify Your Email - BuddyTickets',
     html: buildEmailTemplate('Verify Your Email', 'One Step to Go! 🎉', 'Verify your email to activate your account', content),
@@ -95,6 +100,8 @@ export async function sendSignUpOtpEmail(to: string, otp: string): Promise<void>
 }
 
 export async function sendSignInOtpEmail(to: string, otp: string): Promise<void> {
+  const credentials = getMailerCredentials();
+  const transporter = getTransporter();
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">We noticed a sign-in attempt to your <strong style="color:#1e293b;">BuddyTickets</strong> account. Use the code below to verify your identity and complete sign-in.</p>
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
@@ -107,7 +114,7 @@ export async function sendSignInOtpEmail(to: string, otp: string): Promise<void>
     <p style="color:#64748b;font-size:14px;margin:0;line-height:1.6;"><a href="${FORGOT_PASSWORD_URL}" style="color:#7c3aed;font-weight:600;text-decoration:none;">Reset your password now &rarr;</a></p>`;
 
   await transporter.sendMail({
-    from: `"BuddyTickets" <${GMAIL_USER}>`,
+    from: `"BuddyTickets" <${credentials.user}>`,
     to,
     subject: 'Sign-In Verification Code - BuddyTickets',
     html: buildEmailTemplate('Sign-In Verification', 'Sign-In Verification 🔐', 'Confirm your identity to continue', content),
@@ -115,6 +122,8 @@ export async function sendSignInOtpEmail(to: string, otp: string): Promise<void>
 }
 
 export async function sendForgotPasswordOtpEmail(to: string, otp: string): Promise<void> {
+  const credentials = getMailerCredentials();
+  const transporter = getTransporter();
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">We received a password reset request for your <strong style="color:#1e293b;">BuddyTickets</strong> account. Use the code below to verify your identity before setting a new password.</p>
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
@@ -127,7 +136,7 @@ export async function sendForgotPasswordOtpEmail(to: string, otp: string): Promi
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Questions? <a href="mailto:${SUPPORT_EMAIL}" style="color:#7c3aed;text-decoration:none;">Contact support</a>.</p>`;
 
   await transporter.sendMail({
-    from: `"BuddyTickets" <${GMAIL_USER}>`,
+    from: `"BuddyTickets" <${credentials.user}>`,
     to,
     subject: 'Password Reset Code - BuddyTickets',
     html: buildEmailTemplate('Password Reset', 'Password Reset 🔑', 'Reset your account password', content),
@@ -135,6 +144,8 @@ export async function sendForgotPasswordOtpEmail(to: string, otp: string): Promi
 }
 
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
+  const credentials = getMailerCredentials();
+  const transporter = getTransporter();
   const firstName = name.split(' ')[0];
   const content = `
     <p style="color:#475569;font-size:16px;line-height:1.7;margin:0 0 16px;">Hey <strong style="color:#1e293b;">${firstName}</strong>! 👋</p>
@@ -180,7 +191,7 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Need help getting started? <a href="mailto:${SUPPORT_EMAIL}" style="color:#7c3aed;text-decoration:none;">Contact our support team</a>.</p>`;
 
   await transporter.sendMail({
-    from: `"BuddyTickets" <${GMAIL_USER}>`,
+    from: `"BuddyTickets" <${credentials.user}>`,
     to,
     subject: `Welcome to BuddyTickets, ${firstName}! 🎉`,
     html: buildEmailTemplate('Welcome to BuddyTickets', 'Welcome Aboard! 🎉', 'Your account is ready. Let&rsquo;s explore events', content),
@@ -188,6 +199,8 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
 }
 
 export async function sendPasswordChangedEmail(to: string, name: string): Promise<void> {
+  const credentials = getMailerCredentials();
+  const transporter = getTransporter();
   const firstName = name.split(' ')[0];
   const now = new Date();
   const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -252,7 +265,7 @@ export async function sendPasswordChangedEmail(to: string, name: string): Promis
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">This notification was sent to protect your <a href="${BASE_URL}" style="color:#7c3aed;text-decoration:none;">BuddyTickets</a> account.</p>`;
 
   await transporter.sendMail({
-    from: `"BuddyTickets" <${GMAIL_USER}>`,
+    from: `"BuddyTickets" <${credentials.user}>`,
     to,
     subject: 'Your Password Was Changed - BuddyTickets',
     html: buildEmailTemplate('Password Updated', 'Password Updated ✅', 'Your account password has been changed', content),
