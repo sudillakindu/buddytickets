@@ -45,46 +45,51 @@ interface NavButtonProps {
   className?: string;
 }
 
-const NavButton = memo(({ name, onClick, className = '' }: NavButtonProps) => (
-  <Button
-    variant="ghost"
-    onClick={onClick}
-    className={cn(
-      'font-secondary text-base transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent',
-      styles.textPrimary,
-      styles.hoverAccent,
-      className
-    )}
-  >
-    {name}
-    <span className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full bg-[hsl(270,70%,50%)]" />
-  </Button>
-));
+const NavButton = memo(({ name, onClick, className = '' }: NavButtonProps) => {
+  return (
+    <Button
+      variant="ghost"
+      onClick={onClick}
+      className={cn(
+        'font-secondary text-base transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent',
+        styles.textPrimary,
+        styles.hoverAccent,
+        className
+      )}
+    >
+      {name}
+      <span className="absolute bottom-0 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full bg-[hsl(270,70%,50%)]" />
+    </Button>
+  );
+});
 
 NavButton.displayName = 'NavButton';
 
-const BrandLogo = memo(() => (
-  <Link href="/" className="flex items-center gap-2 group" aria-label="BuddyTickets Home">
-    <div className={cn('flex items-center justify-center transition-transform group-hover:scale-105', styles.textPrimary)}>
-      <Image
-        src={LogoSrc}
-        alt="BuddyTickets Logo"
-        width={40}
-        height={40}
-        className="w-8 h-8 object-contain drop-shadow-sm"
-        priority
-      />
-    </div>
-    <span className="font-special text-base tracking-tight text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0] transition-all duration-500">
-      BuddyTickets
-    </span>
-  </Link>
-));
+const BrandLogo = memo(() => {
+  return (
+    <Link href="/" className="flex items-center gap-2 group" aria-label="BuddyTickets Home">
+      <div className={cn('flex items-center justify-center transition-transform group-hover:scale-105', styles.textPrimary)}>
+        <Image
+          src={LogoSrc}
+          alt="BuddyTickets Logo"
+          width={40}
+          height={40}
+          className="w-8 h-8 object-contain drop-shadow-sm"
+          priority
+        />
+      </div>
+      <span className="font-special text-base tracking-tight text-transparent bg-clip-text bg-[linear-gradient(to_right,hsl(222.2,47.4%,11.2%),hsl(270,70%,50%),hsl(222.2,47.4%,11.2%))] bg-[length:200%_auto] bg-[position:0_0] group-hover:bg-[position:100%_0] transition-all duration-500">
+        BuddyTickets
+      </span>
+    </Link>
+  );
+});
 
 BrandLogo.displayName = 'BrandLogo';
 
 const UserAvatar = memo(({ user, size = 'md' }: { user: UserInfo; size?: 'sm' | 'md' }) => {
   const dim = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-9 h-9 text-sm';
+  
   if (user.imageUrl) {
     return (
       <Image
@@ -96,6 +101,7 @@ const UserAvatar = memo(({ user, size = 'md' }: { user: UserInfo; size?: 'sm' | 
       />
     );
   }
+
   return (
     <div
       className={cn(
@@ -140,6 +146,7 @@ export function Header({ user }: { user: UserInfo | null }) {
         setDropdownOpen(false);
       }
     }
+    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);

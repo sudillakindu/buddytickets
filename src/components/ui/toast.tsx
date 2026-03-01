@@ -77,19 +77,21 @@ const TOAST_TRANSITION = {
   damping: 22,
 } as const;
 
-const Toaster: React.FC<ToasterProps> = React.memo(({ defaultPosition = 'top-right' }) => (
-  <SonnerToaster
-    position={defaultPosition}
-    expand={false}
-    visibleToasts={3}
-    gap={8}
-    style={{ zIndex: 9999 }}
-    toastOptions={{
-      unstyled: true,
-      className: 'flex justify-end w-full mb-2',
-    }}
-  />
-));
+const Toaster: React.FC<ToasterProps> = React.memo(({ defaultPosition = 'top-right' }) => {
+  return (
+    <SonnerToaster
+      position={defaultPosition}
+      expand={false}
+      visibleToasts={3}
+      gap={8}
+      style={{ zIndex: 9999 }}
+      toastOptions={{
+        unstyled: true,
+        className: 'flex justify-end w-full mb-2',
+      }}
+    />
+  );
+});
 
 Toaster.displayName = 'Toaster';
 

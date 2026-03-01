@@ -27,8 +27,7 @@ export const MOCK_EVENTS: Event[] = [
     start_at: new Date('2026-08-15T18:00:00').toISOString(),
     end_at: new Date('2026-08-15T23:59:59').toISOString(),
     location: 'Downtown Arena, NY',
-    primary_image:
-      'https://www.ticketsministry.com/_next/image?url=https%3A%2F%2Fticketsministry.s3.ap-south-1.amazonaws.com%2Fpublic%2Fevents%2F8FgGaaGVeCf9LEJGRx84cwSH6hOYYR93aP0qkHTV.jpg&w=1920&q=75',
+    primary_image: 'https://www.ticketsministry.com/_next/image?url=https%3A%2F%2Fticketsministry.s3.ap-south-1.amazonaws.com%2Fpublic%2Fevents%2F8FgGaaGVeCf9LEJGRx84cwSH6hOYYR93aP0qkHTV.jpg&w=1920&q=75',
     category: 'Music',
     start_ticket_price: '149',
     status: 'ON_SALE',

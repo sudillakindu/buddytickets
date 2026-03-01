@@ -6,7 +6,7 @@ export type TicketStatus =
   | 'USED'
   | 'CANCELLED';
 
-export interface MyTickets {
+export interface Tickets {
   ticket_id: string;
   qr_hash: string;
   status: TicketStatus;
@@ -26,7 +26,7 @@ export interface MyTickets {
   };
 }
 
-export const MOCK_TICKETS: MyTickets[] = [
+export const MOCK_TICKETS: Tickets[] = [
   {
     ticket_id: 'tkt-001',
     qr_hash: 'a3f8c2d1e9b74a6f8012de3c5b7a9f01',
@@ -143,6 +143,6 @@ export const MOCK_TICKETS: MyTickets[] = [
   },
 ];
 
-export async function getMyTicketsMock(): Promise<MyTickets[]> {
+export async function getTicketsMock(): Promise<Tickets[]> {
   return MOCK_TICKETS;
 }

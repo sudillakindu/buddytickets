@@ -43,21 +43,36 @@ function VerifyEmailForm() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>(Array(6).fill(null));
 
   useEffect(() => {
-    if (!token) return;
+    let isMounted = true;
+
+    if (!token) {
+      if (isMounted) setPageLoading(false);
+      return;
+    }
+
     getVerifyEmailData(token).then((data) => {
-      if (!data) {
+      if (!isMounted) return;
+
+      if (!data?.success || !data.data) {
         router.replace('/sign-in');
         return;
       }
-      setEmail(data.email);
-      setPurpose(data.purpose);
-      setCountdown(data.remainingSeconds);
+
+      setEmail(data.data.email);
+      setPurpose(data.data.purpose);
+      setCountdown(data.data.remainingSeconds);
       setPageLoading(false);
     });
+
+    return () => {
+      isMounted = false;
+    };
   }, [token, router]);
 
   useEffect(() => {
     if (countdown <= 0) return;
+    
+    // Manage local countdown logic safely unmounting
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -67,6 +82,7 @@ function VerifyEmailForm() {
         return prev - 1;
       });
     }, 1000);
+    
     return () => clearInterval(interval);
   }, [countdown]);
 
@@ -115,10 +131,12 @@ function VerifyEmailForm() {
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const code = digits.join('');
+    
     if (code.length !== 6) {
       Toast('Error', 'Please enter all 6 digits.', 'error');
       return;
     }
+
     setLoading(true);
     try {
       const result = await verifyOtpAction(token, code);
@@ -153,7 +171,9 @@ function VerifyEmailForm() {
         setCountdown(result.remainingSeconds || 60);
         Toast('Success', result.message || 'A new code has been sent to your email.', 'success');
       } else {
-        if (result.remainingSeconds) setCountdown(result.remainingSeconds);
+        if (result.remainingSeconds) {
+          setCountdown(result.remainingSeconds);
+        }
         Toast('Error', result.message || 'Failed to resend code.', 'error');
       }
     } catch {
@@ -178,7 +198,14 @@ function VerifyEmailForm() {
       <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center overflow-hidden my-auto bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
         
         <div className="flex items-center justify-center mb-6">
-          <Image src={LogoSrc} alt="BuddyTickets Logo" width={48} height={48} className="w-12 h-12 object-contain drop-shadow-sm" priority />
+          <Image 
+            src={LogoSrc} 
+            alt="BuddyTickets Logo" 
+            width={48} 
+            height={48} 
+            className="w-12 h-12 object-contain drop-shadow-sm" 
+            priority 
+          />
         </div>
 
         <h1 className="font-primary text-3xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
@@ -215,7 +242,11 @@ function VerifyEmailForm() {
             ))}
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] disabled:opacity-70">
+          <Button 
+            type="submit" 
+            disabled={loading} 
+            className="w-full mt-2 h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] disabled:opacity-70"
+          >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (purpose === 'forgot-password' ? 'Verify & Continue' : 'Verify Email')}
           </Button>
 

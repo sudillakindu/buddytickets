@@ -21,18 +21,26 @@ export default function EventsPage() {
       setLoading(true);
       try {
         await new Promise<void>((resolve) => setTimeout(resolve, 400));
-        if (!cancelled) setEvents(MOCK_EVENTS);
+        if (!cancelled) {
+          setEvents(MOCK_EVENTS);
+        }
       } catch {
         if (!cancelled) {
           Toast('Error', 'Something went wrong while loading events.', 'error');
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchEvents();
-    return () => { cancelled = true; };
+
+    return () => { 
+      // Prevent state update if component unmounts before fetch completes
+      cancelled = true; 
+    };
   }, []);
 
   return (
@@ -67,7 +75,10 @@ export default function EventsPage() {
             className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
             role="status"
           >
-            <CalendarX className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" aria-hidden="true" />
+            <CalendarX 
+              className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" 
+              aria-hidden="true" 
+            />
             <h3 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">
               No Events Right Now
             </h3>

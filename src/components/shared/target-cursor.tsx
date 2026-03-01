@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { gsap } from 'gsap';
 
 export interface TargetCursorProps {
@@ -41,7 +41,7 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
   const tickerFnRef = useRef<(() => void) | null>(null);
   const activeStrengthRef = useRef({ current: 0 });
 
-  const isMobile = React.useMemo(() => getIsMobile(), []);
+  const isMobile = useMemo(() => getIsMobile(), []);
 
   const moveCursor = useCallback((x: number, y: number) => {
     if (!cursorRef.current) return;
@@ -58,20 +58,17 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
   useEffect(() => {
     if (isMobile || !cursorRef.current) return;
 
-    const activeStrength = activeStrengthRef.current;
+    const cursor = cursorRef.current;
+    cornersRef.current = cursor.querySelectorAll<HTMLDivElement>('.target-cursor-corner');
 
-    if (containerRef) {
-      gsap.set(cursorRef.current, { autoAlpha: 0 });
+    if (containerRef?.current) {
+      gsap.set(cursor, { autoAlpha: 0 });
     }
 
     const originalCursor = document.body.style.cursor;
-    
     if (hideDefaultCursor) {
       document.body.style.cursor = 'none';
     }
-
-    const cursor = cursorRef.current;
-    cornersRef.current = cursor.querySelectorAll<HTMLDivElement>('.target-cursor-corner');
 
     let activeTarget: Element | null = null;
     let currentLeaveHandler: (() => void) | null = null;
@@ -100,7 +97,7 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
 
     createSpinTimeline();
 
-    // Calculate and animate interpolation
+    // GSAP ticker function to animate cursor corners interpolating to target positions
     const tickerFn = () => {
       if (!targetCornerPositionsRef.current || !cursorRef.current || !cornersRef.current) return;
       
@@ -146,7 +143,6 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
         currentLeaveHandler?.();
       }
     };
-    
     window.addEventListener('scroll', scrollHandler, { passive: true });
 
     const mouseDownHandler = () => {
@@ -165,12 +161,15 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
     window.addEventListener('mouseup', mouseUpHandler);
 
     const enterHandler = (e: MouseEvent) => {
-      const directTarget = e.target as Element;
-      let current: Element | null = directTarget;
+      let current: Element | null = e.target as Element;
       let target: Element | null = null;
 
+      // Traverse up to find a matching target
       while (current && current !== document.body) {
-        if (current.matches(targetSelector)) { target = current; break; }
+        if (current.matches(targetSelector)) { 
+          target = current; 
+          break; 
+        }
         current = current.parentElement;
       }
 
@@ -179,7 +178,10 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
       if (activeTarget === target) return;
 
       if (activeTarget) cleanupTarget(activeTarget);
-      if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; }
+      if (resumeTimeout) { 
+        clearTimeout(resumeTimeout); 
+        resumeTimeout = null; 
+      }
 
       activeTarget = target;
       const corners = Array.from(cornersRef.current);
@@ -279,7 +281,7 @@ const TargetCursor: React.FC<TargetCursorProps> = React.memo(({
       if (hideDefaultCursor) document.body.style.cursor = originalCursor;
       isActiveRef.current = false;
       targetCornerPositionsRef.current = null;
-      activeStrength.current = 0;
+      activeStrengthRef.current = { current: 0 };
     };
   }, [targetSelector, spinDuration, moveCursor, hideDefaultCursor, isMobile, hoverDuration, parallaxOn, containerRef]);
 

@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 const GMAIL_USER = process.env.GMAIL_USER;
 const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
-const BASE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '');
+const BASE_URL = (process.env.PUBLIC_SITE_URL ?? '').replace(/\/$/, '');
 const LOGO_URL = `${BASE_URL}/email-logo.png`;
 const EVENTS_URL = `${BASE_URL}/events`;
 const PRIVACY_URL = `${BASE_URL}/privacy`;
@@ -23,7 +23,6 @@ const transporter = nodemailer.createTransport({
   auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
 });
 
-// Extracted reusable HTML layout to drastically reduce duplication and standardize UI
 function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: string, contentHtml: string): string {
   const year = new Date().getFullYear();
   return `<!DOCTYPE html>

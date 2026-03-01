@@ -75,43 +75,47 @@ const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
 
 SectionHeader.displayName = 'SectionHeader';
 
-const EmptyState = memo(() => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
-    role="status"
-  >
-    <CalendarX 
-      className={cn('w-16 sm:w-20 h-16 sm:h-20 mb-4 opacity-50', styles.textMuted)} 
-      aria-hidden="true" 
-    />
-    <h3 className={cn('font-primary text-2xl sm:text-3xl font-semibold mb-2', styles.textPrimary)}>
-      No Events Right Now
-    </h3>
-    <p className={cn('font-secondary text-base sm:text-lg max-w-md mx-auto', styles.textMuted)}>
-      We&apos;re currently planning our next exciting events. Check back soon!
-    </p>
-  </motion.div>
-));
+const EmptyState = memo(() => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
+      role="status"
+    >
+      <CalendarX 
+        className={cn('w-16 sm:w-20 h-16 sm:h-20 mb-4 opacity-50', styles.textMuted)} 
+        aria-hidden="true" 
+      />
+      <h3 className={cn('font-primary text-2xl sm:text-3xl font-semibold mb-2', styles.textPrimary)}>
+        No Events Right Now
+      </h3>
+      <p className={cn('font-secondary text-base sm:text-lg max-w-md mx-auto', styles.textMuted)}>
+        We&apos;re currently planning our next exciting events. Check back soon!
+      </p>
+    </motion.div>
+  );
+});
 
 EmptyState.displayName = 'EmptyState';
 
-const EventGrid = memo(({ events }: { events: Event[] }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
-    {events.map((event, index) => (
-      <motion.div
-        key={event.event_id ?? index}
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: index * 0.1 }}
-      >
-        <EventCard event={event} />
-      </motion.div>
-    ))}
-  </div>
-));
+const EventGrid = memo(({ events }: { events: Event[] }) => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
+      {events.map((event, index) => (
+        <motion.div
+          key={event.event_id ?? index}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: index * 0.1 }}
+        >
+          <EventCard event={event} />
+        </motion.div>
+      ))}
+    </div>
+  );
+});
 
 EventGrid.displayName = 'EventGrid';
 
@@ -137,7 +141,10 @@ function useEvents() {
     };
 
     fetchEvents();
-    return () => { cancelled = true; };
+
+    return () => { 
+      cancelled = true; 
+    };
   }, []);
 
   const activeEvents = useMemo(
