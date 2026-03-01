@@ -36,7 +36,7 @@ interface EventRow {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string | null;
-  categories?: { name: string } | null;
+  categories?: { name: string }[] | null;
   event_images?: { priority_order: number; image_url: string }[];
   ticket_types?: { ticket_type_id?: string; name?: string; description?: string; inclusions?: string[]; price: number; capacity?: number; qty_sold?: number; sale_start_at?: string | null; sale_end_at?: string | null; is_active: boolean }[];
 }
@@ -60,7 +60,7 @@ function mapToEvent(row: EventRow): Event {
     status: row.status,
     is_vip: row.is_vip,
     primary_image: primaryImage,
-    category: row.categories?.name ?? '—',
+    category: row.categories?.[0]?.name ?? '—',
     start_ticket_price: startPrice,
   };
 }

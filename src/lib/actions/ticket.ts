@@ -19,7 +19,7 @@ interface TicketRow {
   status: Ticket['status'];
   price_purchased: string;
   created_at: string;
-  ticket_types?: { ticket_type_id: string; name: string; description: string } | null;
+  ticket_types?: { ticket_type_id: string; name: string; description: string }[] | null;
   events?: {
     event_id: string;
     name: string;
@@ -28,11 +28,13 @@ interface TicketRow {
     end_at: string;
     status: string;
     event_images?: { priority_order: number; image_url: string }[];
-  } | null;
+  }[] | null;
 }
 
 function mapToTicket(row: TicketRow): Ticket {
-  const images: { priority_order: number; image_url: string }[] = row.events?.event_images ?? [];
+  const ticketType = row.ticket_types?.[0] ?? null;
+  const event = row.events?.[0] ?? null;
+  const images: { priority_order: number; image_url: string }[] = event?.event_images ?? [];
   images.sort((a, b) => a.priority_order - b.priority_order);
 
   return {
@@ -42,17 +44,17 @@ function mapToTicket(row: TicketRow): Ticket {
     price_purchased: row.price_purchased,
     created_at: row.created_at,
     ticket_type: {
-      ticket_type_id: row.ticket_types?.ticket_type_id ?? '',
-      name: row.ticket_types?.name ?? '—',
-      description: row.ticket_types?.description ?? '',
+      ticket_type_id: ticketType?.ticket_type_id ?? '',
+      name: ticketType?.name ?? '—',
+      description: ticketType?.description ?? '',
     },
     event: {
-      event_id: row.events?.event_id ?? '',
-      name: row.events?.name ?? '—',
-      location: row.events?.location ?? '—',
-      start_at: row.events?.start_at ?? '',
-      end_at: row.events?.end_at ?? '',
-      status: (row.events?.status as Ticket['event']['status']) ?? 'COMPLETED',
+      event_id: event?.event_id ?? '',
+      name: event?.name ?? '—',
+      location: event?.location ?? '—',
+      start_at: event?.start_at ?? '',
+      end_at: event?.end_at ?? '',
+      status: (event?.status as Ticket['event']['status']) ?? 'COMPLETED',
       primary_image: images[0]?.image_url ?? null,
     },
   };
