@@ -1,6 +1,6 @@
 // lib/utils/otp.ts
-import { createHmac } from 'crypto';
-import { hash, compare } from 'bcryptjs';
+import { createHmac } from "crypto";
+import { hash, compare } from "bcryptjs";
 
 const SALT_ROUNDS = 12;
 const EXPIRY_MINUTES = 10;
@@ -12,14 +12,15 @@ let OTP_SECRET: string | null = null;
 
 function getSecret(): string {
   if (!OTP_SECRET) {
-    OTP_SECRET = process.env.OTP_SECRET ?? '';
-    if (!OTP_SECRET) throw new Error('Missing OTP_SECRET environment variable.');
+    OTP_SECRET = process.env.OTP_SECRET ?? "";
+    if (!OTP_SECRET)
+      throw new Error("Missing OTP_SECRET environment variable.");
   }
   return OTP_SECRET;
 }
 
 function pepper(value: string): string {
-  return createHmac('sha256', getSecret()).update(value).digest('hex');
+  return createHmac("sha256", getSecret()).update(value).digest("hex");
 }
 
 export function generateOtp(): string {
@@ -32,7 +33,10 @@ export async function hashOtp(otp: string): Promise<string> {
   return hash(pepper(otp), SALT_ROUNDS);
 }
 
-export async function compareOtp(otp: string, hashed: string): Promise<boolean> {
+export async function compareOtp(
+  otp: string,
+  hashed: string,
+): Promise<boolean> {
   return compare(pepper(otp), hashed);
 }
 

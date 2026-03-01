@@ -1,10 +1,10 @@
 // app/(main)/main-shell.tsx
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
-import { Header } from '@/components/core/Header';
-import { Footer } from '@/components/core/Footer';
+import { Header } from "@/components/core/Header";
+import { Footer } from "@/components/core/Footer";
 
 export interface Props {
   user: {
@@ -19,7 +19,12 @@ export interface Props {
   children: ReactNode;
 }
 
-export default function MainShell({ user, whatsappNumber, supportEmail, children }: Props) {
+export default function MainShell({
+  user,
+  whatsappNumber,
+  supportEmail,
+  children,
+}: Props) {
   return (
     <>
       <Header user={user} />

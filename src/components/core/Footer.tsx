@@ -1,18 +1,24 @@
 // components/core/Footer.tsx
-'use client';
+"use client";
 
-import { memo } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { memo } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { motion } from "framer-motion";
 import {
-  MapPin, Phone, Mail,
-  Facebook, Twitter, Instagram, Linkedin,
-  ArrowRight, LucideIcon,
-} from 'lucide-react';
+  MapPin,
+  Phone,
+  Mail,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
+  ArrowRight,
+  LucideIcon,
+} from "lucide-react";
 
-import { cn } from '@/lib/ui/utils';
-import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
+import { cn } from "@/lib/ui/utils";
+import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface SocialLink {
   icon: LucideIcon;
@@ -45,23 +51,23 @@ export interface FooterProps {
 const CURRENT_YEAR = new Date().getFullYear();
 
 const SOCIAL_LINKS: SocialLink[] = [
-  { icon: Facebook,  href: 'https://facebook.com',  label: 'Facebook'  },
-  { icon: Twitter,   href: 'https://twitter.com',   label: 'Twitter'   },
-  { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
-  { icon: Linkedin,  href: 'https://linkedin.com',  label: 'LinkedIn'  },
+  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
 ];
 
 const QUICK_LINKS: NavLink[] = [
-  { href: '/',                      label: 'Home'       },
-  { href: '/events',                label: 'Events'     },
-  { href: '/about',                 label: 'About Us'   },
-  { href: '/become-an-organizer',   label: 'Becoming an Organizer' },
+  { href: "/", label: "Home" },
+  { href: "/events", label: "Events" },
+  { href: "/about", label: "About Us" },
+  { href: "/become-an-organizer", label: "Becoming an Organizer" },
 ];
 
 const LEGAL_LINKS: NavLink[] = [
-  { href: '/privacy', label: 'Privacy Policy'  },
-  { href: '/terms',   label: 'Terms of Service' },
-  { href: '/refunds', label: 'Refund Policy'    },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/terms", label: "Terms of Service" },
+  { href: "/refunds", label: "Refund Policy" },
 ];
 
 const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
@@ -82,7 +88,7 @@ const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
           <motion.li
             key={label}
             whileHover={{ x: 5 }}
-            transition={{ type: 'spring', stiffness: 300 }}
+            transition={{ type: "spring", stiffness: 300 }}
             className="flex justify-start"
           >
             <Link
@@ -102,17 +108,25 @@ const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
   );
 });
 
-FooterNavGroup.displayName = 'FooterNavGroup';
+FooterNavGroup.displayName = "FooterNavGroup";
 
 const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
   const iconEl = (
     <div className="w-8 h-8 rounded-lg bg-[hsl(222.2,47.4%,11.2%)]/5 flex items-center justify-center flex-shrink-0 group-hover:bg-[hsl(270,70%,50%)]/10 transition-colors">
-      <Icon className="w-4 h-4 group-hover:text-[hsl(270,70%,50%)] transition-colors text-[hsl(222.2,47.4%,11.2%)]" aria-hidden="true" />
+      <Icon
+        className="w-4 h-4 group-hover:text-[hsl(270,70%,50%)] transition-colors text-[hsl(222.2,47.4%,11.2%)]"
+        aria-hidden="true"
+      />
     </div>
   );
 
   const textEl = (
-    <span className={cn('font-secondary transition-colors text-left text-sm text-[hsl(215.4,16.3%,46.9%)]', href && 'hover:text-[hsl(270,70%,50%)]')}>
+    <span
+      className={cn(
+        "font-secondary transition-colors text-left text-sm text-[hsl(215.4,16.3%,46.9%)]",
+        href && "hover:text-[hsl(270,70%,50%)]",
+      )}
+    >
       {text}
     </span>
   );
@@ -121,7 +135,7 @@ const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
     <motion.li
       className="flex flex-row items-center justify-start gap-3 group w-full"
       whileHover={{ x: 5 }}
-      transition={{ type: 'spring', stiffness: 300 }}
+      transition={{ type: "spring", stiffness: 300 }}
     >
       {href ? (
         <a href={href} className="flex items-center gap-3 w-full">
@@ -138,11 +152,13 @@ const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
   );
 });
 
-ContactItem.displayName = 'ContactItem';
+ContactItem.displayName = "ContactItem";
 
 export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
-  const normalizedWhatsapp = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
-  const whatsappHref = `tel:${normalizedWhatsapp.replace(/\s+/g, '')}`;
+  const normalizedWhatsapp = whatsappNumber.startsWith("+")
+    ? whatsappNumber
+    : `+${whatsappNumber}`;
+  const whatsappHref = `tel:${normalizedWhatsapp.replace(/\s+/g, "")}`;
   const supportEmailHref = `mailto:${supportEmail}`;
 
   return (
@@ -159,8 +175,15 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
           >
-            <Link href="/" className="flex items-center gap-2.5 group" aria-label="BuddyTickets Home">
-              <motion.div whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.95 }}>
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 group"
+              aria-label="BuddyTickets Home"
+            >
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Image
                   src={LogoSrc}
                   alt="BuddyTickets Logo"
@@ -175,10 +198,15 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
             </Link>
 
             <p className="font-secondary text-sm leading-relaxed text-[hsl(215.4,16.3%,46.9%)]">
-              Your premier platform for discovering, creating, and managing events in Sri Lanka. Connect with experiences that matter.
+              Your premier platform for discovering, creating, and managing
+              events in Sri Lanka. Connect with experiences that matter.
             </p>
 
-            <div className="flex space-x-3 pt-1 justify-start w-full" role="list" aria-label="Social media links">
+            <div
+              className="flex space-x-3 pt-1 justify-start w-full"
+              role="list"
+              aria-label="Social media links"
+            >
               {SOCIAL_LINKS.map(({ icon: Icon, href, label }, index) => (
                 <motion.a
                   key={label}
@@ -212,9 +240,20 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
               Contact Info
             </h3>
             <ul className="space-y-3 text-sm w-full" role="list">
-              <ContactItem icon={MapPin} text="Buddy Tickets, Matara, Sri Lanka" />
-              <ContactItem icon={Phone} text={normalizedWhatsapp} href={whatsappHref} />
-              <ContactItem icon={Mail} text={supportEmail} href={supportEmailHref} />
+              <ContactItem
+                icon={MapPin}
+                text="Buddy Tickets, Matara, Sri Lanka"
+              />
+              <ContactItem
+                icon={Phone}
+                text={normalizedWhatsapp}
+                href={whatsappHref}
+              />
+              <ContactItem
+                icon={Mail}
+                text={supportEmail}
+                href={supportEmailHref}
+              />
             </ul>
           </motion.div>
         </div>
@@ -230,7 +269,7 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
             © {CURRENT_YEAR} BuddyTickets. All rights reserved.
           </p>
           <p className="font-secondary text-sm flex flex-row items-center justify-center sm:justify-end gap-1 text-center sm:text-right text-[hsl(215.4,16.3%,46.9%)]">
-            Digitally crafted by{' '}
+            Digitally crafted by{" "}
             <a
               href="https://sudillakindu.online"
               target="_blank"

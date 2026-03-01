@@ -1,12 +1,18 @@
 // app/maintenance/page.tsx
-'use client';
+"use client";
 
-import React, { useCallback, memo } from 'react';
-import Link from 'next/link';
-import { motion, MotionValue, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { Settings, Clock, RefreshCw, Home } from 'lucide-react';
+import React, { useCallback, memo } from "react";
+import Link from "next/link";
+import {
+  motion,
+  MotionValue,
+  useMotionValue,
+  useSpring,
+  useTransform,
+} from "framer-motion";
+import { Settings, Clock, RefreshCw, Home } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 
 interface Particle {
   id: number;
@@ -28,63 +34,99 @@ const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
 
 const SPRING_CONFIG = { stiffness: 100, damping: 30 } as const;
 
-const AnimatedBackground = memo(({ springX, springY }: { springX: MotionValue<number>; springY: MotionValue<number> }) => {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      <motion.div
-        className="absolute top-[-5%] right-[-30%] w-[80vw] h-[80vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
-        style={{
-          background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
-          x: springX,
-          y: springY,
-        }}
-        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute bottom-[-10%] left-[-30%] w-[70vw] h-[70vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
-        style={{
-          background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
-          x: springX,
-          y: springY,
-        }}
-        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
+const AnimatedBackground = memo(
+  ({
+    springX,
+    springY,
+  }: {
+    springX: MotionValue<number>;
+    springY: MotionValue<number>;
+  }) => {
+    return (
       <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
-          backgroundSize: '24px 24px',
-        }}
-      />
-      {PARTICLES.map((p) => (
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        aria-hidden="true"
+      >
         <motion.div
-          key={p.id}
-          className="absolute w-1.5 h-1.5 rounded-full"
-          style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
-          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3], y: [0, -20, 0] }}
-          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+          className="absolute top-[-5%] right-[-30%] w-[80vw] h-[80vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
+          style={{
+            background:
+              "linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))",
+            x: springX,
+            y: springY,
+          }}
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
-      ))}
-    </div>
-  );
-});
+        <motion.div
+          className="absolute bottom-[-10%] left-[-30%] w-[70vw] h-[70vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
+          style={{
+            background:
+              "linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))",
+            x: springX,
+            y: springY,
+          }}
+          animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+        {PARTICLES.map((p) => (
+          <motion.div
+            key={p.id}
+            className="absolute w-1.5 h-1.5 rounded-full"
+            style={{
+              background: `hsl(${p.hue}, 70%, 50%)`,
+              left: p.left,
+              top: p.top,
+            }}
+            animate={{
+              scale: [1, 1.5, 1],
+              opacity: [0.3, 0.8, 0.3],
+              y: [0, -20, 0],
+            }}
+            transition={{
+              duration: p.duration,
+              repeat: Infinity,
+              delay: p.delay,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+      </div>
+    );
+  },
+);
 
-AnimatedBackground.displayName = 'AnimatedBackground';
+AnimatedBackground.displayName = "AnimatedBackground";
 
 export default function MaintenancePage() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(useTransform(mouseX, (v: number) => v * 0.05), SPRING_CONFIG);
-  const springY = useSpring(useTransform(mouseY, (v: number) => v * 0.05), SPRING_CONFIG);
+  const springX = useSpring(
+    useTransform(mouseX, (v: number) => v * 0.05),
+    SPRING_CONFIG,
+  );
+  const springY = useSpring(
+    useTransform(mouseY, (v: number) => v * 0.05),
+    SPRING_CONFIG,
+  );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    mouseX.set(e.clientX - rect.left - rect.width / 2);
-    mouseY.set(e.clientY - rect.top - rect.height / 2);
-  }, [mouseX, mouseY]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      mouseX.set(e.clientX - rect.left - rect.width / 2);
+      mouseY.set(e.clientY - rect.top - rect.height / 2);
+    },
+    [mouseX, mouseY],
+  );
 
   const handleRefresh = useCallback(() => {
     window.location.reload();
@@ -102,13 +144,13 @@ export default function MaintenancePage() {
       <motion.div
         className="hidden sm:block absolute top-1/4 left-4 w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]"
         animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         aria-hidden="true"
       />
       <motion.div
         className="hidden sm:block absolute bottom-1/4 right-4 w-3 h-3 rounded-full bg-gradient-to-r from-[hsl(210,100%,60%)] to-[hsl(180,70%,50%)]"
         animate={{ y: [0, -20, 0], scale: [1, 1.2, 1] }}
-        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
         aria-hidden="true"
       />
 
@@ -116,14 +158,19 @@ export default function MaintenancePage() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
           className="max-w-2xl w-full text-center"
         >
           <motion.div
             className="mb-6 inline-flex p-3 rounded-full bg-white/50 backdrop-blur-sm border border-gray-200/50 shadow-xl"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 20,
+              delay: 0.1,
+            }}
           >
             <Settings
               className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]"
@@ -143,7 +190,10 @@ export default function MaintenancePage() {
               transition={{ delay: 0.2 }}
               whileHover={{ scale: 1.05 }}
             >
-              <Clock className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
+              <Clock
+                className="w-3.5 h-3.5 text-orange-500"
+                aria-hidden="true"
+              />
               System Update in Progress
             </motion.span>
 
@@ -152,7 +202,9 @@ export default function MaintenancePage() {
             </h1>
 
             <p className="font-secondary text-gray-500 mt-3 mb-8 text-sm sm:text-base leading-relaxed max-w-lg mx-auto">
-              BuddyTickets is currently undergoing scheduled maintenance to improve your experience. Please grab a cup of coffee and check back in a few minutes.
+              BuddyTickets is currently undergoing scheduled maintenance to
+              improve your experience. Please grab a cup of coffee and check
+              back in a few minutes.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">

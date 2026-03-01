@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SQL_PATH = ROOT / "supabase/migrations/20260223191944_initial_schema.sql"
+MIGRATIONS_DIR = ROOT / "supabase/migrations"
 ACTIONS_DIR = ROOT / "src/lib/actions"
 TYPES_DIR = ROOT / "src/lib/types"
 
@@ -15,6 +15,7 @@ TYPES_DIR = ROOT / "src/lib/types"
 FILE_TABLE_MAP = {
     "auth.ts": {"users", "otp_records", "auth_flow_tokens"},
     "event.ts": {"events", "categories", "event_images", "ticket_types"},
+    "organizer.ts": {"users", "organizer_details"},
     "profile.ts": {"users"},
     "ticket.ts": {"tickets", "ticket_types", "events", "event_images"},
 }
@@ -76,6 +77,14 @@ def parse_table_columns(sql_text: str) -> dict[str, set[str]]:
             if m:
                 cols.add(m.group(1))
         table_cols[table_name] = cols
+
+    alter_add_col_re = re.compile(
+        r"ALTER TABLE\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+ADD COLUMN(?:\s+IF NOT EXISTS)?\s+([a-z_][a-z0-9_]*)\b",
+        re.I,
+    )
+    for table_name, column_name in alter_add_col_re.findall(sql_text):
+        table_cols.setdefault(table_name, set()).add(column_name)
+
     return table_cols
 
 
@@ -90,6 +99,10 @@ def extract_action_db_fields(ts_text: str) -> set[str]:
         fields.add(m.group(1))
 
     for m in re.finditer(r"\.(?:insert|update)\(\{([\s\S]*?)\}\)", ts_text):
+        obj = m.group(1)
+        fields.update(re.findall(r"\b([a-z]+(?:_[a-z0-9]+)+)\s*:", obj))
+
+    for m in re.finditer(r"\.upsert\(\s*\{([\s\S]*?)\}\s*(?:,|\))", ts_text):
         obj = m.group(1)
         fields.update(re.findall(r"\b([a-z]+(?:_[a-z0-9]+)+)\s*:", obj))
 
@@ -133,7 +146,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    sql_text = SQL_PATH.read_text(encoding="utf-8")
+    sql_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(MIGRATIONS_DIR.glob("*.sql"))
+    )
     table_cols = parse_table_columns(sql_text)
 
     results: dict[str, object] = {

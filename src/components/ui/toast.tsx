@@ -1,28 +1,35 @@
 // components/ui/toast.tsx
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
-import { motion } from 'framer-motion';
-import { CheckCircle, AlertCircle, Info, AlertTriangle, X, LucideIcon } from 'lucide-react';
+import React, { memo } from "react";
+import { Toaster as SonnerToaster, toast as sonnerToast } from "sonner";
+import { motion } from "framer-motion";
+import {
+  CheckCircle,
+  AlertCircle,
+  Info,
+  AlertTriangle,
+  X,
+  LucideIcon,
+} from "lucide-react";
 
-import { cn } from '@/lib/ui/utils';
-import { Button } from './button';
+import { cn } from "@/lib/ui/utils";
+import { Button } from "./button";
 
-export type ToastVariant = 'default' | 'success' | 'error' | 'warning';
+export type ToastVariant = "default" | "success" | "error" | "warning";
 
 export type ToastPosition =
-  | 'top-left'
-  | 'top-center'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-center'
-  | 'bottom-right';
+  | "top-left"
+  | "top-center"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-center"
+  | "bottom-right";
 
 export interface ActionButton {
   label: string;
   onClick: () => void;
-  variant?: 'default' | 'outline' | 'ghost';
+  variant?: "default" | "outline" | "ghost";
 }
 
 export interface ToastOptions {
@@ -52,36 +59,44 @@ const TOAST_ANIMATION = {
 
 const TOAST_TRANSITION = {
   duration: 0.28,
-  type: 'spring',
+  type: "spring",
   stiffness: 220,
   damping: 22,
 } as const;
 
-export const Toaster: React.FC<ToasterProps> = memo(({ defaultPosition = 'top-right' }) => {
-  return (
-    <SonnerToaster
-      position={defaultPosition}
-      expand={false}
-      visibleToasts={3}
-      gap={8}
-      style={{ zIndex: 9999 }}
-      toastOptions={{
-        unstyled: true,
-        className: 'flex justify-end w-full mb-2',
-      }}
-    />
-  );
-});
+export const Toaster: React.FC<ToasterProps> = memo(
+  ({ defaultPosition = "top-right" }) => {
+    return (
+      <SonnerToaster
+        position={defaultPosition}
+        expand={false}
+        visibleToasts={3}
+        gap={8}
+        style={{ zIndex: 9999 }}
+        toastOptions={{
+          unstyled: true,
+          className: "flex justify-end w-full mb-2",
+        }}
+      />
+    );
+  },
+);
 
-Toaster.displayName = 'Toaster';
+Toaster.displayName = "Toaster";
 
 export const Toast = (
   title: string,
   message: string,
-  variant: ToastVariant = 'default',
-  options?: ToastOptions
+  variant: ToastVariant = "default",
+  options?: ToastOptions,
 ): void => {
-  const { duration = 4000, position, action, onDismiss, highlightTitle } = options ?? {};
+  const {
+    duration = 4000,
+    position,
+    action,
+    onDismiss,
+    highlightTitle,
+  } = options ?? {};
   const Icon = VARIANT_ICONS[variant];
 
   sonnerToast.custom(
@@ -97,21 +112,21 @@ export const Toast = (
         aria-live="assertive"
         aria-atomic="true"
         className={cn(
-          'flex items-start w-[min(420px,calc(100vw-2rem))] p-4 rounded-xl border shadow-xl backdrop-blur-md bg-white/95 select-none pointer-events-auto',
-          variant === 'default' && 'bg-white border-gray-200 text-gray-900',
-          variant === 'success' && 'bg-white border-green-600/30 text-gray-900',
-          variant === 'error' && 'bg-white border-red-500/30 text-gray-900',
-          variant === 'warning' && 'bg-white border-amber-500/30 text-gray-900'
+          "flex items-start w-[min(420px,calc(100vw-2rem))] p-4 rounded-xl border shadow-xl backdrop-blur-md bg-white/95 select-none pointer-events-auto",
+          variant === "default" && "bg-white border-gray-200 text-gray-900",
+          variant === "success" && "bg-white border-green-600/30 text-gray-900",
+          variant === "error" && "bg-white border-red-500/30 text-gray-900",
+          variant === "warning" && "bg-white border-amber-500/30 text-gray-900",
         )}
       >
         <div className="flex-shrink-0 pt-0.5" aria-hidden="true">
           <Icon
             className={cn(
-              'h-5 w-5',
-              variant === 'default' && 'text-gray-500',
-              variant === 'success' && 'text-green-600',
-              variant === 'error' && 'text-red-500',
-              variant === 'warning' && 'text-amber-500'
+              "h-5 w-5",
+              variant === "default" && "text-gray-500",
+              variant === "success" && "text-green-600",
+              variant === "error" && "text-red-500",
+              variant === "warning" && "text-amber-500",
             )}
           />
         </div>
@@ -120,12 +135,12 @@ export const Toast = (
           {title && (
             <h3
               className={cn(
-                'font-primary text-sm leading-tight',
-                highlightTitle && 'text-green-600',
-                !highlightTitle && variant === 'default' && 'text-gray-900',
-                !highlightTitle && variant === 'success' && 'text-green-600',
-                !highlightTitle && variant === 'error' && 'text-red-600',
-                !highlightTitle && variant === 'warning' && 'text-amber-600'
+                "font-primary text-sm leading-tight",
+                highlightTitle && "text-green-600",
+                !highlightTitle && variant === "default" && "text-gray-900",
+                !highlightTitle && variant === "success" && "text-green-600",
+                !highlightTitle && variant === "error" && "text-red-600",
+                !highlightTitle && variant === "warning" && "text-amber-600",
               )}
             >
               {title}
@@ -151,7 +166,7 @@ export const Toast = (
 
           {action?.label && (
             <Button
-              variant={action.variant ?? 'outline'}
+              variant={action.variant ?? "outline"}
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
@@ -166,6 +181,6 @@ export const Toast = (
         </div>
       </motion.div>
     ),
-    { duration, position }
+    { duration, position },
   );
 };

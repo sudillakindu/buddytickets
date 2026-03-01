@@ -1,11 +1,7 @@
 // lib/types/ticket.ts
-import { type EventStatus } from './event';
+import { type EventStatus } from "./event";
 
-export type TicketStatus =
-  | 'ACTIVE'
-  | 'ONGATE_PENDING'
-  | 'USED'
-  | 'CANCELLED';
+export type TicketStatus = "ACTIVE" | "ONGATE_PENDING" | "USED" | "CANCELLED";
 
 export interface Ticket {
   ticket_id: string;

@@ -1,28 +1,35 @@
 // app/(main)/become-an-organizer/page.tsx
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useState, memo } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState, memo } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import {
-  CheckCircle2, Clock3, FileText, Loader2, MessageCircle,
-  ShieldAlert, ShieldCheck, UserCheck, XCircle,
-} from 'lucide-react';
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Loader2,
+  MessageCircle,
+  ShieldAlert,
+  ShieldCheck,
+  UserCheck,
+  XCircle,
+} from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Toast } from '@/components/ui/toast';
-import { cn } from '@/lib/ui/utils';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Toast } from "@/components/ui/toast";
+import { cn } from "@/lib/ui/utils";
 
 import {
   getOrganizerOnboardingState,
   submitOrganizerDetails,
-} from '@/lib/actions/organizer';
+} from "@/lib/actions/organizer";
 import type {
   OrganizerDetails,
   OrganizerDetailsFieldErrors,
   OrganizerOnboardingUser,
-} from '@/lib/types/organizer';
+} from "@/lib/types/organizer";
 
 // ─── Internal Types & State ───────────────────────────────────────────────────
 
@@ -38,12 +45,12 @@ interface OrganizerFormState {
 }
 
 const INITIAL_FORM_STATE: OrganizerFormState = {
-  nic_number: '',
-  address: '',
-  bank_name: '',
-  bank_branch: '',
-  account_holder_name: '',
-  account_number: '',
+  nic_number: "",
+  address: "",
+  bank_name: "",
+  bank_branch: "",
+  account_holder_name: "",
+  account_number: "",
   nic_front_image: null,
   nic_back_image: null,
 };
@@ -55,52 +62,58 @@ function isValidSriLankanNic(value: string): boolean {
   return /^\d{9}[VX]$/.test(nic) || /^\d{12}$/.test(nic);
 }
 
-function buildWhatsAppLink(user: OrganizerOnboardingUser, whatsappNumber: string): string {
-  const sanitizedNumber = whatsappNumber.replace(/[^\d]/g, '');
+function buildWhatsAppLink(
+  user: OrganizerOnboardingUser,
+  whatsappNumber: string,
+): string {
+  const sanitizedNumber = whatsappNumber.replace(/[^\d]/g, "");
   const message = [
-    'Hello BuddyTickets Team,',
-    '',
-    'I would like to request organizer role activation.',
+    "Hello BuddyTickets Team,",
+    "",
+    "I would like to request organizer role activation.",
     `user_id: ${user.user_id}`,
     `name: ${user.name}`,
     `email: ${user.email}`,
     `mobile: ${user.mobile}`,
-  ].join('\n');
+  ].join("\n");
 
   return `https://wa.me/${sanitizedNumber}?text=${encodeURIComponent(message)}`;
 }
 
-function validateForm(form: OrganizerFormState): { message: string; fieldErrors: OrganizerDetailsFieldErrors } | null {
+function validateForm(
+  form: OrganizerFormState,
+): { message: string; fieldErrors: OrganizerDetailsFieldErrors } | null {
   const fieldErrors: OrganizerDetailsFieldErrors = {};
 
   if (!isValidSriLankanNic(form.nic_number)) {
-    fieldErrors.nic_number = 'Enter a valid Sri Lankan NIC (old or new format).';
+    fieldErrors.nic_number =
+      "Enter a valid Sri Lankan NIC (old or new format).";
   }
   if (form.address.trim().length < 8) {
-    fieldErrors.address = 'Address must be at least 8 characters.';
+    fieldErrors.address = "Address must be at least 8 characters.";
   }
   if (!form.bank_name.trim()) {
-    fieldErrors.bank_name = 'Bank name is required.';
+    fieldErrors.bank_name = "Bank name is required.";
   }
   if (!form.bank_branch.trim()) {
-    fieldErrors.bank_branch = 'Bank branch is required.';
+    fieldErrors.bank_branch = "Bank branch is required.";
   }
   if (!form.account_holder_name.trim()) {
-    fieldErrors.account_holder_name = 'Account holder name is required.';
+    fieldErrors.account_holder_name = "Account holder name is required.";
   }
   if (!form.account_number.trim()) {
-    fieldErrors.account_number = 'Account number is required.';
+    fieldErrors.account_number = "Account number is required.";
   }
   if (!(form.nic_front_image instanceof File)) {
-    fieldErrors.nic_front_image = 'NIC front image is required.';
+    fieldErrors.nic_front_image = "NIC front image is required.";
   }
   if (!(form.nic_back_image instanceof File)) {
-    fieldErrors.nic_back_image = 'NIC back image is required.';
+    fieldErrors.nic_back_image = "NIC back image is required.";
   }
 
   if (Object.keys(fieldErrors).length > 0) {
     return {
-      message: 'Please correct the highlighted fields before submitting.',
+      message: "Please correct the highlighted fields before submitting.",
       fieldErrors,
     };
   }
@@ -110,51 +123,61 @@ function validateForm(form: OrganizerFormState): { message: string; fieldErrors:
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
-const StepItem = memo(({
-  step,
-  title,
-  description,
-  completed,
-  active,
-}: {
-  step: number;
-  title: string;
-  description: string;
-  completed: boolean;
-  active: boolean;
-}) => (
-  <div
-    className={cn(
-      'rounded-2xl border p-4 sm:p-5 bg-white/90 backdrop-blur-sm transition-colors',
-      completed && 'border-[hsl(142,71%,45%)]/30 bg-[hsl(142,71%,96%)]',
-      !completed && active && 'border-[hsl(270,70%,50%)]/30 bg-[hsl(270,70%,97%)]',
-      !completed && !active && 'border-[hsl(214.3,31.8%,91.4%)]'
-    )}
-  >
-    <div className="flex items-start gap-3">
-      <div
-        className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center text-sm font-primary font-semibold shrink-0',
-          completed && 'bg-[hsl(142,71%,45%)] text-white',
-          !completed && active && 'bg-[hsl(270,70%,50%)] text-white',
-          !completed && !active && 'bg-[hsl(210,40%,96.1%)] text-[hsl(215.4,16.3%,46.9%)]'
-        )}
-      >
-        {completed ? <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> : step}
-      </div>
-      <div>
-        <h3 className="font-primary text-sm sm:text-base font-semibold text-[hsl(222.2,47.4%,11.2%)]">
-          {title}
-        </h3>
-        <p className="font-secondary text-xs sm:text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
-          {description}
-        </p>
+const StepItem = memo(
+  ({
+    step,
+    title,
+    description,
+    completed,
+    active,
+  }: {
+    step: number;
+    title: string;
+    description: string;
+    completed: boolean;
+    active: boolean;
+  }) => (
+    <div
+      className={cn(
+        "rounded-2xl border p-4 sm:p-5 bg-white/90 backdrop-blur-sm transition-colors",
+        completed && "border-[hsl(142,71%,45%)]/30 bg-[hsl(142,71%,96%)]",
+        !completed &&
+          active &&
+          "border-[hsl(270,70%,50%)]/30 bg-[hsl(270,70%,97%)]",
+        !completed && !active && "border-[hsl(214.3,31.8%,91.4%)]",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center text-sm font-primary font-semibold shrink-0",
+            completed && "bg-[hsl(142,71%,45%)] text-white",
+            !completed && active && "bg-[hsl(270,70%,50%)] text-white",
+            !completed &&
+              !active &&
+              "bg-[hsl(210,40%,96.1%)] text-[hsl(215.4,16.3%,46.9%)]",
+          )}
+        >
+          {completed ? (
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+          ) : (
+            step
+          )}
+        </div>
+        <div>
+          <h3 className="font-primary text-sm sm:text-base font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+            {title}
+          </h3>
+          <p className="font-secondary text-xs sm:text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
+            {description}
+          </p>
+        </div>
       </div>
     </div>
-  </div>
-));
+  ),
+);
 
-StepItem.displayName = 'StepItem';
+StepItem.displayName = "StepItem";
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -164,11 +187,14 @@ export default function BecomeAnOrganizerPage() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const [user, setUser] = useState<OrganizerOnboardingUser | null>(null);
-  const [organizerDetails, setOrganizerDetails] = useState<OrganizerDetails | null>(null);
-  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [organizerDetails, setOrganizerDetails] =
+    useState<OrganizerDetails | null>(null);
+  const [whatsappNumber, setWhatsappNumber] = useState("");
 
   const [form, setForm] = useState<OrganizerFormState>(INITIAL_FORM_STATE);
-  const [fieldErrors, setFieldErrors] = useState<OrganizerDetailsFieldErrors>({});
+  const [fieldErrors, setFieldErrors] = useState<OrganizerDetailsFieldErrors>(
+    {},
+  );
 
   const loadState = useCallback(async () => {
     setLoading(true);
@@ -179,10 +205,10 @@ export default function BecomeAnOrganizerPage() {
         setOrganizerDetails(result.organizerDetails);
         setWhatsappNumber(result.whatsappNumber);
       } else {
-        Toast('Error', result.message, 'error');
+        Toast("Error", result.message, "error");
       }
     } catch {
-      Toast('Error', 'Failed to load organizer onboarding state.', 'error');
+      Toast("Error", "Failed to load organizer onboarding state.", "error");
     } finally {
       setLoading(false);
     }
@@ -197,20 +223,26 @@ export default function BecomeAnOrganizerPage() {
     };
 
     run();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [loadState]);
 
   const isSignedIn = Boolean(user);
-  const isOrganizer = user?.role === 'ORGANIZER';
+  const isOrganizer = user?.role === "ORGANIZER";
   const hasSubmittedDetails = organizerDetails?.is_submitted === true;
-  const shouldShowStep3Button = !hasSubmittedDetails || organizerDetails?.status === 'REJECTED';
+  const shouldShowStep3Button =
+    !hasSubmittedDetails || organizerDetails?.status === "REJECTED";
 
-  const stepState = useMemo(() => ({
-    step1: isSignedIn,
-    step2: isOrganizer,
-    step3: hasSubmittedDetails,
-    step4: hasSubmittedDetails,
-  }), [isOrganizer, isSignedIn, hasSubmittedDetails]);
+  const stepState = useMemo(
+    () => ({
+      step1: isSignedIn,
+      step2: isOrganizer,
+      step3: hasSubmittedDetails,
+      step4: hasSubmittedDetails,
+    }),
+    [isOrganizer, isSignedIn, hasSubmittedDetails],
+  );
 
   const whatsappLink = useMemo(() => {
     if (!user || !whatsappNumber) return null;
@@ -222,12 +254,12 @@ export default function BecomeAnOrganizerPage() {
 
     setFieldErrors({});
     setForm({
-      nic_number: organizerDetails?.nic_number ?? '',
-      address: organizerDetails?.address ?? '',
-      bank_name: organizerDetails?.bank_name ?? '',
-      bank_branch: organizerDetails?.bank_branch ?? '',
-      account_holder_name: organizerDetails?.account_holder_name ?? '',
-      account_number: organizerDetails?.account_number ?? '',
+      nic_number: organizerDetails?.nic_number ?? "",
+      address: organizerDetails?.address ?? "",
+      bank_name: organizerDetails?.bank_name ?? "",
+      bank_branch: organizerDetails?.bank_branch ?? "",
+      account_holder_name: organizerDetails?.account_holder_name ?? "",
+      account_number: organizerDetails?.account_number ?? "",
       nic_front_image: null,
       nic_back_image: null,
     });
@@ -239,65 +271,72 @@ export default function BecomeAnOrganizerPage() {
     setModalOpen(false);
   }, [submitting]);
 
-  const handleChange = useCallback((field: keyof OrganizerFormState, value: string | File | null) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
-  }, []);
+  const handleChange = useCallback(
+    (field: keyof OrganizerFormState, value: string | File | null) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    },
+    [],
+  );
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const validation = validateForm(form);
-    if (validation) {
-      setFieldErrors(validation.fieldErrors);
-      Toast('Validation Error', validation.message, 'warning');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const payload = new FormData();
-      payload.append('nic_number', form.nic_number.trim().toUpperCase());
-      payload.append('address', form.address.trim());
-      payload.append('bank_name', form.bank_name.trim());
-      payload.append('bank_branch', form.bank_branch.trim());
-      payload.append('account_holder_name', form.account_holder_name.trim());
-      payload.append('account_number', form.account_number.trim());
-      payload.append('nic_front_image', form.nic_front_image as File);
-      payload.append('nic_back_image', form.nic_back_image as File);
-
-      const result = await submitOrganizerDetails(payload);
-      if (!result.success) {
-        if (result.fieldErrors) setFieldErrors(result.fieldErrors);
-        Toast('Error', result.message, 'error');
+      const validation = validateForm(form);
+      if (validation) {
+        setFieldErrors(validation.fieldErrors);
+        Toast("Validation Error", validation.message, "warning");
         return;
       }
 
-      Toast('Success', result.message, 'success');
-      setModalOpen(false);
-      setForm(INITIAL_FORM_STATE);
-      setFieldErrors({});
-      await loadState();
-    } catch {
-      Toast('Error', 'Failed to submit organizer details.', 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [form, loadState]);
+      setSubmitting(true);
+      try {
+        const payload = new FormData();
+        payload.append("nic_number", form.nic_number.trim().toUpperCase());
+        payload.append("address", form.address.trim());
+        payload.append("bank_name", form.bank_name.trim());
+        payload.append("bank_branch", form.bank_branch.trim());
+        payload.append("account_holder_name", form.account_holder_name.trim());
+        payload.append("account_number", form.account_number.trim());
+        payload.append("nic_front_image", form.nic_front_image as File);
+        payload.append("nic_back_image", form.nic_back_image as File);
+
+        const result = await submitOrganizerDetails(payload);
+        if (!result.success) {
+          if (result.fieldErrors) setFieldErrors(result.fieldErrors);
+          Toast("Error", result.message, "error");
+          return;
+        }
+
+        Toast("Success", result.message, "success");
+        setModalOpen(false);
+        setForm(INITIAL_FORM_STATE);
+        setFieldErrors({});
+        await loadState();
+      } catch {
+        Toast("Error", "Failed to submit organizer details.", "error");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [form, loadState],
+  );
 
   return (
     <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
-            Become an{' '}
+            Become an{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
               Organizer
             </span>
           </h1>
           <div className="h-1.5 w-24 rounded-full mt-2 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
           <p className="font-secondary text-sm sm:text-base text-[hsl(215.4,16.3%,46.9%)] mt-3 max-w-2xl">
-            Complete the 4-step onboarding process to activate organizer features and publish your first event.
+            Complete the 4-step onboarding process to activate organizer
+            features and publish your first event.
           </p>
         </div>
 
@@ -349,17 +388,20 @@ export default function BecomeAnOrganizerPage() {
               className="lg:col-span-7"
             >
               <div className="rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white shadow-sm p-5 sm:p-6 space-y-6">
-
                 {!isSignedIn && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-[hsl(210,40%,98%)] p-4 sm:p-5">
                     <div className="flex items-start gap-3">
-                      <UserCheck className="w-5 h-5 text-[hsl(270,70%,50%)] mt-0.5" aria-hidden="true" />
+                      <UserCheck
+                        className="w-5 h-5 text-[hsl(270,70%,50%)] mt-0.5"
+                        aria-hidden="true"
+                      />
                       <div>
                         <h2 className="font-primary text-base sm:text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)]">
                           Step 1: Sign In to Continue
                         </h2>
                         <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1 mb-4">
-                          You need an authenticated account before requesting organizer access.
+                          You need an authenticated account before requesting
+                          organizer access.
                         </p>
                         <div className="flex flex-wrap items-center gap-3">
                           <Button
@@ -384,20 +426,28 @@ export default function BecomeAnOrganizerPage() {
                 {isSignedIn && !isOrganizer && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-[hsl(210,40%,98%)] p-4 sm:p-5">
                     <div className="flex items-start gap-3">
-                      <MessageCircle className="w-5 h-5 text-[hsl(270,70%,50%)] mt-0.5" aria-hidden="true" />
+                      <MessageCircle
+                        className="w-5 h-5 text-[hsl(270,70%,50%)] mt-0.5"
+                        aria-hidden="true"
+                      />
                       <div className="w-full">
                         <h2 className="font-primary text-base sm:text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)]">
                           Step 2: Request Role Upgrade
                         </h2>
                         <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1 mb-4">
-                          Send your account details directly via WhatsApp for organizer role activation.
+                          Send your account details directly via WhatsApp for
+                          organizer role activation.
                         </p>
                         <Button
                           asChild
                           disabled={!whatsappLink}
                           className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                         >
-                          <a href={whatsappLink ?? '#'} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={whatsappLink ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             Open WhatsApp Request
                           </a>
                         </Button>
@@ -414,18 +464,22 @@ export default function BecomeAnOrganizerPage() {
                 {isOrganizer && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-[hsl(210,40%,98%)] p-4 sm:p-5">
                     <div className="flex items-start gap-3">
-                      <FileText className="w-5 h-5 text-[hsl(270,70%,50%)] mt-0.5" aria-hidden="true" />
+                      <FileText
+                        className="w-5 h-5 text-[hsl(270,70%,50%)] mt-0.5"
+                        aria-hidden="true"
+                      />
                       <div className="w-full">
                         <h2 className="font-primary text-base sm:text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)]">
                           Step 3: Submit Organizer Details
                         </h2>
                         <p
                           className={cn(
-                            'font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1',
-                            shouldShowStep3Button ? 'mb-4' : 'mb-0'
+                            "font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1",
+                            shouldShowStep3Button ? "mb-4" : "mb-0",
                           )}
                         >
-                          Provide identity and bank payout details to complete organizer onboarding.
+                          Provide identity and bank payout details to complete
+                          organizer onboarding.
                         </p>
 
                         {shouldShowStep3Button && (
@@ -433,7 +487,9 @@ export default function BecomeAnOrganizerPage() {
                             onClick={openDetailsModal}
                             className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                           >
-                            {organizerDetails?.status === 'REJECTED' ? 'Resubmit Details' : 'Submit Details'}
+                            {organizerDetails?.status === "REJECTED"
+                              ? "Resubmit Details"
+                              : "Submit Details"}
                           </Button>
                         )}
                       </div>
@@ -443,50 +499,66 @@ export default function BecomeAnOrganizerPage() {
 
                 {hasSubmittedDetails && organizerDetails && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-white p-4 sm:p-5">
-                    {organizerDetails.status === 'PENDING' && (
+                    {organizerDetails.status === "PENDING" && (
                       <div className="flex items-start gap-3">
-                        <Clock3 className="w-5 h-5 text-[hsl(32,95%,44%)] mt-0.5" aria-hidden="true" />
+                        <Clock3
+                          className="w-5 h-5 text-[hsl(32,95%,44%)] mt-0.5"
+                          aria-hidden="true"
+                        />
                         <div>
                           <h3 className="font-primary text-base font-semibold text-[hsl(32,95%,44%)]">
                             Waiting for Approval
                           </h3>
                           <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
-                            Your organizer details are submitted and currently under review.
+                            Your organizer details are submitted and currently
+                            under review.
                           </p>
                         </div>
                       </div>
                     )}
 
-                    {organizerDetails.status === 'REJECTED' && (
+                    {organizerDetails.status === "REJECTED" && (
                       <div className="flex items-start gap-3">
-                        <XCircle className="w-5 h-5 text-red-500 mt-0.5" aria-hidden="true" />
+                        <XCircle
+                          className="w-5 h-5 text-red-500 mt-0.5"
+                          aria-hidden="true"
+                        />
                         <div className="w-full">
                           <h3 className="font-primary text-base font-semibold text-red-600">
                             Submission Rejected
                           </h3>
                           <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
-                            {organizerDetails.remarks?.trim() || 'Your previous submission was rejected. Please correct and resubmit.'}
+                            {organizerDetails.remarks?.trim() ||
+                              "Your previous submission was rejected. Please correct and resubmit."}
                           </p>
                         </div>
                       </div>
                     )}
 
-                    {organizerDetails.status === 'APPROVED' && (
+                    {organizerDetails.status === "APPROVED" && (
                       <div className="flex items-start gap-3">
                         {user?.is_active ? (
-                          <ShieldCheck className="w-5 h-5 text-[hsl(142,71%,45%)] mt-0.5" aria-hidden="true" />
+                          <ShieldCheck
+                            className="w-5 h-5 text-[hsl(142,71%,45%)] mt-0.5"
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <ShieldAlert className="w-5 h-5 text-red-500 mt-0.5" aria-hidden="true" />
+                          <ShieldAlert
+                            className="w-5 h-5 text-red-500 mt-0.5"
+                            aria-hidden="true"
+                          />
                         )}
 
                         <div className="w-full">
                           <h3 className="font-primary text-base font-semibold text-[hsl(142,71%,45%)]">
-                            {user?.is_active ? 'Organizer Approved' : 'Account Suspended'}
+                            {user?.is_active
+                              ? "Organizer Approved"
+                              : "Account Suspended"}
                           </h3>
                           <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
                             {user?.is_active
-                              ? 'Your organizer account is active. You can now create your first event.'
-                              : 'Your organizer profile is approved, but your account is currently suspended.'}
+                              ? "Your organizer account is active. You can now create your first event."
+                              : "Your organizer profile is approved, but your account is currently suspended."}
                           </p>
 
                           {user?.is_active && (
@@ -494,7 +566,9 @@ export default function BecomeAnOrganizerPage() {
                               asChild
                               className="mt-3 h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                             >
-                              <Link href="/create-event">Create First Event</Link>
+                              <Link href="/create-event">
+                                Create First Event
+                              </Link>
                             </Button>
                           )}
                         </div>
@@ -532,23 +606,31 @@ export default function BecomeAnOrganizerPage() {
                 <div>
                   <Input
                     value={form.nic_number}
-                    onChange={(e) => handleChange('nic_number', e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      handleChange("nic_number", e.target.value.toUpperCase())
+                    }
                     placeholder="NIC Number"
                     className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                   />
                   {fieldErrors.nic_number && (
-                    <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.nic_number}</p>
+                    <p className="font-secondary text-xs text-red-500 mt-1">
+                      {fieldErrors.nic_number}
+                    </p>
                   )}
                 </div>
                 <div>
                   <Input
                     value={form.account_number}
-                    onChange={(e) => handleChange('account_number', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("account_number", e.target.value)
+                    }
                     placeholder="Account Number"
                     className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                   />
                   {fieldErrors.account_number && (
-                    <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.account_number}</p>
+                    <p className="font-secondary text-xs text-red-500 mt-1">
+                      {fieldErrors.account_number}
+                    </p>
                   )}
                 </div>
               </div>
@@ -556,12 +638,14 @@ export default function BecomeAnOrganizerPage() {
               <div>
                 <Input
                   value={form.address}
-                  onChange={(e) => handleChange('address', e.target.value)}
+                  onChange={(e) => handleChange("address", e.target.value)}
                   placeholder="Address"
                   className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                 />
                 {fieldErrors.address && (
-                  <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.address}</p>
+                  <p className="font-secondary text-xs text-red-500 mt-1">
+                    {fieldErrors.address}
+                  </p>
                 )}
               </div>
 
@@ -569,23 +653,29 @@ export default function BecomeAnOrganizerPage() {
                 <div>
                   <Input
                     value={form.bank_name}
-                    onChange={(e) => handleChange('bank_name', e.target.value)}
+                    onChange={(e) => handleChange("bank_name", e.target.value)}
                     placeholder="Bank Name"
                     className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                   />
                   {fieldErrors.bank_name && (
-                    <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.bank_name}</p>
+                    <p className="font-secondary text-xs text-red-500 mt-1">
+                      {fieldErrors.bank_name}
+                    </p>
                   )}
                 </div>
                 <div>
                   <Input
                     value={form.bank_branch}
-                    onChange={(e) => handleChange('bank_branch', e.target.value)}
+                    onChange={(e) =>
+                      handleChange("bank_branch", e.target.value)
+                    }
                     placeholder="Bank Branch"
                     className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                   />
                   {fieldErrors.bank_branch && (
-                    <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.bank_branch}</p>
+                    <p className="font-secondary text-xs text-red-500 mt-1">
+                      {fieldErrors.bank_branch}
+                    </p>
                   )}
                 </div>
               </div>
@@ -593,12 +683,16 @@ export default function BecomeAnOrganizerPage() {
               <div>
                 <Input
                   value={form.account_holder_name}
-                  onChange={(e) => handleChange('account_holder_name', e.target.value)}
+                  onChange={(e) =>
+                    handleChange("account_holder_name", e.target.value)
+                  }
                   placeholder="Account Holder Name"
                   className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                 />
                 {fieldErrors.account_holder_name && (
-                  <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.account_holder_name}</p>
+                  <p className="font-secondary text-xs text-red-500 mt-1">
+                    {fieldErrors.account_holder_name}
+                  </p>
                 )}
               </div>
 
@@ -607,12 +701,21 @@ export default function BecomeAnOrganizerPage() {
                   <Input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => handleChange('nic_front_image', e.target.files?.[0] ?? null)}
+                    onChange={(e) =>
+                      handleChange(
+                        "nic_front_image",
+                        e.target.files?.[0] ?? null,
+                      )
+                    }
                     className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                   />
-                  <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] mt-1">NIC Front Image</p>
+                  <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] mt-1">
+                    NIC Front Image
+                  </p>
                   {fieldErrors.nic_front_image && (
-                    <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.nic_front_image}</p>
+                    <p className="font-secondary text-xs text-red-500 mt-1">
+                      {fieldErrors.nic_front_image}
+                    </p>
                   )}
                 </div>
 
@@ -620,12 +723,21 @@ export default function BecomeAnOrganizerPage() {
                   <Input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={(e) => handleChange('nic_back_image', e.target.files?.[0] ?? null)}
+                    onChange={(e) =>
+                      handleChange(
+                        "nic_back_image",
+                        e.target.files?.[0] ?? null,
+                      )
+                    }
                     className="font-secondary rounded-xl border-2 bg-[hsl(210,40%,98%)] border-[hsl(214.3,31.8%,91.4%)] focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                   />
-                  <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] mt-1">NIC Back Image</p>
+                  <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] mt-1">
+                    NIC Back Image
+                  </p>
                   {fieldErrors.nic_back_image && (
-                    <p className="font-secondary text-xs text-red-500 mt-1">{fieldErrors.nic_back_image}</p>
+                    <p className="font-secondary text-xs text-red-500 mt-1">
+                      {fieldErrors.nic_back_image}
+                    </p>
                   )}
                 </div>
               </div>
@@ -645,7 +757,11 @@ export default function BecomeAnOrganizerPage() {
                   disabled={submitting}
                   className="h-auto min-w-[130px] py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                 >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit Details'}
+                  {submitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Submit Details"
+                  )}
                 </Button>
               </div>
             </form>
