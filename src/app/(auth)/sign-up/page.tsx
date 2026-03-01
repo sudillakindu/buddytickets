@@ -1,3 +1,4 @@
+// app/(auth)/sign-up/page.tsx
 'use client';
 
 import { useState, useCallback, memo } from 'react';
@@ -12,10 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Toast } from '@/components/ui/toast';
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
 import { signUp } from '@/lib/actions/auth';
-
-// ─── Shared Input Component ───────────────────────────────────────────────────
 
 interface AuthInputProps {
   icon?: React.ElementType;
@@ -82,7 +80,7 @@ const AuthInput = memo(({
         'focus-visible:border-[hsl(270,70%,50%)] w-full',
         prefix ? 'pl-9' : 'pl-11',
         focused ? 'border-[hsl(270,70%,50%)]' : 'border-[hsl(214.3,31.8%,91.4%)]',
-        rightElement ? 'pr-11' : ''
+        rightElement && 'pr-11'
       )}
     />
     {rightElement}
@@ -90,8 +88,6 @@ const AuthInput = memo(({
 ));
 
 AuthInput.displayName = 'AuthInput';
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -119,12 +115,11 @@ export default function SignUpPage() {
       const result = await signUp(formData);
 
       if (result.success && result.token) {
-        Toast('Success', result.message || 'Account created successfully.', 'success');
+        Toast('Success', result.message, 'success');
         router.push(`/verify-email?token=${result.token}`);
         return;
       }
-
-      Toast('Error', result.message || 'Sign-up failed.', 'error');
+      Toast('Error', result.message, 'error');
     } catch {
       Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {
@@ -173,7 +168,6 @@ export default function SignUpPage() {
             placeholder="username"
             autoComplete="username"
             value={formData.username}
-            // Enforce lowercase alphanumeric + underscore on input
             onChange={(v) => handleChange('username', v.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
             focused={isFocused('username')}
             onFocus={() => setFocusedField('username')}
@@ -199,7 +193,6 @@ export default function SignUpPage() {
             autoComplete="tel"
             maxLength={10}
             value={formData.mobile}
-            // Strip non-digit characters
             onChange={(v) => handleChange('mobile', v.replace(/\D/g, ''))}
             focused={isFocused('mobile')}
             onFocus={() => setFocusedField('mobile')}

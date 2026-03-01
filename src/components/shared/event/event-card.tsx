@@ -1,3 +1,4 @@
+// components/shared/event/event-card.tsx
 'use client';
 
 import React, { useState, memo } from 'react';
@@ -7,61 +8,53 @@ import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
 
 import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
-
 import type { Event } from '@/lib/types/event';
-
-type EventStatusKey = Event['status'];
-
-interface StatusUI {
-  text: string;
-  className: string;
-  disabled: boolean;
-}
-
-const STATUS_UI: Record<EventStatusKey, StatusUI> = {
-  ON_SALE: {
-    text: 'Book Ticket',
-    className:
-      'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500',
-    disabled: false,
-  },
-  SOLD_OUT: { text: 'Sold Out', className: 'bg-[#333333]', disabled: true },
-  ONGOING: { text: 'Live Now', className: 'bg-emerald-500', disabled: true },
-  COMPLETED: { text: 'Completed', className: 'bg-[#333333]', disabled: true },
-  CANCELLED: { text: 'Cancelled', className: 'bg-[#333333]', disabled: true },
-  DRAFT: { text: 'Upcoming', className: 'bg-[#C76E00]', disabled: true },
-  PUBLISHED: { text: 'Upcoming', className: 'bg-[#C76E00]', disabled: true },
-};
-
-const formatDate = (iso: string): string => {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'short', day: '2-digit',
-  });
-};
-
-const formatTime = (iso: string): string => {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('en-US', {
-    hour: '2-digit', minute: '2-digit',
-  });
-};
-
-// Format price: null → "—", 0 → "Free", number → "LKR X,XXX"
-const formatPrice = (price: number | null): string => {
-  if (price === null) return '—';
-  if (price === 0) return 'Free';
-  return `LKR ${price.toLocaleString()}`;
-};
 
 export interface EventCardProps {
   event: Event;
   index?: number;
 }
 
-const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
-  const status = STATUS_UI[event.status] ?? STATUS_UI.ON_SALE;
+const formatDate = (iso: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+  });
+};
+
+const formatTime = (iso: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const formatPrice = (price: number | null): string => {
+  if (price === null) return '—';
+  if (price === 0) return 'Free';
+  return `LKR ${price.toLocaleString()}`;
+};
+
+export const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
   const [imgError, setImgError] = useState(false);
+
+  const getStatusUI = () => {
+    switch (event.status) {
+      case 'ON_SALE': return { text: 'Book Ticket', className: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500', disabled: false };
+      case 'SOLD_OUT': return { text: 'Sold Out', className: 'bg-[#333333]', disabled: true };
+      case 'ONGOING': return { text: 'Live Now', className: 'bg-emerald-500', disabled: true };
+      case 'COMPLETED': return { text: 'Completed', className: 'bg-[#333333]', disabled: true };
+      case 'CANCELLED': return { text: 'Cancelled', className: 'bg-[#333333]', disabled: true };
+      case 'DRAFT': return { text: 'Upcoming', className: 'bg-[#C76E00]', disabled: true };
+      case 'PUBLISHED': return { text: 'Upcoming', className: 'bg-[#C76E00]', disabled: true };
+      default: return { text: 'Book Ticket', className: 'bg-[#333333]', disabled: false };
+    }
+  };
+
+  const status = getStatusUI();
 
   return (
     <motion.article
@@ -98,14 +91,14 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
         )}
 
         <div className="absolute top-3 right-3">
-          <span className="event-category px-2.5 py-1 text-[10px] font-bold bg-white/90 backdrop-blur-md rounded-lg text-[hsl(222.2,47.4%,11.2%)] shadow-sm uppercase tracking-wider">
+          <span className="px-2.5 py-1 text-[10px] font-primary font-bold bg-white/90 backdrop-blur-md rounded-lg text-[hsl(222.2,47.4%,11.2%)] shadow-sm uppercase tracking-wider">
             {event.category}
           </span>
         </div>
       </div>
 
       <div className="p-4 flex flex-col flex-grow gap-2.5">
-        <div className="event-meta flex items-center justify-between w-full text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
+        <div className="flex items-center justify-between w-full font-secondary text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
           <div className="flex items-center gap-1 shrink-0">
             <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <time dateTime={event.start_at}>{formatDate(event.start_at)}</time>
@@ -117,10 +110,10 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
         </div>
 
         <div className="flex flex-col gap-1">
-          <h3 className="event-title text-base font-black text-[hsl(222.2,47.4%,11.2%)] uppercase leading-tight line-clamp-2">
+          <h3 className="font-primary text-base font-black text-[hsl(222.2,47.4%,11.2%)] uppercase leading-tight line-clamp-2">
             {event.name}
           </h3>
-          <div className="event-location flex items-start gap-1 text-gray-500 text-[11px]">
+          <div className="font-secondary flex items-start gap-1 text-gray-500 text-[11px]">
             <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
             <span className="line-clamp-2">{event.location}</span>
           </div>
@@ -128,10 +121,10 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
 
         <div className="flex items-end justify-between mt-auto pt-3 border-t-2 border-gray-100">
           <div>
-            <p className="event-label text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
+            <p className="font-secondary text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">
               Starting from
             </p>
-            <p className="event-price text-base font-bold text-[hsl(222.2,47.4%,11.2%)]">
+            <p className="font-primary text-base font-bold text-[hsl(222.2,47.4%,11.2%)]">
               {formatPrice(event.start_ticket_price)}
             </p>
           </div>
@@ -141,7 +134,7 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
           aria-label={`${event.name} — ${status.text}`}
           disabled={status.disabled}
           className={cn(
-            'event-button w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md mt-2 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-0.5',
+            'font-primary w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md mt-2 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-0.5',
             status.className
           )}
         >
@@ -156,5 +149,3 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
 });
 
 EventCard.displayName = 'EventCard';
-
-export { EventCard };

@@ -1,3 +1,4 @@
+// lib/utils/mail.ts
 import nodemailer from 'nodemailer';
 
 const BASE_URL = (process.env.PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
@@ -7,7 +8,6 @@ const PRIVACY_URL = `${BASE_URL}/privacy`;
 const SIGN_IN_URL = `${BASE_URL}/sign-in`;
 const FORGOT_PASSWORD_URL = `${BASE_URL}/forget-password`;
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? '';
-
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? '';
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%2C%20I%20received%20a%20notification%20that%20my%20BuddyTickets%20account%20password%20was%20changed.%20I%20did%20not%20make%20this%20change%20and%20need%20immediate%20assistance.`;
 
@@ -42,7 +42,6 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
   <div style="padding:32px 16px;">
     <div style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.10);border:1px solid #e2e8f0;">
-
       <div style="background:linear-gradient(135deg,#0f172a 0%,#7c3aed 100%);padding:36px 32px 28px;text-align:center;">
         <a href="${BASE_URL}" style="display:inline-block;margin:0 0 20px;">
           <img src="${LOGO_URL}" alt="BuddyTickets" width="48" height="48" style="display:block;margin:0 auto;width:48px;height:48px;border-radius:12px;object-fit:contain;">
@@ -50,11 +49,9 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
         <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 6px;letter-spacing:-0.3px;line-height:1.3;">${headerTitle}</h1>
         <p style="color:rgba(255,255,255,0.72);font-size:13px;margin:0;line-height:1.5;">${headerSubtitle}</p>
       </div>
-
       <div style="padding:36px 32px;">
         ${contentHtml}
       </div>
-
       <div style="background:#f8fafc;padding:20px 32px;border-top:1px solid #e2e8f0;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           <tr>
@@ -75,7 +72,6 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
           </tr>
         </table>
       </div>
-
     </div>
   </div>
 </body>

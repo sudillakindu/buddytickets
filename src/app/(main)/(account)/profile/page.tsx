@@ -1,3 +1,4 @@
+// app/(main)/(account)/profile/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -22,8 +23,6 @@ import {
 
 import type { UserProfile } from '@/lib/types/profile';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const ROLE_LABEL: Record<string, string> = {
   SYSTEM: 'System',
   ORGANIZER: 'Organizer',
@@ -35,11 +34,11 @@ const ROLE_LABEL: Record<string, string> = {
 function formatJoinDate(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 }
-
-// ─── Section Card Wrapper ─────────────────────────────────────────────────────
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -53,8 +52,6 @@ function SectionCard({ title, children }: { title: string; children: React.React
     </div>
   );
 }
-
-// ─── Labelled Field ───────────────────────────────────────────────────────────
 
 function ProfileField({
   icon: Icon,
@@ -79,8 +76,6 @@ function ProfileField({
     </div>
   );
 }
-
-// ─── Inline Input ─────────────────────────────────────────────────────────────
 
 interface FormInputProps {
   icon: React.ElementType;
@@ -127,7 +122,7 @@ function FormInput({
             'text-[hsl(222.2,47.4%,11.2%)] placeholder:text-[hsl(215.4,16.3%,46.9%)]',
             'focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]',
             'border-[hsl(214.3,31.8%,91.4%)] disabled:opacity-50 disabled:cursor-not-allowed',
-            rightElement ? 'pr-10' : ''
+            rightElement && 'pr-10'
           )}
         />
         {rightElement}
@@ -135,8 +130,6 @@ function FormInput({
     </div>
   );
 }
-
-// ─── Avatar Section ───────────────────────────────────────────────────────────
 
 interface AvatarSectionProps {
   profile: UserProfile;
@@ -159,15 +152,14 @@ function AvatarSection({ profile, onImageChange }: AvatarSectionProps) {
         const result = await uploadProfileImage(fd);
         if (result.success && result.imageUrl) {
           onImageChange(result.imageUrl);
-          Toast('Success', 'Profile image updated.', 'success');
+          Toast('Success', result.message, 'success');
         } else {
-          Toast('Error', result.message || 'Upload failed.', 'error');
+          Toast('Error', result.message, 'error');
         }
       } catch {
         Toast('Error', 'Failed to upload image.', 'error');
       } finally {
         setUploading(false);
-        // Reset input so the same file can be re-selected
         if (fileInputRef.current) fileInputRef.current.value = '';
       }
     },
@@ -203,11 +195,7 @@ function AvatarSection({ profile, onImageChange }: AvatarSectionProps) {
           className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-[hsl(270,70%,50%)] text-white flex items-center justify-center shadow-md hover:bg-[hsl(270,70%,45%)] transition-colors disabled:opacity-60"
           aria-label="Change profile photo"
         >
-          {uploading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Camera className="w-3.5 h-3.5" />
-          )}
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
         </button>
 
         <input
@@ -235,8 +223,6 @@ function AvatarSection({ profile, onImageChange }: AvatarSectionProps) {
     </div>
   );
 }
-
-// ─── Edit Profile Form ────────────────────────────────────────────────────────
 
 interface EditProfileFormProps {
   profile: UserProfile;
@@ -288,7 +274,6 @@ function EditProfileForm({ profile, onSuccess }: EditProfileFormProps) {
         icon={AtSign}
         label="Username"
         value={username}
-        // Enforce lowercase alphanumeric + underscore
         onChange={(v) => setUsername(v.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
         placeholder="your_username"
       />
@@ -321,8 +306,6 @@ function EditProfileForm({ profile, onSuccess }: EditProfileFormProps) {
     </form>
   );
 }
-
-// ─── Change Password Form ─────────────────────────────────────────────────────
 
 function ChangePasswordForm() {
   const [formData, setFormData] = useState({ currentPassword: '', newPassword: '' });
@@ -398,8 +381,6 @@ function ChangePasswordForm() {
   );
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -415,11 +396,11 @@ export default function ProfilePage() {
           if (result.success && result.profile) {
             setProfile(result.profile);
           } else {
-            Toast('Error', result.message || 'Failed to load profile.', 'error');
+            Toast('Error', result.message, 'error');
           }
         }
       } catch {
-        if (!cancelled) Toast('Error', 'Failed to connect to the server.', 'error');
+        if (!cancelled) Toast('Error', 'Failed to load profile.', 'error');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -429,7 +410,6 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Optimistic update: merge changed fields into local state immediately
   const handleProfileUpdate = useCallback((updated: Partial<UserProfile>) => {
     setProfile((prev) => (prev ? { ...prev, ...updated } : prev));
   }, []);
@@ -471,13 +451,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="flex flex-col gap-6">
-
-          {/* Avatar + name card */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <SectionCard title="Profile Overview">
               <AvatarSection profile={profile} onImageChange={handleImageChange} />
 
@@ -486,11 +460,7 @@ export default function ProfilePage() {
                 <ProfileField
                   icon={Phone}
                   label="Mobile"
-                  value={
-                    profile.mobile
-                      ? `${profile.mobile}${profile.is_mobile_verified ? ' ✓' : ''}`
-                      : '—'
-                  }
+                  value={profile.mobile ? `${profile.mobile}${profile.is_mobile_verified ? ' ✓' : ''}` : '—'}
                 />
                 <ProfileField
                   icon={CheckCircle2}
@@ -506,28 +476,17 @@ export default function ProfilePage() {
             </SectionCard>
           </motion.div>
 
-          {/* Edit profile */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}>
             <SectionCard title="Edit Profile">
               <EditProfileForm profile={profile} onSuccess={handleProfileUpdate} />
             </SectionCard>
           </motion.div>
 
-          {/* Change password */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
             <SectionCard title="Change Password">
               <ChangePasswordForm />
             </SectionCard>
           </motion.div>
-
         </div>
       </div>
     </section>

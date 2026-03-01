@@ -1,3 +1,4 @@
+// app/(auth)/reset-password/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback, memo } from 'react';
@@ -12,10 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Toast } from '@/components/ui/toast';
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
 import { resetPassword as resetPasswordAction, validateResetToken } from '@/lib/actions/auth';
-
-// ─── Shared Input Component ───────────────────────────────────────────────────
 
 interface AuthInputProps {
   icon: React.ElementType;
@@ -64,7 +62,7 @@ const AuthInput = memo(({
         'placeholder:text-[hsl(215.4,16.3%,46.9%)] focus-visible:ring-0',
         'focus-visible:border-[hsl(270,70%,50%)] w-full',
         focused ? 'border-[hsl(270,70%,50%)]' : 'border-[hsl(214.3,31.8%,91.4%)]',
-        rightElement ? 'pr-11' : ''
+        rightElement && 'pr-11'
       )}
     />
     {rightElement}
@@ -72,8 +70,6 @@ const AuthInput = memo(({
 ));
 
 AuthInput.displayName = 'AuthInput';
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -91,7 +87,6 @@ export default function ResetPasswordPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  // Extract token from URL without useSearchParams to avoid Suspense boundary
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setToken(params.get('token') ?? '');
@@ -109,13 +104,11 @@ export default function ResetPasswordPage() {
 
     try {
       const result = await validateResetToken(token);
-
       if (result?.success && result.data) {
         setEmail(result.data.email);
         setPageLoading(false);
         return;
       }
-
       setPageError(result?.message || 'Invalid or expired reset link. Please try again.');
       setPageLoading(false);
     } catch {
@@ -134,15 +127,12 @@ export default function ResetPasswordPage() {
 
     try {
       const result = await resetPasswordAction(token, formData);
-
       if (result.success) {
-        Toast('Success', result.message || 'Password reset successfully.', 'success');
-        // Short delay so the user sees the toast before redirect
+        Toast('Success', result.message, 'success');
         setTimeout(() => router.push('/sign-in'), 1500);
         return;
       }
-
-      Toast('Error', result.message || 'Failed to reset password.', 'error');
+      Toast('Error', result.message, 'error');
     } catch {
       Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {

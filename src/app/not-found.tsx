@@ -1,3 +1,4 @@
+// app/not-found.tsx
 'use client';
 
 import React, { useCallback, memo } from 'react';
@@ -112,15 +113,15 @@ export default function NotFound() {
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
           >
-            <Settings 
-              className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]" 
-              aria-hidden="true" 
+            <Settings
+              className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]"
+              aria-hidden="true"
             />
           </motion.div>
 
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.8 }}
           >
             <h1 className="font-primary text-3xl sm:text-4xl font-bold text-gray-900 mt-4 tracking-tight">
@@ -136,9 +137,9 @@ export default function NotFound() {
                 onClick={goBack}
                 className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
               >
-                <ArrowLeft 
-                  className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" 
-                  aria-hidden="true" 
+                <ArrowLeft
+                  className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300"
+                  aria-hidden="true"
                 />
                 <span>Go Back</span>
               </Button>

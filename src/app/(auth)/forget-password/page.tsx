@@ -1,3 +1,4 @@
+// app/(auth)/forget-password/page.tsx
 'use client';
 
 import { useState, useCallback, memo } from 'react';
@@ -12,10 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Toast } from '@/components/ui/toast';
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
 import { forgotPassword as forgotPasswordAction } from '@/lib/actions/auth';
-
-// ─── Shared Input Component ───────────────────────────────────────────────────
 
 interface AuthInputProps {
   icon: React.ElementType;
@@ -69,8 +67,6 @@ const AuthInput = memo(({
 
 AuthInput.displayName = 'AuthInput';
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function ForgotPasswordPage() {
   const router = useRouter();
 
@@ -84,14 +80,12 @@ export default function ForgotPasswordPage() {
 
     try {
       const result = await forgotPasswordAction({ email: email.trim().toLowerCase() });
-
       if (result.success && result.token) {
-        Toast('Success', result.message || 'Verification code sent to your email.', 'success');
+        Toast('Success', result.message, 'success');
         router.push(`/verify-email?token=${result.token}`);
         return;
       }
-
-      Toast('Error', result.message || 'Failed to send reset code.', 'error');
+      Toast('Error', result.message, 'error');
     } catch {
       Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {

@@ -1,10 +1,9 @@
+// lib/utils/otp.ts
 import { createHmac } from 'crypto';
 import { hash, compare } from 'bcryptjs';
 
 const SALT_ROUNDS = 12;
 const EXPIRY_MINUTES = 10;
-
-// Exponential back-off delays (seconds): 1m, 2m, 5m, 15m, 1h, 24h
 const RESEND_DELAYS = [60, 120, 300, 900, 3600, 86400];
 
 export const MAX_ATTEMPTS = 5;
@@ -19,7 +18,6 @@ function getSecret(): string {
   return OTP_SECRET;
 }
 
-// HMAC pepper prevents rainbow-table attacks even if the DB is compromised
 function pepper(value: string): string {
   return createHmac('sha256', getSecret()).update(value).digest('hex');
 }
@@ -42,7 +40,6 @@ export function expiresAt(): string {
   return new Date(Date.now() + EXPIRY_MINUTES * 60_000).toISOString();
 }
 
-// Returns the cooldown in seconds for a given resend count (0-indexed)
 export function resendDelay(count: number): number {
   const index = Math.min(Math.max(0, count), RESEND_DELAYS.length - 1);
   return RESEND_DELAYS[index];

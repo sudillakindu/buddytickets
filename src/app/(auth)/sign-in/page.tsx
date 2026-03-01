@@ -1,3 +1,4 @@
+// app/(auth)/sign-in/page.tsx
 'use client';
 
 import { useState, useCallback, memo } from 'react';
@@ -12,10 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Toast } from '@/components/ui/toast';
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
 import { signIn } from '@/lib/actions/auth';
-
-// ─── Shared Input Component ───────────────────────────────────────────────────
 
 interface AuthInputProps {
   icon: React.ElementType;
@@ -64,7 +62,7 @@ const AuthInput = memo(({
         'placeholder:text-[hsl(215.4,16.3%,46.9%)] focus-visible:ring-0',
         'focus-visible:border-[hsl(270,70%,50%)] w-full',
         focused ? 'border-[hsl(270,70%,50%)]' : 'border-[hsl(214.3,31.8%,91.4%)]',
-        rightElement ? 'pr-11' : ''
+        rightElement && 'pr-11'
       )}
     />
     {rightElement}
@@ -72,8 +70,6 @@ const AuthInput = memo(({
 ));
 
 AuthInput.displayName = 'AuthInput';
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SignInPage() {
   const router = useRouter();
@@ -95,8 +91,7 @@ export default function SignInPage() {
       const result = await signIn(formData);
 
       if (result.success) {
-        Toast('Success', result.message || 'Signed in successfully.', 'success');
-        // Honour the ?redirect= param set by proxy when guarding protected pages
+        Toast('Success', result.message, 'success');
         const params = new URLSearchParams(window.location.search);
         const redirectTo = params.get('redirect') ?? result.redirectTo ?? '/';
         window.location.href = redirectTo;
@@ -109,7 +104,7 @@ export default function SignInPage() {
         return;
       }
 
-      Toast('Error', result.message || 'Sign-in failed.', 'error');
+      Toast('Error', result.message, 'error');
     } catch {
       Toast('Error', 'An unexpected error occurred.', 'error');
     } finally {

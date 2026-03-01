@@ -1,3 +1,4 @@
+// app/(auth)/verify-email/page.tsx
 'use client';
 
 import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
@@ -11,14 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Toast } from '@/components/ui/toast';
 
 import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
-import {
-  verifyOtp as verifyOtpAction,
-  resendOtp as resendOtpAction,
-  getVerifyEmailData,
-} from '@/lib/actions/auth';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import { verifyOtp as verifyOtpAction, resendOtp as resendOtpAction, getVerifyEmailData } from '@/lib/actions/auth';
 
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return '0s';
@@ -32,8 +26,6 @@ function formatCountdown(seconds: number): string {
   return `${s}s`;
 }
 
-// ─── Full-page Spinner ────────────────────────────────────────────────────────
-
 function PageSpinner() {
   return (
     <div className="w-full min-h-[100dvh] flex items-center justify-center">
@@ -41,8 +33,6 @@ function PageSpinner() {
     </div>
   );
 }
-
-// ─── Error State ──────────────────────────────────────────────────────────────
 
 interface ErrorCardProps {
   message: string;
@@ -88,8 +78,6 @@ function ErrorCard({ message, onRetry }: ErrorCardProps) {
   );
 }
 
-// ─── Main Form ────────────────────────────────────────────────────────────────
-
 function VerifyEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -119,13 +107,11 @@ function VerifyEmailForm() {
 
     try {
       const result = await getVerifyEmailData(token);
-
       if (!result?.success || !result.data) {
         setPageError(result?.message || 'Session expired. Please start over.');
         setPageLoading(false);
         return;
       }
-
       setEmail(result.data.email);
       setPurpose(result.data.purpose);
       setCountdown(result.data.remainingSeconds);
@@ -138,7 +124,6 @@ function VerifyEmailForm() {
 
   useEffect(() => { loadSessionData(); }, [loadSessionData]);
 
-  // Tick-down the resend cooldown counter
   useEffect(() => {
     if (countdown <= 0) return;
     const interval = setInterval(() => {
@@ -157,7 +142,6 @@ function VerifyEmailForm() {
       next[index] = digit;
       return next;
     });
-    // Auto-advance to next input
     if (digit && index < 5) inputRefs.current[index + 1]?.focus();
   }, []);
 
@@ -209,15 +193,13 @@ function VerifyEmailForm() {
         return;
       }
 
-      Toast('Success', result.message || 'Verified successfully.', 'success');
+      Toast('Success', result.message, 'success');
 
-      // Forgot-password flow → go to /reset-password
       if (result.purpose === 'forgot-password' && result.resetToken) {
         router.push(`/reset-password?token=${result.resetToken}`);
         return;
       }
 
-      // Sign-up / sign-in flow → session already created, hard-redirect to homepage
       window.location.href = result.redirectTo ?? '/';
     } catch {
       Toast('Error', 'An unexpected error occurred.', 'error');
@@ -230,16 +212,14 @@ function VerifyEmailForm() {
     setResending(true);
     try {
       const result = await resendOtpAction(token);
-
       if (result.success) {
         setDigits(Array(6).fill(''));
         setCountdown(result.remainingSeconds ?? 60);
-        Toast('Success', result.message || 'New code sent to your email.', 'success');
+        Toast('Success', result.message, 'success');
         return;
       }
-
       if (result.remainingSeconds) setCountdown(result.remainingSeconds);
-      Toast('Error', result.message || 'Failed to resend code.', 'error');
+      Toast('Error', result.message, 'error');
     } catch {
       Toast('Error', 'Failed to resend code.', 'error');
     } finally {
@@ -281,11 +261,7 @@ function VerifyEmailForm() {
         </p>
 
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
-          <div
-            className="flex gap-2 sm:gap-3 justify-center w-full"
-            role="group"
-            aria-label="One-time password"
-          >
+          <div className="flex gap-2 sm:gap-3 justify-center w-full" role="group" aria-label="One-time password">
             {digits.map((digit, i) => (
               <input
                 key={i}
@@ -303,11 +279,7 @@ function VerifyEmailForm() {
                   'w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-primary font-semibold rounded-xl',
                   'border-2 transition-all duration-200 bg-[hsl(210,40%,98%)]',
                   'text-[hsl(222.2,47.4%,11.2%)] outline-none select-none caret-transparent',
-                  focusedIndex === i
-                    ? 'border-[hsl(270,70%,50%)]'
-                    : digit
-                    ? 'border-[hsl(270,70%,50%)] bg-[hsl(270,70%,98%)]'
-                    : 'border-[hsl(214.3,31.8%,91.4%)]'
+                  focusedIndex === i ? 'border-[hsl(270,70%,50%)]' : digit ? 'border-[hsl(270,70%,50%)] bg-[hsl(270,70%,98%)]' : 'border-[hsl(214.3,31.8%,91.4%)]'
                 )}
                 aria-label={`Digit ${i + 1}`}
               />
@@ -328,16 +300,10 @@ function VerifyEmailForm() {
             onClick={handleResend}
             className={cn(
               'text-xs font-secondary mx-auto mt-0 transition-colors duration-200',
-              isResendDisabled
-                ? 'text-[hsl(215.4,16.3%,46.9%)]/60 cursor-not-allowed'
-                : 'text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] cursor-pointer'
+              isResendDisabled ? 'text-[hsl(215.4,16.3%,46.9%)]/60 cursor-not-allowed' : 'text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] cursor-pointer'
             )}
           >
-            {resending
-              ? 'Sending…'
-              : countdown > 0
-              ? `Resend code in ${formatCountdown(countdown)}`
-              : "Didn\u2019t receive the code? Resend"}
+            {resending ? 'Sending…' : countdown > 0 ? `Resend code in ${formatCountdown(countdown)}` : "Didn\u2019t receive the code? Resend"}
           </button>
         </form>
 
@@ -354,8 +320,6 @@ function VerifyEmailForm() {
     </div>
   );
 }
-
-// ─── Page Export ──────────────────────────────────────────────────────────────
 
 export default function VerifyEmailPage() {
   return (

@@ -1,3 +1,4 @@
+// lib/utils/password.ts
 import { createHmac } from 'crypto';
 import { hash, compare } from 'bcryptjs';
 
@@ -13,7 +14,6 @@ function getSecret(): string {
   return PASSWORD_SECRET;
 }
 
-// HMAC pepper adds a server-side secret to the password before bcrypt hashing
 function pepper(value: string): string {
   return createHmac('sha256', getSecret()).update(value).digest('hex');
 }

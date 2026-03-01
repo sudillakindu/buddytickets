@@ -1,3 +1,4 @@
+// app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 
@@ -71,19 +72,18 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const fontVariables = cn(
-  primaryFont.variable,
-  secondaryFont.variable,
-  tertiaryFont.variable,
-  specialFont.variable
-);
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body 
-        suppressHydrationWarning 
-        className={cn(fontVariables, 'antialiased bg-white text-zinc-950')}
+      <body
+        suppressHydrationWarning
+        className={cn(
+          primaryFont.variable,
+          secondaryFont.variable,
+          tertiaryFont.variable,
+          specialFont.variable,
+          'antialiased bg-white text-zinc-950'
+        )}
       >
         <div className="flex flex-col min-h-[100dvh] bg-background">
           {children}

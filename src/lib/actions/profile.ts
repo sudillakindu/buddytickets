@@ -1,11 +1,10 @@
+// lib/actions/profile.ts
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
-
 import { comparePassword, hashPassword } from '@/lib/utils/password';
 import { uploadProfileImageToStorage } from '@/lib/utils/profile-image-upload';
 import { getSession } from '@/lib/utils/session';
-
 import type {
   UserProfile,
   ProfileResult,
@@ -13,14 +12,14 @@ import type {
   ProfileImageResult,
 } from '@/lib/types/profile';
 
-// ─── Internal Helper ──────────────────────────────────────────────────────────
+// ─── Internal Helpers ────────────────────────────────────────────────────────
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await getSession();
   return session?.sub ?? null;
 }
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
+// ─── Queries (GET) ───────────────────────────────────────────────────────────
 
 export async function getUserProfile(): Promise<ProfileFetchResult> {
   try {
@@ -29,9 +28,7 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
 
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select(
-        'user_id, name, email, mobile, is_mobile_verified, username, role, is_active, image_url, created_at, last_login_at'
-      )
+      .select('user_id, name, email, mobile, is_mobile_verified, username, role, is_active, image_url, created_at, last_login_at')
       .eq('user_id', userId)
       .maybeSingle();
 
@@ -44,7 +41,8 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
   }
 }
 
-// Upload image to Supabase Storage and persist the URL in the users table
+// ─── Mutations (POST/PUT/DELETE) ─────────────────────────────────────────────
+
 export async function uploadProfileImage(formData: FormData): Promise<ProfileImageResult> {
   try {
     const userId = await getAuthenticatedUserId();
@@ -56,7 +54,6 @@ export async function uploadProfileImage(formData: FormData): Promise<ProfileIma
     const upload = await uploadProfileImageToStorage(file, userId);
     if (!upload.success || !upload.imageUrl) return { success: false, message: upload.message };
 
-    // Persist the new image URL immediately so the DB stays in sync
     const { error } = await supabaseAdmin
       .from('users')
       .update({ image_url: upload.imageUrl })
@@ -74,7 +71,6 @@ export async function uploadProfileImage(formData: FormData): Promise<ProfileIma
   }
 }
 
-// Update editable profile fields — validates uniqueness constraints
 export async function updateProfile(data: {
   name: string;
   username: string;
@@ -90,14 +86,10 @@ export async function updateProfile(data: {
     const mobile = data.mobile.trim();
     const imageUrl = data.image_url?.trim() || null;
 
-    if (!name || name.length < 3)
-      return { success: false, message: 'Name must be at least 3 characters.' };
-    if (!/^[a-z0-9_]{3,}$/.test(username))
-      return { success: false, message: 'Username must be at least 3 characters (a–z, 0–9, _).' };
-    if (!/^\d{10}$/.test(mobile))
-      return { success: false, message: 'Mobile must be 10 digits.' };
+    if (!name || name.length < 3) return { success: false, message: 'Name must be at least 3 characters.' };
+    if (!/^[a-z0-9_]{3,}$/.test(username)) return { success: false, message: 'Username must be at least 3 characters (a–z, 0–9, _).' };
+    if (!/^\d{10}$/.test(mobile)) return { success: false, message: 'Mobile must be 10 digits.' };
 
-    // Fetch current mobile to detect if it changed (determines is_mobile_verified reset)
     const { data: current, error: fetchErr } = await supabaseAdmin
       .from('users')
       .select('mobile')
@@ -106,33 +98,18 @@ export async function updateProfile(data: {
 
     if (fetchErr || !current) return { success: false, message: 'Unable to validate profile update.' };
 
-    // Check username and mobile uniqueness in parallel
     const [{ data: takenUsername }, { data: takenMobile }] = await Promise.all([
-      supabaseAdmin
-        .from('users')
-        .select('user_id')
-        .eq('username', username)
-        .neq('user_id', userId)
-        .maybeSingle(),
-      supabaseAdmin
-        .from('users')
-        .select('user_id')
-        .eq('mobile', mobile)
-        .neq('user_id', userId)
-        .maybeSingle(),
+      supabaseAdmin.from('users').select('user_id').eq('username', username).neq('user_id', userId).maybeSingle(),
+      supabaseAdmin.from('users').select('user_id').eq('mobile', mobile).neq('user_id', userId).maybeSingle(),
     ]);
 
     if (takenUsername) return { success: false, message: 'Username is already taken.' };
     if (takenMobile) return { success: false, message: 'Mobile number is already registered.' };
 
     const payload: Record<string, unknown> = { name, username, mobile, image_url: imageUrl };
-    // Reset mobile verification if the number changed
     if (current.mobile !== mobile) payload.is_mobile_verified = false;
 
-    const { error: updateErr } = await supabaseAdmin
-      .from('users')
-      .update(payload)
-      .eq('user_id', userId);
+    const { error: updateErr } = await supabaseAdmin.from('users').update(payload).eq('user_id', userId);
 
     if (updateErr) return { success: false, message: 'Failed to update profile.' };
 
@@ -143,7 +120,6 @@ export async function updateProfile(data: {
   }
 }
 
-// Secure password change — verifies current password before hashing new one
 export async function changePassword(data: {
   currentPassword: string;
   newPassword: string;
@@ -155,10 +131,8 @@ export async function changePassword(data: {
     const { currentPassword, newPassword } = data;
 
     if (!currentPassword) return { success: false, message: 'Current password is required.' };
-    if (!newPassword || newPassword.length < 6)
-      return { success: false, message: 'New password must be at least 6 characters.' };
-    if (newPassword === currentPassword)
-      return { success: false, message: 'New password must differ from current password.' };
+    if (!newPassword || newPassword.length < 6) return { success: false, message: 'New password must be at least 6 characters.' };
+    if (newPassword === currentPassword) return { success: false, message: 'New password must differ from current password.' };
 
     const { data: user, error } = await supabaseAdmin
       .from('users')
@@ -166,17 +140,13 @@ export async function changePassword(data: {
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (error || !user?.password_hash)
-      return { success: false, message: 'Failed to validate current password.' };
+    if (error || !user?.password_hash) return { success: false, message: 'Failed to validate current password.' };
 
     const isValid = await comparePassword(currentPassword, user.password_hash);
     if (!isValid) return { success: false, message: 'Current password is incorrect.' };
 
     const newHash = await hashPassword(newPassword);
-    const { error: updateErr } = await supabaseAdmin
-      .from('users')
-      .update({ password_hash: newHash })
-      .eq('user_id', userId);
+    const { error: updateErr } = await supabaseAdmin.from('users').update({ password_hash: newHash }).eq('user_id', userId);
 
     if (updateErr) return { success: false, message: 'Failed to change password.' };
 

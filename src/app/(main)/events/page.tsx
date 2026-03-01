@@ -1,3 +1,4 @@
+// app/(main)/events/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,11 +27,13 @@ export default function EventsPage() {
           if (result.success) {
             setEvents(result.events ?? []);
           } else {
-            Toast('Error', result.message || 'Failed to load events.', 'error');
+            Toast('Error', result.message, 'error');
           }
         }
       } catch {
-        if (!cancelled) Toast('Error', 'Failed to connect to the server.', 'error');
+        if (!cancelled) {
+          Toast('Error', 'Failed to load events. Please check your connection.', 'error');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

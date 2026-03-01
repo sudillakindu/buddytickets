@@ -1,8 +1,9 @@
+// lib/utils/session.ts
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 
 const COOKIE_NAME = 'bt_session';
-const MAX_AGE_SECONDS = 60 * 60 * 24; // 1 day
+const MAX_AGE_SECONDS = 60 * 60 * 24;
 
 let SESSION_SECRET: Uint8Array | null = null;
 
@@ -70,7 +71,6 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
-// Verify a raw token string without relying on the cookie store (used in middleware)
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());

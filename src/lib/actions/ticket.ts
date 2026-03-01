@@ -1,11 +1,9 @@
+// lib/actions/ticket.ts
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getSession } from '@/lib/utils/session';
-
 import type { Ticket } from '@/lib/types/ticket';
-
-// ─── Return Types ─────────────────────────────────────────────────────────────
 
 export interface TicketsResult {
   success: boolean;
@@ -13,9 +11,8 @@ export interface TicketsResult {
   tickets?: Ticket[];
 }
 
-// ─── Raw DB Row Shape ─────────────────────────────────────────────────────────
+// ─── Internal Helpers ────────────────────────────────────────────────────────
 
-// Matches the Supabase select + joins used in getUserTickets / getTicketById
 interface TicketRow {
   ticket_id: string;
   qr_hash: string;
@@ -34,12 +31,8 @@ interface TicketRow {
   } | null;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-// Map a raw DB row (with joins) to the Ticket shape
 function mapToTicket(row: TicketRow): Ticket {
-  const images: { priority_order: number; image_url: string }[] =
-    row.events?.event_images ?? [];
+  const images: { priority_order: number; image_url: string }[] = row.events?.event_images ?? [];
   images.sort((a, b) => a.priority_order - b.priority_order);
 
   return {
@@ -59,15 +52,14 @@ function mapToTicket(row: TicketRow): Ticket {
       location: row.events?.location ?? '—',
       start_at: row.events?.start_at ?? '',
       end_at: row.events?.end_at ?? '',
-      status: row.events?.status ?? 'COMPLETED',
+      status: (row.events?.status as Ticket['event']['status']) ?? 'COMPLETED',
       primary_image: images[0]?.image_url ?? null,
     },
   };
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// ─── Queries (GET) ───────────────────────────────────────────────────────────
 
-// Fetch all tickets owned by the current session user — scoped by owner_user_id
 export async function getUserTickets(): Promise<TicketsResult> {
   try {
     const session = await getSession();
@@ -83,7 +75,6 @@ export async function getUserTickets(): Promise<TicketsResult> {
           event_images ( priority_order, image_url )
         )
       `)
-      // Security: always scope by owner_user_id — never allow cross-user access
       .eq('owner_user_id', session.sub)
       .order('created_at', { ascending: false });
 
@@ -100,7 +91,6 @@ export async function getUserTickets(): Promise<TicketsResult> {
   }
 }
 
-// Fetch a single ticket — validates ownership before returning
 export async function getTicketById(ticketId: string): Promise<{
   success: boolean;
   message: string;
@@ -121,7 +111,6 @@ export async function getTicketById(ticketId: string): Promise<{
         )
       `)
       .eq('ticket_id', ticketId)
-      // Enforce ownership — prevents IDOR attacks
       .eq('owner_user_id', session.sub)
       .maybeSingle();
 

@@ -1,11 +1,9 @@
+// lib/actions/event.ts
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { getSession } from '@/lib/utils/session';
-
 import type { Event, EventDetail } from '@/lib/types/event';
-
-// ─── Return Types ─────────────────────────────────────────────────────────────
 
 export interface EventsResult {
   success: boolean;
@@ -19,9 +17,8 @@ export interface EventDetailResult {
   event?: EventDetail;
 }
 
-// ─── Raw DB Row Shape ─────────────────────────────────────────────────────────
+// ─── Internal Helpers ────────────────────────────────────────────────────────
 
-// Matches the Supabase select + joins used in getEvents / getEventById
 interface EventRow {
   event_id: string;
   name: string;
@@ -44,16 +41,11 @@ interface EventRow {
   ticket_types?: { ticket_type_id?: string; name?: string; description?: string; inclusions?: string[]; price: number; capacity?: number; qty_sold?: number; sale_start_at?: string | null; sale_end_at?: string | null; is_active: boolean }[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-// Map raw Supabase row to the flat Event shape consumed by UI cards
 function mapToEvent(row: EventRow): Event {
-  // Grab the lowest-priority image (priority_order = 1 = primary)
   const images: { priority_order: number; image_url: string }[] = row.event_images ?? [];
   images.sort((a, b) => a.priority_order - b.priority_order);
   const primaryImage = images[0]?.image_url ?? null;
 
-  // Lowest active ticket price
   const ticketTypes: { price: number; is_active: boolean }[] = row.ticket_types ?? [];
   const activePrices = ticketTypes.filter((t) => t.is_active).map((t) => Number(t.price));
   const startPrice = activePrices.length > 0 ? Math.min(...activePrices) : null;
@@ -73,9 +65,8 @@ function mapToEvent(row: EventRow): Event {
   };
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// ─── Queries (GET) ───────────────────────────────────────────────────────────
 
-// Fetch all publicly visible events (PUBLISHED, ON_SALE, ONGOING, SOLD_OUT, COMPLETED)
 export async function getEvents(): Promise<EventsResult> {
   try {
     const { data, error } = await supabaseAdmin
@@ -104,7 +95,6 @@ export async function getEvents(): Promise<EventsResult> {
   }
 }
 
-// Fetch a single event's full detail — used on event detail page
 export async function getEventById(eventId: string): Promise<EventDetailResult> {
   try {
     if (!eventId) return { success: false, message: 'Event ID is required.' };
@@ -132,9 +122,7 @@ export async function getEventById(eventId: string): Promise<EventDetailResult> 
     }
     if (!data) return { success: false, message: 'Event not found.' };
 
-    const images = (data.event_images ?? []).sort(
-      (a, b) => a.priority_order - b.priority_order
-    );
+    const images = (data.event_images ?? []).sort((a, b) => a.priority_order - b.priority_order);
 
     const event: EventDetail = {
       ...mapToEvent(data),
@@ -157,7 +145,6 @@ export async function getEventById(eventId: string): Promise<EventDetailResult> 
   }
 }
 
-// Fetch only ON_SALE / PUBLISHED / ONGOING events for the homepage Featured section
 export async function getFeaturedEvents(): Promise<EventsResult> {
   try {
     const { data, error } = await supabaseAdmin
@@ -188,7 +175,6 @@ export async function getFeaturedEvents(): Promise<EventsResult> {
   }
 }
 
-// Fetch events owned by the currently authenticated organizer
 export async function getMyEvents(): Promise<EventsResult> {
   try {
     const session = await getSession();

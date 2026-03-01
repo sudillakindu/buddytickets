@@ -1,12 +1,10 @@
-﻿'use client';
+﻿// components/core/Hero.tsx
+'use client';
 
 import React, { useRef, memo } from 'react';
 import Link from 'next/link';
 import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
-import {
-  SparklesIcon, CalendarIcon, MusicIcon, UsersIcon,
-  TrophyIcon, StarIcon, ZapIcon, LucideIcon,
-} from 'lucide-react';
+import { SparklesIcon, CalendarIcon, MusicIcon, UsersIcon, TrophyIcon, StarIcon, ZapIcon, LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
@@ -47,12 +45,6 @@ const CATEGORIES: Category[] = [
   { icon: StarIcon, label: 'Arts', color: '#a855f7', delay: 0.6 },
   { icon: ZapIcon, label: 'Technology', color: '#6366f1', delay: 0.65 },
 ];
-
-const styles = {
-  textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
-  textMuted: 'text-[hsl(215.4,16.3%,46.9%)]',
-  btnGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]',
-} as const;
 
 interface HeroBackgroundProps {
   springX: MotionValue<number>;
@@ -171,10 +163,7 @@ export default function Hero() {
           transition={{ duration: 0.5 }}
         >
           <motion.span
-            className={cn(
-              'font-primary inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-[13px] sm:text-[14px] font-medium mb-5 border border-[hsl(222.2,47.4%,11.2%)]/20 shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm',
-              styles.textPrimary
-            )}
+            className="font-primary inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full text-[13px] sm:text-[14px] font-medium mb-5 border border-[hsl(222.2,47.4%,11.2%)]/20 shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)] bg-white/50 backdrop-blur-sm text-[hsl(222.2,47.4%,11.2%)]"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
@@ -185,10 +174,7 @@ export default function Hero() {
           </motion.span>
 
           <motion.h1
-            className={cn(
-              'font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6',
-              styles.textPrimary
-            )}
+            className="font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6 text-[hsl(222.2,47.4%,11.2%)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -215,10 +201,7 @@ export default function Hero() {
           </motion.h1>
 
           <motion.p
-            className={cn(
-              'font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed px-2 sm:px-4',
-              styles.textMuted
-            )}
+            className="font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed px-2 sm:px-4 text-[hsl(215.4,16.3%,46.9%)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -234,10 +217,7 @@ export default function Hero() {
           >
             <Button
               asChild
-              className={cn(
-                'cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 px-8 w-full sm:w-auto text-[15px] text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]',
-                styles.btnGradient
-              )}
+              className="cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 px-8 w-full sm:w-auto text-[15px] text-white rounded-xl shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] transition-all duration-500 hover:scale-[1.02] border-none bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]"
             >
               <Link href="/events">
                 <span className="relative z-10">Explore Events</span>
@@ -247,10 +227,7 @@ export default function Hero() {
             <Button
               asChild
               variant="outline"
-              className={cn(
-                'cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 w-full sm:w-auto px-8 text-[15px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent border-[hsl(222.2,47.4%,11.2%)]/20',
-                styles.textPrimary
-              )}
+              className="cursor-target font-primary relative cursor-pointer group overflow-hidden inline-flex items-center justify-center h-11 w-full sm:w-auto px-8 text-[15px] rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)]"
             >
               <Link href="/become-an-organizer">
                 <span className="relative z-10">Become an Organizer</span>

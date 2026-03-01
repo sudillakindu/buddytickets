@@ -1,6 +1,4 @@
-// ─── Profile Types ────────────────────────────────────────────────────────────
-
-// Maps 1:1 to users table columns exposed to the profile page
+// lib/types/profile.ts
 export interface UserProfile {
   user_id: string;
   name: string;
@@ -15,20 +13,15 @@ export interface UserProfile {
   last_login_at: string | null;
 }
 
-// ─── Profile Action Return Types ──────────────────────────────────────────────
-
-// Base result for profile mutations
 export interface ProfileResult {
   success: boolean;
   message: string;
 }
 
-// Returned by getUserProfile
 export interface ProfileFetchResult extends ProfileResult {
   profile?: UserProfile;
 }
 
-// Returned by uploadProfileImage
 export interface ProfileImageResult extends ProfileResult {
   imageUrl?: string;
 }

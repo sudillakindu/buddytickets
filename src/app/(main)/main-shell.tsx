@@ -1,3 +1,4 @@
+// app/(main)/main-shell.tsx
 'use client';
 
 import type { ReactNode } from 'react';
@@ -5,7 +6,7 @@ import type { ReactNode } from 'react';
 import { Header } from '@/components/core/Header';
 import { Footer } from '@/components/core/Footer';
 
-interface Props {
+export interface Props {
   user: {
     sub: string;
     name: string;
@@ -22,7 +23,6 @@ export default function MainShell({ user, whatsappNumber, supportEmail, children
   return (
     <>
       <Header user={user} />
-      {/* Global centered wrapper explicitly applied at the layout root */}
       <main className="flex-1 w-full flex flex-col relative bg-transparent">
         {children}
       </main>

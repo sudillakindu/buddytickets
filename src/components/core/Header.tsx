@@ -1,3 +1,4 @@
+// components/core/Header.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
@@ -8,10 +9,8 @@ import { Menu, X, ChevronDown, User, Ticket, LogOut } from 'lucide-react';
 
 import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
-
-import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
-
 import { signOut } from '@/lib/actions/auth';
+import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
 
 export interface UserInfo {
   sub: string;
@@ -31,14 +30,6 @@ const NAV_LINKS: NavLinkItem[] = [
   { name: 'Events', sectionId: 'events' },
 ];
 
-const styles = {
-  textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
-  textAccent: 'text-[hsl(270,70%,50%)]',
-  hoverAccent: 'hover:text-[hsl(270,70%,50%)]',
-  btnGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]',
-  gradientText: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] bg-clip-text text-transparent',
-} as const;
-
 interface NavButtonProps {
   name: string;
   onClick: () => void;
@@ -51,9 +42,7 @@ const NavButton = memo(({ name, onClick, className = '' }: NavButtonProps) => {
       variant="ghost"
       onClick={onClick}
       className={cn(
-        'font-secondary text-base transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent',
-        styles.textPrimary,
-        styles.hoverAccent,
+        'font-secondary text-base transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]',
         className
       )}
     >
@@ -68,7 +57,7 @@ NavButton.displayName = 'NavButton';
 const BrandLogo = memo(() => {
   return (
     <Link href="/" className="flex items-center gap-2 group" aria-label="BuddyTickets Home">
-      <div className={cn('flex items-center justify-center transition-transform group-hover:scale-105', styles.textPrimary)}>
+      <div className="flex items-center justify-center transition-transform group-hover:scale-105 text-[hsl(222.2,47.4%,11.2%)]">
         <Image
           src={LogoSrc}
           alt="BuddyTickets Logo"
@@ -103,12 +92,7 @@ const UserAvatar = memo(({ user, size = 'md' }: { user: UserInfo; size?: 'sm' | 
   }
 
   return (
-    <div
-      className={cn(
-        dim,
-        'rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] flex items-center justify-center text-white font-semibold shrink-0'
-      )}
-    >
+    <div className={cn(dim, 'rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] flex items-center justify-center text-white font-semibold shrink-0')}>
       {user.name.charAt(0).toUpperCase()}
     </div>
   );
@@ -162,11 +146,7 @@ export function Header({ user }: { user: UserInfo | null }) {
     <header className="fixed top-0 left-0 right-0 z-50 bg-transparent flex justify-center pt-4 w-full">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="relative w-full" aria-label="Main navigation">
-          <div
-            className={cn(
-              'flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full translate-y-0 opacity-100 blur-0'
-            )}
-          >
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full">
             <BrandLogo />
 
             <div className="hidden md:flex items-center gap-5">
@@ -190,7 +170,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                       className="flex items-center gap-2 group cursor-pointer"
                     >
                       <UserAvatar user={user} size="sm" />
-                      <span className={cn('font-secondary text-sm', styles.textPrimary)}>
+                      <span className="font-secondary text-sm text-[hsl(222.2,47.4%,11.2%)]">
                         {user.name.split(' ')[0]}
                       </span>
                       <ChevronDown
@@ -201,7 +181,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                     {dropdownOpen && (
                       <div className="absolute right-0 top-full mt-5 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-[hsl(222.2,47.4%,11.2%)]/5 shadow-lg py-2 z-50">
                         <div className="px-4 py-3 min-w-0">
-                          <p className={cn('font-primary text-sm font-semibold truncate', styles.textPrimary)}>
+                          <p className="font-primary text-sm font-semibold truncate text-[hsl(222.2,47.4%,11.2%)]">
                             {user.name}
                           </p>
                           <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] truncate">
@@ -212,7 +192,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                         <Link
                           href="/profile"
                           onClick={() => setDropdownOpen(false)}
-                          className={cn('flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors', styles.textPrimary, styles.hoverAccent)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                         >
                           <User className="w-4 h-4" />
                           My Profile
@@ -220,7 +200,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                         <Link
                           href="/tickets"
                           onClick={() => setDropdownOpen(false)}
-                          className={cn('flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors', styles.textPrimary, styles.hoverAccent)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                         >
                           <Ticket className="w-4 h-4" />
                           My Tickets
@@ -246,10 +226,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                     </Link>
                     <Button
                       asChild
-                      className={cn(
-                        'font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] hover:shadow-xl transition-all duration-500 hover:scale-105 h-auto border-none bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]',
-                        styles.btnGradient
-                      )}
+                      className="font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.2)] hover:shadow-xl transition-all duration-500 hover:scale-105 h-auto border-none bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]"
                     >
                       <Link href="/sign-up">Get Started</Link>
                     </Button>
@@ -259,7 +236,7 @@ export function Header({ user }: { user: UserInfo | null }) {
             </div>
 
             <button
-              className={cn('md:hidden p-2 rounded-full transition-colors hover:bg-[hsl(222.2,47.4%,11.2%)]/5', styles.textPrimary)}
+              className="md:hidden p-2 rounded-full transition-colors hover:bg-[hsl(222.2,47.4%,11.2%)]/5 text-[hsl(222.2,47.4%,11.2%)]"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={mobileMenuOpen}
@@ -275,7 +252,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                   <div className="flex items-center gap-3 py-2">
                     <UserAvatar user={user} />
                     <div className="min-w-0">
-                      <p className={cn('font-primary text-sm font-medium truncate', styles.textPrimary)}>
+                      <p className="font-primary text-sm font-medium truncate text-[hsl(222.2,47.4%,11.2%)]">
                         {user.name}
                       </p>
                       <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)] truncate max-w-[180px]">
@@ -294,7 +271,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                     handleNavigation(item.sectionId);
                     setMobileMenuOpen(false);
                   }}
-                  className={cn('font-secondary text-base text-left transition-colors duration-300 py-1.5', styles.textPrimary, styles.hoverAccent)}
+                  className="font-secondary text-base text-left transition-colors duration-300 py-1.5 text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                 >
                   {item.name}
                 </button>
@@ -307,7 +284,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                   <Link
                     href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
-                    className={cn('flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors', styles.textPrimary, styles.hoverAccent)}
+                    className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                   >
                     <User className="w-4 h-4" />
                     My Profile
@@ -315,7 +292,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                   <Link
                     href="/tickets"
                     onClick={() => setMobileMenuOpen(false)}
-                    className={cn('flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors', styles.textPrimary, styles.hoverAccent)}
+                    className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                   >
                     <Ticket className="w-4 h-4" />
                     My Tickets
@@ -339,10 +316,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                   </Link>
                   <Button
                     asChild
-                    className={cn(
-                      'font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-md hover:shadow-xl transition-all duration-500 h-auto border-none w-full bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]',
-                      styles.btnGradient
-                    )}
+                    className="font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-md hover:shadow-xl transition-all duration-500 h-auto border-none w-full bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]"
                   >
                     <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
                       Get Started
