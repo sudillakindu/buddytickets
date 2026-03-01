@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { motion, useMotionValue, useSpring, useTransform, MotionValue } from 'framer-motion';
 import { SparklesIcon, CalendarIcon, MusicIcon, UsersIcon, TrophyIcon, StarIcon, ZapIcon, LucideIcon } from 'lucide-react';
 
-import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
 import { TargetCursor } from '@/components/shared/target-cursor';
 

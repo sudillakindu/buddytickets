@@ -1,0 +1,35 @@
+name: Schema Alignment Check
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/actions/**'
+      - 'src/lib/types/**'
+      - 'supabase/migrations/**'
+      - 'scripts/audit_schema_alignment.py'
+      - '.github/workflows/schema-alignment.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/lib/actions/**'
+      - 'src/lib/types/**'
+      - 'supabase/migrations/**'
+      - 'scripts/audit_schema_alignment.py'
+      - '.github/workflows/schema-alignment.yml'
+
+jobs:
+  audit-schema-alignment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run DB alignment audit
+        run: python scripts/audit_schema_alignment.py --fail-under 100

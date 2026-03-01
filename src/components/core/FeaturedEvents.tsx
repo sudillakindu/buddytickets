@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { ChevronRight, CalendarX } from 'lucide-react';
 
-import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/shared/event/event-card';
 import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
