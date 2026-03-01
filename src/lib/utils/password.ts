@@ -2,19 +2,18 @@ import { createHmac } from 'crypto';
 import { hash, compare } from 'bcryptjs';
 
 const SALT_ROUNDS = 12;
-let PASSWORD_SECRET_CACHE: string | null = null;
+
+let PASSWORD_SECRET: string | null = null;
 
 function getSecret(): string {
-  if (!PASSWORD_SECRET_CACHE) {
-    PASSWORD_SECRET_CACHE = process.env.PASSWORD_SECRET || '';
-    if (!PASSWORD_SECRET_CACHE) {
-      throw new Error('Missing PASSWORD_SECRET environment variable.');
-    }
+  if (!PASSWORD_SECRET) {
+    PASSWORD_SECRET = process.env.PASSWORD_SECRET ?? '';
+    if (!PASSWORD_SECRET) throw new Error('Missing PASSWORD_SECRET environment variable.');
   }
-  return PASSWORD_SECRET_CACHE;
+  return PASSWORD_SECRET;
 }
 
-// Enhance password security by adding an internal HMAC "pepper" before hashing
+// HMAC pepper adds a server-side secret to the password before bcrypt hashing
 function pepper(value: string): string {
   return createHmac('sha256', getSecret()).update(value).digest('hex');
 }

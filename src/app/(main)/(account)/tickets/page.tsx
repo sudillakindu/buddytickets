@@ -7,44 +7,43 @@ import { Ticket, TicketX } from 'lucide-react';
 import { TicketCard } from '@/components/shared/ticket/ticket-card';
 import { TicketGridSkeleton } from '@/components/shared/ticket/ticket-skeleton';
 import { Toast } from '@/components/ui/toast';
-import { MOCK_TICKETS, type Tickets } from '@/lib/meta/ticket';
+
+import { getUserTickets } from '@/lib/actions/ticket';
+import type { Ticket as TicketType } from '@/lib/types/ticket';
 
 export default function TicketsPage() {
-  const [tickets, setTickets] = useState<Tickets[]>([]);
+  const [tickets, setTickets] = useState<TicketType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
-    const fetchTickets = async () => {
+    const load = async () => {
       setIsLoading(true);
       try {
-        await new Promise<void>((resolve) => setTimeout(resolve, 400));
-        if (isMounted) {
-          setTickets(MOCK_TICKETS);
+        const result = await getUserTickets();
+        if (!cancelled) {
+          if (result.success) {
+            setTickets(result.tickets ?? []);
+          } else {
+            Toast('Error', result.message || 'Failed to load tickets.', 'error');
+          }
         }
       } catch {
-        if (isMounted) {
-          Toast('Error', 'Something went wrong while loading tickets.', 'error');
-        }
+        if (!cancelled) Toast('Error', 'Failed to connect to the server.', 'error');
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (!cancelled) setIsLoading(false);
       }
     };
 
-    fetchTickets();
-    
-    return () => { 
-      isMounted = false; 
-    };
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   return (
-    <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-28 pb-16">
+    <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center justify-between w-full">
             <div>
@@ -77,9 +76,9 @@ export default function TicketsPage() {
             className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
             role="status"
           >
-            <TicketX 
-              className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" 
-              aria-hidden="true" 
+            <TicketX
+              className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50"
+              aria-hidden="true"
             />
             <h3 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">
               No Tickets Yet
@@ -91,15 +90,14 @@ export default function TicketsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 w-full">
             {tickets.map((ticket, index) => (
-              <TicketCard 
-                key={ticket.ticket_id} 
-                ticket={ticket} 
-                index={index} 
+              <TicketCard
+                key={ticket.ticket_id}
+                ticket={ticket}
+                index={index}
               />
             ))}
           </div>
         )}
-
       </div>
     </section>
   );

@@ -19,7 +19,8 @@ function AuthBackground() {
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundImage:
+            'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
       />

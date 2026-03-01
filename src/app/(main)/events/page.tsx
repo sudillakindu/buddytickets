@@ -8,7 +8,8 @@ import { EventCard } from '@/components/shared/event/event-card';
 import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
 import { Toast } from '@/components/ui/toast';
 
-import { MOCK_EVENTS, type Event } from '@/lib/meta/event';
+import { getEvents } from '@/lib/actions/event';
+import type { Event } from '@/lib/types/event';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -17,40 +18,40 @@ export default function EventsPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const fetchEvents = async () => {
+    const load = async () => {
       setLoading(true);
       try {
-        await new Promise<void>((resolve) => setTimeout(resolve, 400));
+        const result = await getEvents();
         if (!cancelled) {
-          setEvents(MOCK_EVENTS);
+          if (result.success) {
+            setEvents(result.events ?? []);
+          } else {
+            Toast('Error', result.message || 'Failed to load events.', 'error');
+          }
         }
       } catch {
-        if (!cancelled) {
-          Toast('Error', 'Something went wrong while loading events.', 'error');
-        }
+        if (!cancelled) Toast('Error', 'Failed to connect to the server.', 'error');
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     };
 
-    fetchEvents();
-
-    return () => { 
-      // Prevent state update if component unmounts before fetch completes
-      cancelled = true; 
-    };
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   return (
-    <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-28 sm:pt-32 pb-16">
+    <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center justify-between w-full">
             <div>
               <h1 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
-                All <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">Events</span>
+                All{' '}
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
+                  Events
+                </span>
               </h1>
               <div className="h-1.5 w-20 rounded-full mt-2 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
             </div>
@@ -75,9 +76,9 @@ export default function EventsPage() {
             className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
             role="status"
           >
-            <CalendarX 
-              className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50" 
-              aria-hidden="true" 
+            <CalendarX
+              className="w-16 sm:w-20 h-16 sm:h-20 mb-4 text-[hsl(215.4,16.3%,46.9%)] opacity-50"
+              aria-hidden="true"
             />
             <h3 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)] mb-2">
               No Events Right Now
@@ -95,7 +96,7 @@ export default function EventsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.06 }}
               >
-                <EventCard event={event} />
+                <EventCard event={event} index={index} />
               </motion.div>
             ))}
           </div>

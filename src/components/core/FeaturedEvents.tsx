@@ -11,16 +11,21 @@ import { EventCard } from '@/components/shared/event/event-card';
 import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
 import { Toast } from '@/components/ui/toast';
 
-import { MOCK_EVENTS, type Event } from '@/lib/meta/event';
+import { getFeaturedEvents } from '@/lib/actions/event';
+import type { Event } from '@/lib/types/event';
 
-const ACTIVE_STATUSES = ['ON_SALE', 'PUBLISHED', 'ONGOING'] as const;
+// Statuses that appear in the "Latest Events" section
+const ACTIVE_STATUSES = new Set(['ON_SALE', 'ONGOING']);
 
 const styles = {
-  textGradient: 'bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
+  textGradient:
+    'bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
   bgGradient: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]',
   textPrimary: 'text-[hsl(222.2,47.4%,11.2%)]',
   textMuted: 'text-[hsl(215.4,16.3%,46.9%)]',
 } as const;
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface SectionHeaderProps {
   highlight: string;
@@ -63,10 +68,7 @@ const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
           aria-label={`View all ${title}`}
         >
           View All
-          <ChevronRight 
-            className="w-4 h-4 group-hover:translate-x-1 transition-transform" 
-            aria-hidden="true" 
-          />
+          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
         </Button>
       </motion.div>
     </div>
@@ -75,93 +77,94 @@ const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
 
 SectionHeader.displayName = 'SectionHeader';
 
-const EmptyState = memo(() => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
-      role="status"
-    >
-      <CalendarX 
-        className={cn('w-16 sm:w-20 h-16 sm:h-20 mb-4 opacity-50', styles.textMuted)} 
-        aria-hidden="true" 
-      />
-      <h3 className={cn('font-primary text-2xl sm:text-3xl font-semibold mb-2', styles.textPrimary)}>
-        No Events Right Now
-      </h3>
-      <p className={cn('font-secondary text-base sm:text-lg max-w-md mx-auto', styles.textMuted)}>
-        We&apos;re currently planning our next exciting events. Check back soon!
-      </p>
-    </motion.div>
-  );
-});
+const EmptyState = memo(() => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex flex-col items-center justify-center py-24 text-center px-4 w-full"
+    role="status"
+  >
+    <CalendarX
+      className={cn('w-16 sm:w-20 h-16 sm:h-20 mb-4 opacity-50', styles.textMuted)}
+      aria-hidden="true"
+    />
+    <h3 className={cn('font-primary text-2xl sm:text-3xl font-semibold mb-2', styles.textPrimary)}>
+      No Events Right Now
+    </h3>
+    <p className={cn('font-secondary text-base sm:text-lg max-w-md mx-auto', styles.textMuted)}>
+      We&apos;re currently planning our next exciting events. Check back soon!
+    </p>
+  </motion.div>
+));
 
 EmptyState.displayName = 'EmptyState';
 
-const EventGrid = memo(({ events }: { events: Event[] }) => {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
-      {events.map((event, index) => (
-        <motion.div
-          key={event.event_id ?? index}
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
-        >
-          <EventCard event={event} />
-        </motion.div>
-      ))}
-    </div>
-  );
-});
+const EventGrid = memo(({ events }: { events: Event[] }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
+    {events.map((event, index) => (
+      <motion.div
+        key={event.event_id}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: index * 0.1 }}
+      >
+        <EventCard event={event} />
+      </motion.div>
+    ))}
+  </div>
+));
 
 EventGrid.displayName = 'EventGrid';
 
-function useEvents() {
-  const [eventsList, setEventsList] = useState<Event[]>([]);
+// ─── Data Hook ────────────────────────────────────────────────────────────────
+
+function useFeaturedEvents() {
+  const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    const fetchEvents = async () => {
+    const load = async () => {
       setIsLoading(true);
       try {
-        await new Promise<void>((resolve) => setTimeout(resolve, 400));
-        if (!cancelled) setEventsList(MOCK_EVENTS);
-      } catch {
+        const result = await getFeaturedEvents();
         if (!cancelled) {
-          Toast('Connection Error', 'Something went wrong while connecting to the server.', 'error');
+          if (result.success) {
+            setEvents(result.events ?? []);
+          } else {
+            Toast('Error', result.message || 'Failed to load events.', 'error');
+          }
         }
+      } catch {
+        if (!cancelled) Toast('Connection Error', 'Failed to connect to the server.', 'error');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     };
 
-    fetchEvents();
-
-    return () => { 
-      cancelled = true; 
-    };
+    load();
+    return () => { cancelled = true; };
   }, []);
 
   const activeEvents = useMemo(
-    () => eventsList.filter((e) => (ACTIVE_STATUSES as readonly string[]).includes(e.status)),
-    [eventsList]
+    () => events.filter((e) => ACTIVE_STATUSES.has(e.status)),
+    [events]
   );
 
   const upcomingEvents = useMemo(
-    () => eventsList.filter((e) => e.status === 'DRAFT'),
-    [eventsList]
+    () => events.filter((e) => e.status === 'PUBLISHED'),
+    [events]
   );
 
-  return { eventsList, isLoading, activeEvents, upcomingEvents };
+  return { events, isLoading, activeEvents, upcomingEvents };
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function FeaturedEvents() {
-  const { eventsList, isLoading, activeEvents, upcomingEvents } = useEvents();
+  const { events, isLoading, activeEvents, upcomingEvents } = useFeaturedEvents();
 
   return (
     <section
@@ -177,7 +180,7 @@ export default function FeaturedEvents() {
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16 sm:space-y-20 [&_.event-title]:font-primary [&_.event-category]:font-primary [&_.event-price]:font-primary [&_.event-button]:font-primary [&_.event-meta]:font-secondary [&_.event-overlay]:font-secondary [&_.event-location]:font-secondary [&_.event-label]:font-secondary">
         {isLoading ? (
           <EventGridSkeleton />
-        ) : eventsList.length === 0 ? (
+        ) : events.length === 0 ? (
           <EmptyState />
         ) : (
           <>

@@ -2,19 +2,17 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 
 const COOKIE_NAME = 'bt_session';
-const MAX_AGE = 60 * 60 * 24 * 1; // 1 day
+const MAX_AGE_SECONDS = 60 * 60 * 24; // 1 day
 
-let SESSION_SECRET_CACHE: Uint8Array | null = null;
+let SESSION_SECRET: Uint8Array | null = null;
 
 function getSecret(): Uint8Array {
-  if (!SESSION_SECRET_CACHE) {
+  if (!SESSION_SECRET) {
     const secret = process.env.SESSION_SECRET;
-    if (!secret) {
-      throw new Error('Missing SESSION_SECRET environment variable.');
-    }
-    SESSION_SECRET_CACHE = new TextEncoder().encode(secret);
+    if (!secret) throw new Error('Missing SESSION_SECRET environment variable.');
+    SESSION_SECRET = new TextEncoder().encode(secret);
   }
-  return SESSION_SECRET_CACHE;
+  return SESSION_SECRET;
 }
 
 export interface SessionUser extends JWTPayload {
@@ -41,7 +39,7 @@ export async function createSession(user: {
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE}s`)
+    .setExpirationTime(`${MAX_AGE_SECONDS}s`)
     .sign(getSecret());
 
   const cookieStore = await cookies();
@@ -50,7 +48,7 @@ export async function createSession(user: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: MAX_AGE,
+    maxAge: MAX_AGE_SECONDS,
   });
 }
 
@@ -63,7 +61,7 @@ export async function getSession(): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
   } catch {
-    return null; // Token invalid or expired
+    return null;
   }
 }
 
@@ -72,6 +70,7 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
+// Verify a raw token string without relying on the cookie store (used in middleware)
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());

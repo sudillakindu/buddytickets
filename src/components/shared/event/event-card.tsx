@@ -8,7 +8,7 @@ import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from 'lucide-react';
 import { cn } from '@/lib/ui/utils';
 import { Button } from '@/components/ui/button';
 
-import type { Event } from '@/lib/meta/event';
+import type { Event } from '@/lib/types/event';
 
 type EventStatusKey = Event['status'];
 
@@ -21,56 +21,37 @@ interface StatusUI {
 const STATUS_UI: Record<EventStatusKey, StatusUI> = {
   ON_SALE: {
     text: 'Book Ticket',
-    className: 'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500',
+    className:
+      'bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500',
     disabled: false,
   },
-  SOLD_OUT: {
-    text: 'Sold Out',
-    className: 'bg-[#333333]',
-    disabled: true,
-  },
-  ONGOING: {
-    text: 'Live Now',
-    className: 'bg-emerald-500',
-    disabled: true,
-  },
-  COMPLETED: {
-    text: 'Completed',
-    className: 'bg-[#333333]',
-    disabled: true,
-  },
-  CANCELLED: {
-    text: 'Cancelled',
-    className: 'bg-[#333333]',
-    disabled: true,
-  },
-  DRAFT: {
-    text: 'Upcoming',
-    className: 'bg-[#C76E00]',
-    disabled: true,
-  },
-  PUBLISHED: {
-    text: 'Upcoming',
-    className: 'bg-[#C76E00]',
-    disabled: true,
-  },
+  SOLD_OUT: { text: 'Sold Out', className: 'bg-[#333333]', disabled: true },
+  ONGOING: { text: 'Live Now', className: 'bg-emerald-500', disabled: true },
+  COMPLETED: { text: 'Completed', className: 'bg-[#333333]', disabled: true },
+  CANCELLED: { text: 'Cancelled', className: 'bg-[#333333]', disabled: true },
+  DRAFT: { text: 'Upcoming', className: 'bg-[#C76E00]', disabled: true },
+  PUBLISHED: { text: 'Upcoming', className: 'bg-[#C76E00]', disabled: true },
 };
 
-const formatDate = (isoString: string): string => {
-  if (!isoString) return '—';
-  return new Date(isoString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
+const formatDate = (iso: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: '2-digit',
   });
 };
 
-const formatTime = (isoString: string): string => {
-  if (!isoString) return '—';
-  return new Date(isoString).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
+const formatTime = (iso: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: '2-digit', minute: '2-digit',
   });
+};
+
+// Format price: null → "—", 0 → "Free", number → "LKR X,XXX"
+const formatPrice = (price: number | null): string => {
+  if (price === null) return '—';
+  if (price === 0) return 'Free';
+  return `LKR ${price.toLocaleString()}`;
 };
 
 export interface EventCardProps {
@@ -151,7 +132,7 @@ const EventCard: React.FC<EventCardProps> = memo(({ event, index = 0 }) => {
               Starting from
             </p>
             <p className="event-price text-base font-bold text-[hsl(222.2,47.4%,11.2%)]">
-              {event.start_ticket_price}
+              {formatPrice(event.start_ticket_price)}
             </p>
           </div>
         </div>
