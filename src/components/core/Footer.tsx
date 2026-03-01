@@ -37,6 +37,11 @@ interface FooterNavGroupProps {
   delay: number;
 }
 
+interface FooterProps {
+  whatsappNumber: string;
+  supportEmail: string;
+}
+
 const CURRENT_YEAR = new Date().getFullYear();
 
 const SOCIAL_LINKS: SocialLink[] = [
@@ -66,46 +71,48 @@ const styles = {
   hoverAccent: 'hover:text-[hsl(270,70%,50%)]',
 } as const;
 
-const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => (
-  <motion.nav
-    className="space-y-4 flex flex-col items-start text-left w-full"
-    initial={{ opacity: 0, y: 20 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.5, delay }}
-    viewport={{ once: true }}
-    aria-label={`${title} links`}
-  >
-    <h3 className={cn('font-primary text-base font-bold', styles.textPrimary)}>{title}</h3>
-    <ul className="space-y-2.5 text-sm w-full" role="list">
-      {links.map(({ href, label }) => (
-        <motion.li
-          key={label}
-          whileHover={{ x: 5 }}
-          transition={{ type: 'spring', stiffness: 300 }}
-          className="flex justify-start"
-        >
-          <Link
-            href={href}
-            className={cn(
-              'font-secondary transition-colors flex items-center gap-2 group',
-              styles.textMuted,
-              styles.hoverAccent
-            )}
+const FooterNavGroup = memo(({ title, links, delay }: FooterNavGroupProps) => {
+  return (
+    <motion.nav
+      className="space-y-4 flex flex-col items-start text-left w-full"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      viewport={{ once: true }}
+      aria-label={`${title} links`}
+    >
+      <h3 className={cn('font-primary text-base font-bold', styles.textPrimary)}>{title}</h3>
+      <ul className="space-y-2.5 text-sm w-full" role="list">
+        {links.map(({ href, label }) => (
+          <motion.li
+            key={label}
+            whileHover={{ x: 5 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            className="flex justify-start"
           >
-            <ArrowRight
+            <Link
+              href={href}
               className={cn(
-                'w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300',
-                styles.textAccent
+                'font-secondary transition-colors flex items-center gap-2 group',
+                styles.textMuted,
+                styles.hoverAccent
               )}
-              aria-hidden="true"
-            />
-            {label}
-          </Link>
-        </motion.li>
-      ))}
-    </ul>
-  </motion.nav>
-));
+            >
+              <ArrowRight
+                className={cn(
+                  'w-3 h-3 opacity-0 -ml-5 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300',
+                  styles.textAccent
+                )}
+                aria-hidden="true"
+              />
+              {label}
+            </Link>
+          </motion.li>
+        ))}
+      </ul>
+    </motion.nav>
+  );
+});
 
 FooterNavGroup.displayName = 'FooterNavGroup';
 
@@ -148,7 +155,11 @@ const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
 
 ContactItem.displayName = 'ContactItem';
 
-export function Footer() {
+export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
+  const normalizedWhatsapp = whatsappNumber.startsWith('+') ? whatsappNumber : `+${whatsappNumber}`;
+  const whatsappHref = `tel:${normalizedWhatsapp.replace(/\s+/g, '')}`;
+  const supportEmailHref = `mailto:${supportEmail}`;
+
   return (
     <footer
       className="bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-12 sm:pt-16 pb-8 border-t border-[hsl(222.2,47.4%,11.2%)]/5 w-full"
@@ -226,8 +237,8 @@ export function Footer() {
             </h3>
             <ul className="space-y-3 text-sm w-full" role="list">
               <ContactItem icon={MapPin} text="Buddy Tickets, Matara, Sri Lanka" />
-              <ContactItem icon={Phone} text="+94 72 33 56 907" href="tel:+94763356907" />
-              <ContactItem icon={Mail} text="info@buddytickets.lk" href="mailto:info@buddyticket.lk" />
+              <ContactItem icon={Phone} text={normalizedWhatsapp} href={whatsappHref} />
+              <ContactItem icon={Mail} text={supportEmail} href={supportEmailHref} />
             </ul>
           </motion.div>
         </div>

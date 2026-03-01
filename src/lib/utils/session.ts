@@ -2,7 +2,7 @@ import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { cookies } from 'next/headers';
 
 const COOKIE_NAME = 'bt_session';
-const MAX_AGE = 60 * 60 * 24 * 7;
+const MAX_AGE = 60 * 60 * 24 * 1; // 1 day
 
 let SESSION_SECRET_CACHE: Uint8Array | null = null;
 
@@ -47,7 +47,7 @@ export async function createSession(user: {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NEXT_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: MAX_AGE,
@@ -63,7 +63,7 @@ export async function getSession(): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
   } catch {
-    return null;
+    return null; // Token invalid or expired
   }
 }
 

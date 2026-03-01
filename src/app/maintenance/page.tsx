@@ -27,47 +27,49 @@ const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
 
 const SPRING_CONFIG = { stiffness: 100, damping: 30 } as const;
 
-const AnimatedBackground = memo(({ springX, springY }: { springX: MotionValue<number>; springY: MotionValue<number> }) => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-    <motion.div
-      className="absolute top-[-5%] right-[-30%] w-[80vw] h-[80vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
-      style={{
-        background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
-        x: springX,
-        y: springY,
-      }}
-      animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-    <motion.div
-      className="absolute bottom-[-10%] left-[-30%] w-[70vw] h-[70vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
-      style={{
-        background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
-        x: springX,
-        y: springY,
-      }}
-      animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }}
-    />
-    {PARTICLES.map((p) => (
+const AnimatedBackground = memo(({ springX, springY }: { springX: MotionValue<number>; springY: MotionValue<number> }) => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       <motion.div
-        key={p.id}
-        className="absolute w-1.5 h-1.5 rounded-full"
-        style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
-        animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3], y: [0, -20, 0] }}
-        transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        className="absolute top-[-5%] right-[-30%] w-[80vw] h-[80vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
+        style={{
+          background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
+          x: springX,
+          y: springY,
+        }}
+        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
-    ))}
-  </div>
-));
+      <motion.div
+        className="absolute bottom-[-10%] left-[-30%] w-[70vw] h-[70vw] min-w-[200px] min-h-[200px] rounded-full blur-[60px] opacity-30"
+        style={{
+          background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
+          x: springX,
+          y: springY,
+        }}
+        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+      {PARTICLES.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute w-1.5 h-1.5 rounded-full"
+          style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
+          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3], y: [0, -20, 0] }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  );
+});
 
 AnimatedBackground.displayName = 'AnimatedBackground';
 
@@ -83,7 +85,9 @@ export default function MaintenancePage() {
     mouseY.set(e.clientY - rect.top - rect.height / 2);
   }, [mouseX, mouseY]);
 
-  const handleRefresh = useCallback(() => window.location.reload(), []);
+  const handleRefresh = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   return (
     <section
@@ -120,10 +124,17 @@ export default function MaintenancePage() {
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
           >
-            <Settings className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]" aria-hidden="true" />
+            <Settings 
+              className="w-10 h-10 text-indigo-500 animate-[spin_8s_linear_infinite]" 
+              aria-hidden="true" 
+            />
           </motion.div>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.8 }}>
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            transition={{ delay: 0.3, duration: 0.8 }}
+          >
             <motion.span
               className="font-primary inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium mb-4 bg-white/50 backdrop-blur-sm border border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)] shadow-[0_10px_15px_-3px_hsl(222.2,47.4%,11.2%,0.1)]"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -149,7 +160,10 @@ export default function MaintenancePage() {
                 onClick={handleRefresh}
                 className="font-primary relative group overflow-hidden inline-flex items-center justify-center gap-2 h-12 w-full sm:w-auto px-8 text-sm rounded-xl border-2 transition-all duration-300 shadow-sm hover:shadow-md hover:bg-gray-50 text-[hsl(222.2,47.4%,11.2%)] border-[hsl(222.2,47.4%,11.2%)]/20"
               >
-                <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" aria-hidden="true" />
+                <RefreshCw 
+                  className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" 
+                  aria-hidden="true" 
+                />
                 <span>Refresh Page</span>
               </Button>
               <Button

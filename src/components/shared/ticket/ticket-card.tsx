@@ -6,9 +6,9 @@ import { Calendar, Clock, MapPin, QrCode, Tag } from 'lucide-react';
 
 import { cn } from '@/lib/ui/utils';
 
-import type { MyTickets } from '@/lib/meta/ticket';
+import type { Tickets } from '@/lib/meta/ticket';
 
-type TicketStatus = MyTickets['status'];
+type TicketStatus = Tickets['status'];
 
 interface StatusUI {
   text: string;
@@ -62,7 +62,7 @@ const formatTime = (isoString: string): string => {
 };
 
 export interface TicketCardProps {
-  ticket: MyTickets;
+  ticket: Tickets;
   index?: number;
 }
 

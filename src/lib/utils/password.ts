@@ -14,6 +14,7 @@ function getSecret(): string {
   return PASSWORD_SECRET_CACHE;
 }
 
+// Enhance password security by adding an internal HMAC "pepper" before hashing
 function pepper(value: string): string {
   return createHmac('sha256', getSecret()).update(value).digest('hex');
 }

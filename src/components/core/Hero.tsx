@@ -59,69 +59,73 @@ interface HeroBackgroundProps {
   springY: MotionValue<number>;
 }
 
-const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-    <motion.div
-      className="absolute top-[-5%] right-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
-      style={{
-        background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
-        x: springX,
-        y: springY,
-      }}
-      animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-    <motion.div
-      className="absolute bottom-[-10%] left-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
-      style={{
-        background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
-        x: springX,
-        y: springY,
-      }}
-      animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-    />
-
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
-
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }}
-    />
-
-    {PARTICLES.map((p) => (
+const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
       <motion.div
-        key={p.id}
-        className="absolute w-2 h-2 rounded-full"
-        style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
-        animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
-        transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        className="absolute top-[-5%] right-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
+        style={{
+          background: 'linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))',
+          x: springX,
+          y: springY,
+        }}
+        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
       />
-    ))}
-  </div>
-));
+      <motion.div
+        className="absolute bottom-[-10%] left-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
+        style={{
+          background: 'linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))',
+          x: springX,
+          y: springY,
+        }}
+        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
+        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
+
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: 'linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+
+      {PARTICLES.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute w-2 h-2 rounded-full"
+          style={{ background: `hsl(${p.hue}, 70%, 50%)`, left: p.left, top: p.top }}
+          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  );
+});
 
 HeroBackground.displayName = 'HeroBackground';
 
-const CategoryPill = memo(({ icon: Icon, label, color, delay }: Category) => (
-  <motion.div
-    className="font-secondary flex items-center gap-1.5 text-sm cursor-pointer group px-3 sm:px-4 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
-    whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay }}
-  >
-    <Icon 
-      size={14} 
-      style={{ color }} 
-      className="w-3.5 h-3.5 flex-shrink-0 group-hover:scale-110 transition-transform" 
-    />
-    <span className="whitespace-nowrap">{label}</span>
-  </motion.div>
-));
+const CategoryPill = memo(({ icon: Icon, label, color, delay }: Category) => {
+  return (
+    <motion.div
+      className="font-secondary flex items-center gap-1.5 text-sm cursor-pointer group px-3 sm:px-4 py-2 rounded-full transition-colors duration-200 bg-white/60 backdrop-blur-md border border-gray-100 hover:border-gray-300 shadow-sm text-[hsl(215.4,16.3%,46.9%)]"
+      whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.9)' }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+    >
+      <Icon 
+        size={14} 
+        style={{ color }} 
+        className="w-3.5 h-3.5 flex-shrink-0 group-hover:scale-110 transition-transform" 
+      />
+      <span className="whitespace-nowrap">{label}</span>
+    </motion.div>
+  );
+});
 
 CategoryPill.displayName = 'CategoryPill';
 

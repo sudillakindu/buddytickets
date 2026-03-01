@@ -31,7 +31,6 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="relative min-h-[100dvh] w-full bg-gradient-to-b from-[hsl(210,40%,96.1%)] to-white">
       <AuthBackground />
-      {/* Container sizing logic pushed strictly into individual auth pages */}
       {children}
     </div>
   );
