@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { logger } from "@/lib/logger";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -32,7 +33,12 @@ async function isAuthenticated(request: NextRequest): Promise<boolean> {
   try {
     await jwtVerify(token, getJwtSecret());
     return true;
-  } catch {
+  } catch (error) {
+    logger.error({
+      fn: "proxy.isAuthenticated",
+      message: "Failed to verify session token",
+      meta: error,
+    });
     return false;
   }
 }

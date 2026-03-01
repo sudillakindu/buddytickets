@@ -8,6 +8,7 @@ import { Calendar, CalendarX } from "lucide-react";
 import { EventCard } from "@/components/shared/event/event-card";
 import { EventGridSkeleton } from "@/components/shared/event/event-skeleton";
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import { getEvents } from "@/lib/actions/event";
 import type { Event } from "@/lib/types/event";
@@ -30,7 +31,12 @@ export default function EventsPage() {
             Toast("Error", result.message, "error");
           }
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "EventsPage.load",
+          message: "Failed to load events",
+          meta: error,
+        });
         if (!cancelled) {
           Toast(
             "Error",

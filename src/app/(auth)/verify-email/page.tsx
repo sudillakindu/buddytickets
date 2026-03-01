@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 import {
@@ -120,7 +121,12 @@ function VerifyEmailForm() {
       setPurpose(result.data.purpose);
       setCountdown(result.data.remainingSeconds);
       setPageLoading(false);
-    } catch {
+    } catch (error) {
+      logger.error({
+        fn: "VerifyEmailPage.loadSessionData",
+        message: "Failed to load verify session",
+        meta: error,
+      });
       setPageError("Failed to load verification session. Please try again.");
       setPageLoading(false);
     }
@@ -226,7 +232,12 @@ function VerifyEmailForm() {
         }
 
         window.location.href = result.redirectTo ?? "/";
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "VerifyEmailPage.handleSubmit",
+          message: "Failed to verify otp",
+          meta: error,
+        });
         Toast("Error", "An unexpected error occurred.", "error");
       } finally {
         setLoading(false);
@@ -247,7 +258,12 @@ function VerifyEmailForm() {
       }
       if (result.remainingSeconds) setCountdown(result.remainingSeconds);
       Toast("Error", result.message, "error");
-    } catch {
+    } catch (error) {
+      logger.error({
+        fn: "VerifyEmailPage.handleResend",
+        message: "Failed to resend otp",
+        meta: error,
+      });
       Toast("Error", "Failed to resend code.", "error");
     } finally {
       setResending(false);

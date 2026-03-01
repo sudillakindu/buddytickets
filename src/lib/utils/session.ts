@@ -1,6 +1,7 @@
 // lib/utils/session.ts
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 const COOKIE_NAME = "bt_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24;
@@ -62,7 +63,8 @@ export async function getSession(): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "getSession", message: "Invalid session token", meta: err });
     return null;
   }
 }
@@ -78,7 +80,8 @@ export async function verifySessionToken(
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "verifySessionToken", message: "Invalid session token", meta: err });
     return null;
   }
 }

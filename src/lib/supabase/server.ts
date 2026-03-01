@@ -1,6 +1,7 @@
 // lib/supabase/server.ts
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
@@ -22,7 +23,12 @@ export const createClient = async () => {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options),
           );
-        } catch {
+        } catch (error) {
+          logger.error({
+            fn: "supabase.server.createClient.setAll",
+            message: "Failed to set response cookies",
+            meta: error,
+          });
           // Handled gracefully in Server Components by middleware
         }
       },

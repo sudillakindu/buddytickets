@@ -11,6 +11,7 @@ import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 import { signIn } from "@/lib/actions/auth";
@@ -113,7 +114,12 @@ export default function SignInPage() {
         }
 
         Toast("Error", result.message, "error");
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "SignInPage.handleSubmit",
+          message: "Failed to sign in",
+          meta: error,
+        });
         Toast("Error", "An unexpected error occurred.", "error");
       } finally {
         setLoading(false);
