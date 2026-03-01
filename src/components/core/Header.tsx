@@ -5,7 +5,10 @@ import { useState, useEffect, useCallback, useRef, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, User, Ticket, LogOut } from "lucide-react";
+import {
+  Menu, X, ChevronDown, User,
+  Ticket, LogOut, LayoutDashboard,
+} from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,8 @@ const NAV_LINKS: NavLinkItem[] = [
   { name: "Home", sectionId: "home" },
   { name: "Events", sectionId: "events" },
 ];
+
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 interface NavButtonProps {
   name: string;
@@ -118,6 +123,8 @@ export function Header({ user }: { user: UserInfo | null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const hasDashboardAccess = user !== null && DASHBOARD_ROLES.has(user.role);
 
   const handleNavigation = useCallback(
     (sectionId: string) => {
@@ -227,6 +234,16 @@ export function Header({ user }: { user: UserInfo | null }) {
                           <Ticket className="w-4 h-4" />
                           My Tickets
                         </Link>
+                        {hasDashboardAccess && (
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
+                          </Link>
+                        )}
                         <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1 mx-3" />
                         <button
                           onClick={handleSignOut}
@@ -302,6 +319,16 @@ export function Header({ user }: { user: UserInfo | null }) {
                   {item.name}
                 </button>
               ))}
+
+              {hasDashboardAccess && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="font-secondary text-base text-left transition-colors duration-300 py-1.5 text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                >
+                  Dashboard
+                </Link>
+              )}
 
               <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1" />
 

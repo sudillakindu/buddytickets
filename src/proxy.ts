@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+import { jwtVerify, type JWTPayload } from "jose";
 import { logger } from "@/lib/logger";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -9,6 +9,8 @@ const COOKIE_NAME = "bt_session";
 const PROTECTED_PAGES = new Set(["/profile", "/tickets"]);
 const AUTH_ONLY_PAGES = new Set(["/sign-in", "/sign-up", "/forget-password"]);
 const FLOW_PAGES = new Set(["/verify-email", "/reset-password"]);
+
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 let cachedSecret: Uint8Array | null = null;
 
@@ -26,20 +28,26 @@ function getJwtSecret(): Uint8Array {
   return cachedSecret;
 }
 
-async function isAuthenticated(request: NextRequest): Promise<boolean> {
+interface SessionPayload extends JWTPayload {
+  role?: string;
+}
+
+async function getSessionPayload(
+  request: NextRequest,
+): Promise<SessionPayload | null> {
   const token = request.cookies.get(COOKIE_NAME)?.value;
-  if (!token) return false;
+  if (!token) return null;
 
   try {
-    await jwtVerify(token, getJwtSecret());
-    return true;
+    const { payload } = await jwtVerify(token, getJwtSecret());
+    return payload as SessionPayload;
   } catch (error) {
     logger.error({
-      fn: "proxy.isAuthenticated",
+      fn: "proxy.getSessionPayload",
       message: "Failed to verify session token",
       meta: error,
     });
-    return false;
+    return null;
   }
 }
 
@@ -75,7 +83,28 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  const authenticated = await isAuthenticated(request);
+  const session = await getSessionPayload(request);
+  const authenticated = session !== null;
+
+  // ─── Dashboard Protection ─────────────────────────────────────────────────
+
+  if (pathname.startsWith("/dashboard")) {
+    if (!authenticated) {
+      url.pathname = "/sign-in";
+      url.search = `?redirect=${encodeURIComponent(pathname)}`;
+      return NextResponse.redirect(url);
+    }
+
+    const role = session.role ?? "";
+
+    if (!DASHBOARD_ROLES.has(role)) {
+      url.pathname = "/";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // ─── Standard Protected Pages ─────────────────────────────────────────────
 
   // Redirect unauthenticated users from protected routes to sign-in
   if (PROTECTED_PAGES.has(pathname) && !authenticated) {
