@@ -52,10 +52,10 @@ const SOCIAL_LINKS: SocialLink[] = [
 ];
 
 const QUICK_LINKS: NavLink[] = [
-  { href: '/',            label: 'Home'       },
-  { href: '/events',      label: 'Events'     },
-  { href: '/organizers',  label: 'Organizers' },
-  { href: '/about',       label: 'About Us'   },
+  { href: '/',                      label: 'Home'       },
+  { href: '/events',                label: 'Events'     },
+  { href: '/about',                 label: 'About Us'   },
+  { href: '/become-an-organizer',   label: 'Becoming an Organizer' },
 ];
 
 const LEGAL_LINKS: NavLink[] = [
