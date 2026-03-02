@@ -89,14 +89,22 @@ export async function getUserTickets(): Promise<TicketsResult> {
       .order("created_at", { ascending: false });
 
     if (error) {
-      logger.error({ fn: "getUserTickets", message: "DB error", meta: error.message });
+      logger.error({
+        fn: "getUserTickets",
+        message: "DB error",
+        meta: error.message,
+      });
       return { success: false, message: "Failed to load tickets." };
     }
 
     const tickets = (data ?? []).map(mapToTicket);
     return { success: true, message: "Tickets loaded.", tickets };
   } catch (err) {
-    logger.error({ fn: "getUserTickets", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "getUserTickets",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -127,7 +135,11 @@ export async function getTicketById(ticketId: string): Promise<{
       .maybeSingle();
 
     if (error) {
-      logger.error({ fn: "getTicketById", message: "DB error", meta: error.message });
+      logger.error({
+        fn: "getTicketById",
+        message: "DB error",
+        meta: error.message,
+      });
       return { success: false, message: "Failed to load ticket." };
     }
     if (!data) return { success: false, message: "Ticket not found." };
@@ -138,7 +150,11 @@ export async function getTicketById(ticketId: string): Promise<{
       ticket: mapToTicket(data),
     };
   } catch (err) {
-    logger.error({ fn: "getTicketById", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "getTicketById",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }

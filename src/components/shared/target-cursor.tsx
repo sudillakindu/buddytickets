@@ -109,13 +109,11 @@ export const TargetCursor: React.FC<TargetCursorProps> = memo(
 
       const createSpinTimeline = () => {
         spinTl.current?.kill();
-        spinTl.current = gsap
-          .timeline({ repeat: -1 })
-          .to(cursor, {
-            rotation: "+=360",
-            duration: spinDuration,
-            ease: "none",
-          });
+        spinTl.current = gsap.timeline({ repeat: -1 }).to(cursor, {
+          rotation: "+=360",
+          duration: spinDuration,
+          ease: "none",
+        });
       };
 
       createSpinTimeline();
@@ -356,13 +354,11 @@ export const TargetCursor: React.FC<TargetCursorProps> = memo(
 
       if (spinTl.current.isActive()) {
         spinTl.current.kill();
-        spinTl.current = gsap
-          .timeline({ repeat: -1 })
-          .to(cursorRef.current, {
-            rotation: "+=360",
-            duration: spinDuration,
-            ease: "none",
-          });
+        spinTl.current = gsap.timeline({ repeat: -1 }).to(cursorRef.current, {
+          rotation: "+=360",
+          duration: spinDuration,
+          ease: "none",
+        });
       }
     }, [spinDuration, isMobile]);
 

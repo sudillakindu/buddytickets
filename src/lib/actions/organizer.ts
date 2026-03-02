@@ -13,7 +13,7 @@ import type {
 } from "@/lib/types/organizer";
 import { logger } from "@/lib/logger";
 
-const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 // ─── Internal Types & Helpers ────────────────────────────────────────────────
@@ -113,8 +113,8 @@ function validateImageFile(
   if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
     return {
       success: false,
-      message: "Each image must be smaller than 2MB.",
-      fieldErrors: { [fieldName]: "Image must be smaller than 2MB." },
+      message: "Each image must be smaller than 1MB.",
+      fieldErrors: { [fieldName]: "Image must be smaller than 1MB." },
     };
   }
   return null;

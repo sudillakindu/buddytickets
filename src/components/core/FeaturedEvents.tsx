@@ -9,10 +9,12 @@ import { ChevronRight, CalendarX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/shared/event/event-card";
 import { EventGridSkeleton } from "@/components/shared/event/event-skeleton";
+
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 
 import { getFeaturedEvents } from "@/lib/actions/event";
+
 import type { Event } from "@/lib/types/event";
 
 const ACTIVE_STATUSES = new Set(["ON_SALE", "ONGOING"]);

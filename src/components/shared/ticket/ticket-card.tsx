@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
+
 import type { Ticket } from "@/lib/types/ticket";
 
 export interface TicketCardProps {

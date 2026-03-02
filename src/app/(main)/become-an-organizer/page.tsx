@@ -16,22 +16,23 @@ import {
   XCircle,
 } from "lucide-react";
 
+import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import { Toast } from "@/components/ui/toast";
-import { cn } from "@/lib/ui/utils";
+import { logger } from "@/lib/logger";
 
 import {
   getOrganizerOnboardingState,
   submitOrganizerDetails,
 } from "@/lib/actions/organizer";
+
 import type {
   OrganizerDetails,
   OrganizerDetailsFieldErrors,
   OrganizerOnboardingUser,
 } from "@/lib/types/organizer";
-
-import { logger } from "@/lib/logger";
 
 // ─── Internal Types & Helpers ────────────────────────────────────────────────
 

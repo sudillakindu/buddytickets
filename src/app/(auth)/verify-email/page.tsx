@@ -9,10 +9,12 @@ import { Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
+
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
+
 import {
   verifyOtp as verifyOtpAction,
   resendOtp as resendOtpAction,
@@ -49,14 +51,16 @@ function ErrorCard({ message, onRetry }: ErrorCardProps) {
     <div className="min-h-[100dvh] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center py-10">
       <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
         <div className="flex items-center justify-center mb-6">
-          <Image
-            src={LogoSrc}
-            alt="BuddyTickets Logo"
-            width={48}
-            height={48}
-            className="w-12 h-12 object-contain drop-shadow-sm"
-            priority
-          />
+          <Link href="/" aria-label="Go to Home">
+            <Image
+              src={LogoSrc}
+              alt="BuddyTickets Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12 object-contain drop-shadow-sm hover:opacity-80 transition-opacity duration-200"
+              priority
+            />
+          </Link>
         </div>
         <h1 className="font-primary text-2xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
           Verification Failed
@@ -284,14 +288,16 @@ function VerifyEmailForm() {
     <div className="min-h-[100dvh] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-x-hidden overflow-y-auto py-10">
       <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center overflow-hidden my-auto bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
         <div className="flex items-center justify-center mb-6">
-          <Image
-            src={LogoSrc}
-            alt="BuddyTickets Logo"
-            width={48}
-            height={48}
-            className="w-12 h-12 object-contain drop-shadow-sm"
-            priority
-          />
+          <Link href="/" aria-label="Go to Home">
+            <Image
+              src={LogoSrc}
+              alt="BuddyTickets Logo"
+              width={48}
+              height={48}
+              className="w-12 h-12 object-contain drop-shadow-sm hover:opacity-80 transition-opacity duration-200"
+              priority
+            />
+          </Link>
         </div>
 
         <h1 className="font-primary text-3xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
