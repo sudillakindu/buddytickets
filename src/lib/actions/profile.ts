@@ -2,7 +2,6 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { logger } from "@/lib/logger";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
@@ -12,15 +11,35 @@ import type {
   ProfileFetchResult,
   ProfileImageResult,
 } from "@/lib/types/profile";
+import { logger } from "@/lib/logger";
 
-// ─── Internal Helpers ────────────────────────────────────────────────────────
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await getSession();
   return session?.sub ?? null;
 }
 
-// ─── Queries (GET) ───────────────────────────────────────────────────────────
+function validateImageFile(file: File | null): ProfileImageResult | null {
+  if (!(file instanceof File)) {
+    return { success: false, message: "Please select a valid image." };
+  }
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return {
+      success: false,
+      message: "Only JPG, PNG, or WEBP images are allowed.",
+    };
+  }
+  if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
+    return { success: false, message: "Image must be smaller than 1MB." };
+  }
+  return null;
+}
+
+// ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function getUserProfile(): Promise<ProfileFetchResult> {
   try {
@@ -30,19 +49,18 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
     const { data, error } = await supabaseAdmin
       .from("users")
       .select(
-        "user_id, name, email, mobile, is_mobile_verified, username, role, is_active, image_url, created_at, last_login_at",
+        "user_id, name, email, is_email_verified, mobile, is_mobile_verified, username, role, is_active, image_url, created_at, last_login_at",
       )
       .eq("user_id", userId)
       .maybeSingle();
 
     if (error || !data) {
-      if (error) {
+      if (error)
         logger.error({
           fn: "getUserProfile",
           message: "DB fetch error",
           meta: error.message,
         });
-      }
       return { success: false, message: "Failed to load profile." };
     }
 
@@ -52,12 +70,16 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
       profile: data as UserProfile,
     };
   } catch (err) {
-    logger.error({ fn: "getUserProfile", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "getUserProfile",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
 
-// ─── Mutations (POST/PUT/DELETE) ─────────────────────────────────────────────
+// ─── Mutations ───────────────────────────────────────────────────────────────
 
 export async function uploadProfileImage(
   formData: FormData,
@@ -67,12 +89,16 @@ export async function uploadProfileImage(
     if (!userId) return { success: false, message: "Unauthorized." };
 
     const file = formData.get("file");
-    if (!(file instanceof File))
-      return { success: false, message: "Please select a valid image." };
+    const imageFile = file instanceof File ? file : null;
 
-    const upload = await uploadProfileImageToStorage(file, userId);
-    if (!upload.success || !upload.imageUrl)
+    const imageError = validateImageFile(imageFile);
+    if (imageError) return imageError;
+
+    const upload = await uploadProfileImageToStorage(imageFile!, userId);
+
+    if (!upload.success || !upload.imageUrl) {
       return { success: false, message: upload.message };
+    }
 
     const { error } = await supabaseAdmin
       .from("users")
@@ -85,6 +111,12 @@ export async function uploadProfileImage(
         message: "DB update error",
         meta: error.message,
       });
+
+      const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
+      if (upload.objectPath) {
+        await supabaseAdmin.storage.from(bucket).remove([upload.objectPath]);
+      }
+
       return {
         success: false,
         message: "Image uploaded but failed to update profile.",
@@ -97,7 +129,11 @@ export async function uploadProfileImage(
       imageUrl: upload.imageUrl,
     };
   } catch (err) {
-    logger.error({ fn: "uploadProfileImage", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "uploadProfileImage",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -117,15 +153,18 @@ export async function updateProfile(data: {
     const mobile = data.mobile.trim();
     const imageUrl = data.image_url?.trim() || null;
 
-    if (!name || name.length < 3)
+    if (!name || name.length < 3) {
       return { success: false, message: "Name must be at least 3 characters." };
-    if (!/^[a-z0-9_]{3,}$/.test(username))
+    }
+    if (!/^[a-z0-9_]{3,}$/.test(username)) {
       return {
         success: false,
         message: "Username must be at least 3 characters (a–z, 0–9, _).",
       };
-    if (!/^\d{10}$/.test(mobile))
+    }
+    if (!/^\d{10}$/.test(mobile)) {
       return { success: false, message: "Mobile must be 10 digits." };
+    }
 
     const { data: current, error: fetchErr } = await supabaseAdmin
       .from("users")
@@ -134,13 +173,12 @@ export async function updateProfile(data: {
       .maybeSingle();
 
     if (fetchErr || !current) {
-      if (fetchErr) {
+      if (fetchErr)
         logger.error({
           fn: "updateProfile",
-          message: "DB fetch current user error",
+          message: "DB fetch error",
           meta: fetchErr.message,
         });
-      }
       return { success: false, message: "Unable to validate profile update." };
     }
 
@@ -173,7 +211,10 @@ export async function updateProfile(data: {
       mobile,
       image_url: imageUrl,
     };
-    if (current.mobile !== mobile) payload.is_mobile_verified = false;
+
+    if (current.mobile !== mobile) {
+      payload.is_mobile_verified = false;
+    }
 
     const { error: updateErr } = await supabaseAdmin
       .from("users")
@@ -191,7 +232,11 @@ export async function updateProfile(data: {
 
     return { success: true, message: "Profile updated successfully." };
   } catch (err) {
-    logger.error({ fn: "updateProfile", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "updateProfile",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -206,18 +251,21 @@ export async function changePassword(data: {
 
     const { currentPassword, newPassword } = data;
 
-    if (!currentPassword)
+    if (!currentPassword) {
       return { success: false, message: "Current password is required." };
-    if (!newPassword || newPassword.length < 6)
+    }
+    if (!newPassword || newPassword.length < 6) {
       return {
         success: false,
         message: "New password must be at least 6 characters.",
       };
-    if (newPassword === currentPassword)
+    }
+    if (newPassword === currentPassword) {
       return {
         success: false,
         message: "New password must differ from current password.",
       };
+    }
 
     const { data: user, error } = await supabaseAdmin
       .from("users")
@@ -226,13 +274,12 @@ export async function changePassword(data: {
       .maybeSingle();
 
     if (error || !user?.password_hash) {
-      if (error) {
+      if (error)
         logger.error({
           fn: "changePassword",
-          message: "DB fetch password hash error",
+          message: "DB fetch error",
           meta: error.message,
         });
-      }
       return {
         success: false,
         message: "Failed to validate current password.",
@@ -244,6 +291,7 @@ export async function changePassword(data: {
       return { success: false, message: "Current password is incorrect." };
 
     const newHash = await hashPassword(newPassword);
+
     const { error: updateErr } = await supabaseAdmin
       .from("users")
       .update({ password_hash: newHash })
@@ -252,7 +300,7 @@ export async function changePassword(data: {
     if (updateErr) {
       logger.error({
         fn: "changePassword",
-        message: "DB update password error",
+        message: "DB update error",
         meta: updateErr.message,
       });
       return { success: false, message: "Failed to change password." };
@@ -260,7 +308,11 @@ export async function changePassword(data: {
 
     return { success: true, message: "Password changed successfully." };
   } catch (err) {
-    logger.error({ fn: "changePassword", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "changePassword",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }

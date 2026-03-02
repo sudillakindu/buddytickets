@@ -3,6 +3,7 @@ export interface UserProfile {
   user_id: string;
   name: string;
   email: string;
+  is_email_verified: boolean;
   mobile: string;
   is_mobile_verified: boolean;
   username: string;

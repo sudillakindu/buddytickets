@@ -2,13 +2,8 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { logger } from "@/lib/logger";
 import { getSession } from "@/lib/utils/session";
-import {
-  uploadOrganizerDocumentToStorage,
-  validateOrganizerDetailsInput,
-  validateOrganizerDocument,
-} from "@/lib/utils/organizer-doc-upload";
+import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
 import type {
   OrganizerDetails,
   OrganizerDetailsInput,
@@ -16,8 +11,12 @@ import type {
   SubmitOrganizerDetailsResult,
   UserRole,
 } from "@/lib/types/organizer";
+import { logger } from "@/lib/logger";
 
-// ─── Internal Helpers ────────────────────────────────────────────────────────
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+// ─── Internal Types & Helpers ────────────────────────────────────────────────
 
 interface UserRow {
   user_id: string;
@@ -50,7 +49,78 @@ function getWhatsappNumber(): string {
   return process.env.WHATSAPP_NUMBER ?? "";
 }
 
-// ─── Queries (GET) ───────────────────────────────────────────────────────────
+function isValidSriLankanNic(value: string): boolean {
+  const nic = value.trim().toUpperCase();
+  return /^\d{9}[VX]$/.test(nic) || /^\d{12}$/.test(nic);
+}
+
+function validateDetailsPayload(
+  payload: OrganizerDetailsInput,
+): SubmitOrganizerDetailsResult | null {
+  const fieldErrors: Record<string, string> = {};
+
+  if (!isValidSriLankanNic(payload.nic_number)) {
+    fieldErrors.nic_number =
+      "Enter a valid Sri Lankan NIC (old or new format).";
+  }
+  if (payload.address.length < 8) {
+    fieldErrors.address = "Address must be at least 8 characters.";
+  }
+  if (!payload.bank_name) {
+    fieldErrors.bank_name = "Bank name is required.";
+  }
+  if (!payload.bank_branch) {
+    fieldErrors.bank_branch = "Bank branch is required.";
+  }
+  if (!payload.account_holder_name) {
+    fieldErrors.account_holder_name = "Account holder name is required.";
+  }
+  if (!payload.account_number) {
+    fieldErrors.account_number = "Account number is required.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      success: false,
+      message: "Please correct the highlighted fields and try again.",
+      fieldErrors,
+    };
+  }
+
+  return null;
+}
+
+function validateImageFile(
+  file: File | null,
+  fieldName: "nic_front_image" | "nic_back_image",
+): SubmitOrganizerDetailsResult | null {
+  if (!(file instanceof File)) {
+    return {
+      success: false,
+      message: "Both NIC images are required.",
+      fieldErrors: { [fieldName]: "This image is required." },
+    };
+  }
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return {
+      success: false,
+      message: "Only JPG, PNG, or WEBP images are allowed.",
+      fieldErrors: {
+        [fieldName]: "Only JPG, PNG, or WEBP images are allowed.",
+      },
+    };
+  }
+  if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
+    return {
+      success: false,
+      message: "Each image must be smaller than 2MB.",
+      fieldErrors: { [fieldName]: "Image must be smaller than 2MB." },
+    };
+  }
+  return null;
+}
+
+// ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function getOrganizerOnboardingState(): Promise<OrganizerStateResult> {
   try {
@@ -97,7 +167,6 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
         .eq("user_id", user.user_id)
         .maybeSingle<OrganizerDetailsRow>();
 
-    // Ignore PGRST116 (No rows found) as it's expected for new organizers
     if (organizerError && organizerError.code !== "PGRST116") {
       logger.error({
         fn: "getOrganizerOnboardingState",
@@ -123,7 +192,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
   } catch (err) {
     logger.error({
       fn: "getOrganizerOnboardingState",
-      message: "Unexpected error",
+      message: "Unexpected error while loading organizer onboarding state",
       meta: err,
     });
     return {
@@ -137,15 +206,16 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
   }
 }
 
-// ─── Mutations (POST/PUT/DELETE) ─────────────────────────────────────────────
+// ─── Mutations ───────────────────────────────────────────────────────────────
 
 export async function submitOrganizerDetails(
   formData: FormData,
 ): Promise<SubmitOrganizerDetailsResult> {
   try {
     const session = await getSession();
-    if (!session?.sub)
+    if (!session?.sub) {
       return { success: false, message: "Unauthorized. Please sign in first." };
+    }
 
     const { data: user, error: userError } = await supabaseAdmin
       .from("users")
@@ -183,68 +253,66 @@ export async function submitOrganizerDetails(
       account_number: String(formData.get("account_number") ?? "").trim(),
     };
 
-    const detailsValidation = validateOrganizerDetailsInput(payload);
-    if (!detailsValidation.success) {
+    const detailsError = validateDetailsPayload(payload);
+    if (detailsError) return detailsError;
+
+    const frontFile = formData.get("nic_front_image");
+    const backFile = formData.get("nic_back_image");
+    const nicFrontImage = frontFile instanceof File ? frontFile : null;
+    const nicBackImage = backFile instanceof File ? backFile : null;
+
+    const frontImageError = validateImageFile(nicFrontImage, "nic_front_image");
+    if (frontImageError) return frontImageError;
+
+    const backImageError = validateImageFile(nicBackImage, "nic_back_image");
+    if (backImageError) return backImageError;
+
+    // Concurrency check before uploading files
+    const [{ data: nicConflict }, { data: accountConflict }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("organizer_details")
+          .select("user_id")
+          .eq("nic_number", payload.nic_number)
+          .neq("user_id", user.user_id)
+          .maybeSingle(),
+        supabaseAdmin
+          .from("organizer_details")
+          .select("user_id")
+          .eq("account_number", payload.account_number)
+          .neq("user_id", user.user_id)
+          .maybeSingle(),
+      ]);
+
+    if (nicConflict) {
       return {
         success: false,
-        message: detailsValidation.message,
-        fieldErrors: detailsValidation.fieldErrors,
+        message: "This NIC number is already registered by another account.",
+        fieldErrors: { nic_number: "NIC number already in use." },
       };
     }
 
-    const nicFrontImageRaw = formData.get("nic_front_image");
-    const nicBackImageRaw = formData.get("nic_back_image");
-    const nicFrontImage =
-      nicFrontImageRaw instanceof File ? nicFrontImageRaw : null;
-    const nicBackImage =
-      nicBackImageRaw instanceof File ? nicBackImageRaw : null;
-
-    const frontValidation = validateOrganizerDocument(
-      nicFrontImage,
-      "nic_front_image",
-    );
-    if (!frontValidation.success) {
+    if (accountConflict) {
       return {
         success: false,
-        message: frontValidation.message,
-        fieldErrors: frontValidation.fieldErrors,
+        message:
+          "This bank account number is already registered by another account.",
+        fieldErrors: { account_number: "Account number already in use." },
       };
     }
 
-    const backValidation = validateOrganizerDocument(
-      nicBackImage,
-      "nic_back_image",
-    );
-    if (!backValidation.success) {
-      return {
-        success: false,
-        message: backValidation.message,
-        fieldErrors: backValidation.fieldErrors,
-      };
-    }
-
-    const frontUpload = await uploadOrganizerDocumentToStorage(
+    const uploadResult = await uploadOrganizerNicImages(
       nicFrontImage!,
-      user.user_id,
-      "front",
-    );
-    if (!frontUpload.success || !frontUpload.imageUrl) {
-      return {
-        success: false,
-        message: frontUpload.message || "Failed to upload NIC front image.",
-      };
-    }
-
-    const backUpload = await uploadOrganizerDocumentToStorage(
       nicBackImage!,
       user.user_id,
-      "back",
     );
-    if (!backUpload.success || !backUpload.imageUrl) {
-      return {
-        success: false,
-        message: backUpload.message || "Failed to upload NIC back image.",
-      };
+
+    if (
+      !uploadResult.success ||
+      !uploadResult.frontUrl ||
+      !uploadResult.backUrl
+    ) {
+      return { success: false, message: uploadResult.message };
     }
 
     const { error: upsertError } = await supabaseAdmin
@@ -258,8 +326,8 @@ export async function submitOrganizerDetails(
           bank_branch: payload.bank_branch,
           account_holder_name: payload.account_holder_name,
           account_number: payload.account_number,
-          nic_front_image_url: frontUpload.imageUrl,
-          nic_back_image_url: backUpload.imageUrl,
+          nic_front_image_url: uploadResult.frontUrl,
+          nic_back_image_url: uploadResult.backUrl,
           status: "PENDING",
           remarks: null,
           verified_by: null,
@@ -272,9 +340,19 @@ export async function submitOrganizerDetails(
     if (upsertError) {
       logger.error({
         fn: "submitOrganizerDetails",
-        message: "Upsert error",
+        message: "Supabase upsert error",
         meta: upsertError.message,
       });
+
+      const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
+      const toRemove = [uploadResult.frontPath, uploadResult.backPath].filter(
+        Boolean,
+      ) as string[];
+
+      if (toRemove.length > 0) {
+        await supabaseAdmin.storage.from(bucket).remove(toRemove);
+      }
+
       if (upsertError.code === "23505") {
         return {
           success: false,
@@ -282,6 +360,7 @@ export async function submitOrganizerDetails(
             "The provided NIC or bank account details are already in use.",
         };
       }
+
       return { success: false, message: "Failed to submit organizer details." };
     }
 
@@ -293,7 +372,7 @@ export async function submitOrganizerDetails(
   } catch (err) {
     logger.error({
       fn: "submitOrganizerDetails",
-      message: "Unexpected error",
+      message: "Unexpected error while submitting organizer details",
       meta: err,
     });
     return {
