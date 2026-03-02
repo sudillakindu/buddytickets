@@ -9,17 +9,23 @@ A Next.js 16 (App Router) ticket-selling platform with a complete, custom authen
 ```
 public/
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 ├── email-logo.png                       # Logo used in OTP emails
 └── og-image.png                         # Open Graph social preview image
 src/
 ├── proxy.ts                             # (Legacy) maintenance-mode proxy
 =======
+=======
+>>>>>>> Stashed changes
 ├── email-logo.png                          # Logo used in OTP emails
 └── og-image.png                            # Open Graph social preview image
 scripts/
 └── audit_schema_alignment.py
 src/
 ├── proxy.ts                                # Request proxy/middleware logic
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 ├── app/
 │   ├── globals.css
@@ -27,6 +33,7 @@ src/
 │   ├── layout.tsx                          # Root layout (fonts, metadata, Toaster)
 │   ├── not-found.tsx
 │   ├── (auth)/
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 │   │   ├── layout.tsx                   # Auth background wrapper
 │   │   ├── sign-in/page.tsx             # Sign-in page
@@ -54,6 +61,15 @@ src/
 │   │   ├── forget-password/page.tsx        # Forgot password page
 │   │   └── reset-password/page.tsx         # Reset password page
 │   ├── (main)/
+=======
+│   │   ├── layout.tsx                      # Auth background wrapper
+│   │   ├── sign-in/page.tsx                # Sign-in page
+│   │   ├── sign-up/page.tsx                # Sign-up page
+│   │   ├── verify-email/page.tsx           # OTP verification page
+│   │   ├── forget-password/page.tsx        # Forgot password page
+│   │   └── reset-password/page.tsx         # Reset password page
+│   ├── (main)/
+>>>>>>> Stashed changes
 │   │   ├── layout.tsx                      # Main layout (revalidated session + AuthProvider)
 │   │   ├── main-shell.tsx                  # Client shell (AuthProvider + Header + Footer)
 │   │   ├── page.tsx                        # Home page
@@ -77,6 +93,9 @@ src/
 │   │   │   ├── montserrat-alternates-regular.ttf
 │   │   │   ├── sugar-pie-regular.ttf
 │   │   │   └── tanheadline-regular.ttf
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 │   │   └── images/
 │   │       ├── icons/
@@ -91,6 +110,7 @@ src/
 │   │   ├── Header.tsx                      # Dynamic navbar (guest vs authenticated)
 │   │   └── Hero.tsx                        # Landing hero section
 │   ├── shared/
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 │   │   └── target-cursor.tsx            # Custom animated cursor
 │   └── ui/
@@ -124,6 +144,8 @@ supabase/
 └── migrations/
     └── 20260223191944_initial_schema.sql
 =======
+=======
+>>>>>>> Stashed changes
 │   │   ├── target-cursor.tsx               # Custom animated cursor
 │   │   ├── event/
 │   │   │   ├── event-card.tsx
@@ -169,6 +191,9 @@ supabase/
 └── migrations/
     ├── 20260223191944_initial_schema.sql
     └── 20260301091500_add_is_submitted_to_organizer_details.sql
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 ```
 
