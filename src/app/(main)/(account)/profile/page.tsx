@@ -23,7 +23,10 @@ import {
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
 import {
   getUserProfile,
@@ -149,9 +152,9 @@ function FormInput({
 }: FormInputProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="font-secondary text-xs font-medium text-[hsl(215.4,16.3%,46.9%)] uppercase tracking-wide">
+      <Label className="font-secondary text-xs font-medium text-[hsl(215.4,16.3%,46.9%)] uppercase tracking-wide">
         {label}
-      </label>
+      </Label>
       <div className="relative">
         <Icon
           className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[hsl(215.4,16.3%,46.9%)] pointer-events-none z-10"
@@ -207,7 +210,12 @@ function AvatarSection({ profile, onImageChange }: AvatarSectionProps) {
         } else {
           Toast("Error", result.message, "error");
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "ProfilePage.handleFileSelect",
+          message: "Failed to upload profile image",
+          meta: error,
+        });
         Toast("Error", "Failed to upload image.", "error");
       } finally {
         setUploading(false);
@@ -398,7 +406,12 @@ function EditProfileForm({ profile, onSuccess }: EditProfileFormProps) {
         } else {
           Toast("Error", result.message, "error");
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "ProfilePage.handleSubmit",
+          message: "Failed to update profile",
+          meta: error,
+        });
         Toast("Error", "Failed to update profile.", "error");
       } finally {
         setSaving(false);
@@ -501,7 +514,12 @@ function ChangePasswordForm({ onCancel }: { onCancel: () => void }) {
         } else {
           Toast("Error", result.message, "error");
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "ProfilePage.handleSubmit",
+          message: "Failed to change password",
+          meta: error,
+        });
         Toast("Error", "Failed to change password.", "error");
       } finally {
         setSaving(false);
@@ -660,7 +678,12 @@ export default function ProfilePage() {
             Toast("Error", result.message, "error");
           }
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "ProfilePage.load",
+          message: "Failed to load profile",
+          meta: error,
+        });
         if (!cancelled) Toast("Error", "Failed to load profile.", "error");
       } finally {
         if (!cancelled) setLoading(false);

@@ -64,7 +64,11 @@ export async function getSession(): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
   } catch (err) {
-    logger.error({ fn: "getSession", message: "Invalid session token", meta: err });
+    logger.error({
+      fn: "getSession",
+      message: "Invalid session token",
+      meta: err,
+    });
     return null;
   }
 }
@@ -81,7 +85,11 @@ export async function verifySessionToken(
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
   } catch (err) {
-    logger.error({ fn: "verifySessionToken", message: "Invalid session token", meta: err });
+    logger.error({
+      fn: "verifySessionToken",
+      message: "Invalid session token",
+      meta: err,
+    });
     return null;
   }
 }

@@ -17,8 +17,10 @@ import {
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
-import { signOut } from "@/lib/actions/auth";
+
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
+
+import { signOut } from "@/lib/actions/auth";
 
 export interface UserInfo {
   sub: string;

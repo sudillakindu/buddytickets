@@ -101,7 +101,11 @@ export async function getEvents(): Promise<EventsResult> {
       .order("start_at", { ascending: true });
 
     if (error) {
-      logger.error({ fn: "getEvents", message: "DB error", meta: error.message });
+      logger.error({
+        fn: "getEvents",
+        message: "DB error",
+        meta: error.message,
+      });
       return { success: false, message: "Failed to load events." };
     }
 
@@ -139,7 +143,11 @@ export async function getEventById(
       .maybeSingle();
 
     if (error) {
-      logger.error({ fn: "getEventById", message: "DB error", meta: error.message });
+      logger.error({
+        fn: "getEventById",
+        message: "DB error",
+        meta: error.message,
+      });
       return { success: false, message: "Failed to load event." };
     }
     if (!data) return { success: false, message: "Event not found." };
@@ -164,7 +172,11 @@ export async function getEventById(
 
     return { success: true, message: "Event loaded.", event };
   } catch (err) {
-    logger.error({ fn: "getEventById", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "getEventById",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -189,14 +201,22 @@ export async function getFeaturedEvents(): Promise<EventsResult> {
       .limit(8);
 
     if (error) {
-      logger.error({ fn: "getFeaturedEvents", message: "DB error", meta: error.message });
+      logger.error({
+        fn: "getFeaturedEvents",
+        message: "DB error",
+        meta: error.message,
+      });
       return { success: false, message: "Failed to load featured events." };
     }
 
     const events = (data ?? []).map(mapToEvent);
     return { success: true, message: "Featured events loaded.", events };
   } catch (err) {
-    logger.error({ fn: "getFeaturedEvents", message: "Unexpected error", meta: err });
+    logger.error({
+      fn: "getFeaturedEvents",
+      message: "Unexpected error",
+      meta: err,
+    });
     return { success: false, message: "An unexpected error occurred." };
   }
 }
@@ -221,7 +241,11 @@ export async function getMyEvents(): Promise<EventsResult> {
       .order("created_at", { ascending: false });
 
     if (error) {
-      logger.error({ fn: "getMyEvents", message: "DB error", meta: error.message });
+      logger.error({
+        fn: "getMyEvents",
+        message: "DB error",
+        meta: error.message,
+      });
       return { success: false, message: "Failed to load your events." };
     }
 

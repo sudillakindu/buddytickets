@@ -8,6 +8,7 @@ import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
+
 import type { Event } from "@/lib/types/event";
 
 export interface EventCardProps {

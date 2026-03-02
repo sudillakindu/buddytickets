@@ -6,12 +6,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  MapPin, Phone, Mail,
-  Facebook, Twitter, Instagram, Linkedin,
-  ArrowRight, LucideIcon,
+  MapPin,
+  Phone,
+  Mail,
+  Facebook,
+  Twitter,
+  Instagram,
+  Linkedin,
+  ArrowRight,
+  LucideIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
+
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface SocialLink {
