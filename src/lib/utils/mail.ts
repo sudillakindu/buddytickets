@@ -1,14 +1,16 @@
 // lib/utils/mail.ts
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
-const BASE_URL = (process.env.PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+const BASE_URL = (
+  process.env.PUBLIC_SITE_URL ?? "http://localhost:3000"
+).replace(/\/$/, "");
 const LOGO_URL = `${BASE_URL}/email-logo.png`;
 const EVENTS_URL = `${BASE_URL}/events`;
 const PRIVACY_URL = `${BASE_URL}/privacy`;
 const SIGN_IN_URL = `${BASE_URL}/sign-in`;
 const FORGOT_PASSWORD_URL = `${BASE_URL}/forget-password`;
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? '';
-const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? '';
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "";
+const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? "";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%2C%20I%20received%20a%20notification%20that%20my%20BuddyTickets%20account%20password%20was%20changed.%20I%20did%20not%20make%20this%20change%20and%20need%20immediate%20assistance.`;
 
 function getMailerCredentials(): { user: string; pass: string } {
@@ -16,7 +18,7 @@ function getMailerCredentials(): { user: string; pass: string } {
   const pass = process.env.GMAIL_APP_PASSWORD;
 
   if (!user || !pass) {
-    throw new Error('Missing Gmail credentials in environment variables.');
+    throw new Error("Missing Gmail credentials in environment variables.");
   }
 
   return { user, pass };
@@ -25,12 +27,17 @@ function getMailerCredentials(): { user: string; pass: string } {
 function getTransporter() {
   const credentials = getMailerCredentials();
   return nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: { user: credentials.user, pass: credentials.pass },
   });
 }
 
-function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: string, contentHtml: string): string {
+function buildEmailTemplate(
+  title: string,
+  headerTitle: string,
+  headerSubtitle: string,
+  contentHtml: string,
+): string {
   const year = new Date().getFullYear();
   return `<!DOCTYPE html>
 <html lang="en">
@@ -78,7 +85,10 @@ function buildEmailTemplate(title: string, headerTitle: string, headerSubtitle: 
 </html>`;
 }
 
-export async function sendSignUpOtpEmail(to: string, otp: string): Promise<void> {
+export async function sendSignUpOtpEmail(
+  to: string,
+  otp: string,
+): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
   const content = `
@@ -94,12 +104,20 @@ export async function sendSignUpOtpEmail(to: string, otp: string): Promise<void>
   await transporter.sendMail({
     from: `"BuddyTickets" <${credentials.user}>`,
     to,
-    subject: 'Verify Your Email - BuddyTickets',
-    html: buildEmailTemplate('Verify Your Email', 'One Step to Go! 🎉', 'Verify your email to activate your account', content),
+    subject: "Verify Your Email - BuddyTickets",
+    html: buildEmailTemplate(
+      "Verify Your Email",
+      "One Step to Go! 🎉",
+      "Verify your email to activate your account",
+      content,
+    ),
   });
 }
 
-export async function sendSignInOtpEmail(to: string, otp: string): Promise<void> {
+export async function sendSignInOtpEmail(
+  to: string,
+  otp: string,
+): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
   const content = `
@@ -116,12 +134,20 @@ export async function sendSignInOtpEmail(to: string, otp: string): Promise<void>
   await transporter.sendMail({
     from: `"BuddyTickets" <${credentials.user}>`,
     to,
-    subject: 'Sign-In Verification Code - BuddyTickets',
-    html: buildEmailTemplate('Sign-In Verification', 'Sign-In Verification 🔐', 'Confirm your identity to continue', content),
+    subject: "Sign-In Verification Code - BuddyTickets",
+    html: buildEmailTemplate(
+      "Sign-In Verification",
+      "Sign-In Verification 🔐",
+      "Confirm your identity to continue",
+      content,
+    ),
   });
 }
 
-export async function sendForgotPasswordOtpEmail(to: string, otp: string): Promise<void> {
+export async function sendForgotPasswordOtpEmail(
+  to: string,
+  otp: string,
+): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
   const content = `
@@ -138,15 +164,23 @@ export async function sendForgotPasswordOtpEmail(to: string, otp: string): Promi
   await transporter.sendMail({
     from: `"BuddyTickets" <${credentials.user}>`,
     to,
-    subject: 'Password Reset Code - BuddyTickets',
-    html: buildEmailTemplate('Password Reset', 'Password Reset 🔑', 'Reset your account password', content),
+    subject: "Password Reset Code - BuddyTickets",
+    html: buildEmailTemplate(
+      "Password Reset",
+      "Password Reset 🔑",
+      "Reset your account password",
+      content,
+    ),
   });
 }
 
-export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
+export async function sendWelcomeEmail(
+  to: string,
+  name: string,
+): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
-  const firstName = name.split(' ')[0];
+  const firstName = name.split(" ")[0];
   const content = `
     <p style="color:#475569;font-size:16px;line-height:1.7;margin:0 0 16px;">Hey <strong style="color:#1e293b;">${firstName}</strong>! 👋</p>
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 32px;">Welcome to <strong style="color:#1e293b;">BuddyTickets</strong>. Sri Lanka&rsquo;s premier platform for discovering and enjoying events with the people you love. Your account is ready to go!</p>
@@ -194,17 +228,32 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
     from: `"BuddyTickets" <${credentials.user}>`,
     to,
     subject: `Welcome to BuddyTickets, ${firstName}! 🎉`,
-    html: buildEmailTemplate('Welcome to BuddyTickets', 'Welcome Aboard! 🎉', 'Your account is ready. Let&rsquo;s explore events', content),
+    html: buildEmailTemplate(
+      "Welcome to BuddyTickets",
+      "Welcome Aboard! 🎉",
+      "Your account is ready. Let&rsquo;s explore events",
+      content,
+    ),
   });
 }
 
-export async function sendPasswordChangedEmail(to: string, name: string): Promise<void> {
+export async function sendPasswordChangedEmail(
+  to: string,
+  name: string,
+): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
-  const firstName = name.split(' ')[0];
+  const firstName = name.split(" ")[0];
   const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const timeStr = now.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">Hi <strong style="color:#1e293b;">${firstName}</strong>,</p>
@@ -267,7 +316,12 @@ export async function sendPasswordChangedEmail(to: string, name: string): Promis
   await transporter.sendMail({
     from: `"BuddyTickets" <${credentials.user}>`,
     to,
-    subject: 'Your Password Was Changed - BuddyTickets',
-    html: buildEmailTemplate('Password Updated', 'Password Updated ✅', 'Your account password has been changed', content),
+    subject: "Your Password Was Changed - BuddyTickets",
+    html: buildEmailTemplate(
+      "Password Updated",
+      "Password Updated ✅",
+      "Your account password has been changed",
+      content,
+    ),
   });
 }

@@ -1,5 +1,6 @@
 // lib/utils/profile-image-upload.ts
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -72,6 +73,11 @@ export async function uploadProfileImageToStorage(
       });
 
     if (uploadError) {
+      logger.error({
+        fn: "uploadProfileImageToStorage",
+        message: "Upload error",
+        meta: uploadError.message,
+      });
       return {
         success: false,
         message: "Failed to upload image. Please try again.",
@@ -89,7 +95,11 @@ export async function uploadProfileImageToStorage(
       objectPath,
     };
   } catch (error) {
-    console.error("[uploadProfileImageToStorage] error:", error);
+    logger.error({
+      fn: "uploadProfileImageToStorage",
+      message: "Unexpected error",
+      meta: error,
+    });
     return {
       success: false,
       message: "Image upload failed due to an unexpected error.",

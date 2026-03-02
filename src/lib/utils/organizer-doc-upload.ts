@@ -1,5 +1,6 @@
 // lib/utils/organizer-doc-upload.ts
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import type {
   OrganizerDetailsFieldErrors,
   OrganizerDetailsInput,
@@ -153,10 +154,11 @@ export async function uploadOrganizerDocumentToStorage(
       });
 
     if (uploadError) {
-      console.error(
-        "[uploadOrganizerDocumentToStorage] Upload error:",
-        uploadError.message,
-      );
+      logger.error({
+        fn: "uploadOrganizerDocumentToStorage",
+        message: "Upload error",
+        meta: uploadError.message,
+      });
       return { success: false, message: "Failed to upload document image." };
     }
 
@@ -171,7 +173,11 @@ export async function uploadOrganizerDocumentToStorage(
       objectPath,
     };
   } catch (error) {
-    console.error("[uploadOrganizerDocumentToStorage]", error);
+    logger.error({
+      fn: "uploadOrganizerDocumentToStorage",
+      message: "Unexpected error",
+      meta: error,
+    });
     return {
       success: false,
       message: "Document upload failed due to an unexpected error.",

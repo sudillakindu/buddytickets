@@ -1,16 +1,19 @@
 // components/core/Header.tsx
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation';
-import { Menu, X, ChevronDown, User, Ticket, LogOut } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, memo } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Menu, X, ChevronDown, User,
+  Ticket, LogOut, LayoutDashboard,
+} from "lucide-react";
 
-import { cn } from '@/lib/ui/utils';
-import { Button } from '@/components/ui/button';
-import { signOut } from '@/lib/actions/auth';
-import LogoSrc from '@/app/assets/images/logo/upscale_media_logo.png';
+import { cn } from "@/lib/ui/utils";
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/actions/auth";
+import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 export interface UserInfo {
   sub: string;
@@ -26,9 +29,11 @@ interface NavLinkItem {
 }
 
 const NAV_LINKS: NavLinkItem[] = [
-  { name: 'Home', sectionId: 'home' },
-  { name: 'Events', sectionId: 'events' },
+  { name: "Home", sectionId: "home" },
+  { name: "Events", sectionId: "events" },
 ];
+
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 interface NavButtonProps {
   name: string;
@@ -36,14 +41,14 @@ interface NavButtonProps {
   className?: string;
 }
 
-const NavButton = memo(({ name, onClick, className = '' }: NavButtonProps) => {
+const NavButton = memo(({ name, onClick, className = "" }: NavButtonProps) => {
   return (
     <Button
       variant="ghost"
       onClick={onClick}
       className={cn(
-        'font-secondary text-base transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]',
-        className
+        "font-secondary text-base transition-colors duration-300 relative group bg-transparent border-none cursor-pointer h-auto p-0 hover:bg-transparent text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]",
+        className,
       )}
     >
       {name}
@@ -52,11 +57,15 @@ const NavButton = memo(({ name, onClick, className = '' }: NavButtonProps) => {
   );
 });
 
-NavButton.displayName = 'NavButton';
+NavButton.displayName = "NavButton";
 
 const BrandLogo = memo(() => {
   return (
-    <Link href="/" className="flex items-center gap-2 group" aria-label="BuddyTickets Home">
+    <Link
+      href="/"
+      className="flex items-center gap-2 group"
+      aria-label="BuddyTickets Home"
+    >
       <div className="flex items-center justify-center transition-transform group-hover:scale-105 text-[hsl(222.2,47.4%,11.2%)]">
         <Image
           src={LogoSrc}
@@ -74,72 +83,89 @@ const BrandLogo = memo(() => {
   );
 });
 
-BrandLogo.displayName = 'BrandLogo';
+BrandLogo.displayName = "BrandLogo";
 
-const UserAvatar = memo(({ user, size = 'md' }: { user: UserInfo; size?: 'sm' | 'md' }) => {
-  const dim = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-9 h-9 text-sm';
-  
-  if (user.imageUrl) {
+const UserAvatar = memo(
+  ({ user, size = "md" }: { user: UserInfo; size?: "sm" | "md" }) => {
+    const dim = size === "sm" ? "w-8 h-8 text-xs" : "w-9 h-9 text-sm";
+
+    if (user.imageUrl) {
+      return (
+        <Image
+          src={user.imageUrl}
+          alt=""
+          width={36}
+          height={36}
+          className={cn(dim, "rounded-full object-cover")}
+        />
+      );
+    }
+
     return (
-      <Image
-        src={user.imageUrl}
-        alt=""
-        width={36}
-        height={36}
-        className={cn(dim, 'rounded-full object-cover')}
-      />
+      <div
+        className={cn(
+          dim,
+          "rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] flex items-center justify-center text-white font-semibold shrink-0",
+        )}
+      >
+        {user.name.charAt(0).toUpperCase()}
+      </div>
     );
-  }
+  },
+);
 
-  return (
-    <div className={cn(dim, 'rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] flex items-center justify-center text-white font-semibold shrink-0')}>
-      {user.name.charAt(0).toUpperCase()}
-    </div>
-  );
-});
-
-UserAvatar.displayName = 'UserAvatar';
+UserAvatar.displayName = "UserAvatar";
 
 export function Header({ user }: { user: UserInfo | null }) {
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleNavigation = useCallback((sectionId: string) => {
-    if (pathname !== '/') {
-      router.push('/');
-      setTimeout(() => {
-        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-      }, 150);
-    } else {
-      const element = document.getElementById(sectionId);
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
+  const hasDashboardAccess = user !== null && DASHBOARD_ROLES.has(user.role);
+
+  const handleNavigation = useCallback(
+    (sectionId: string) => {
+      if (pathname !== "/") {
+        router.push("/");
+        setTimeout(() => {
+          document
+            .getElementById(sectionId)
+            ?.scrollIntoView({ behavior: "smooth" });
+        }, 150);
       } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
       }
-    }
-  }, [pathname, router]);
+    },
+    [pathname, router],
+  );
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
     setDropdownOpen(false);
     setMobileMenuOpen(false);
-    window.location.href = '/';
+    window.location.href = "/";
   }, []);
 
   return (
@@ -171,10 +197,13 @@ export function Header({ user }: { user: UserInfo | null }) {
                     >
                       <UserAvatar user={user} size="sm" />
                       <span className="font-secondary text-sm text-[hsl(222.2,47.4%,11.2%)]">
-                        {user.name.split(' ')[0]}
+                        {user.name.split(" ")[0]}
                       </span>
                       <ChevronDown
-                        className={cn('w-3.5 h-3.5 text-[hsl(215.4,16.3%,46.9%)] transition-transform duration-200', dropdownOpen ? 'rotate-180' : '')}
+                        className={cn(
+                          "w-3.5 h-3.5 text-[hsl(215.4,16.3%,46.9%)] transition-transform duration-200",
+                          dropdownOpen ? "rotate-180" : "",
+                        )}
                       />
                     </button>
 
@@ -205,6 +234,16 @@ export function Header({ user }: { user: UserInfo | null }) {
                           <Ticket className="w-4 h-4" />
                           My Tickets
                         </Link>
+                        {hasDashboardAccess && (
+                          <Link
+                            href="/dashboard"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            Dashboard
+                          </Link>
+                        )}
                         <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1 mx-3" />
                         <button
                           onClick={handleSignOut}
@@ -238,10 +277,14 @@ export function Header({ user }: { user: UserInfo | null }) {
             <button
               className="md:hidden p-2 rounded-full transition-colors hover:bg-[hsl(222.2,47.4%,11.2%)]/5 text-[hsl(222.2,47.4%,11.2%)]"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
 
@@ -276,6 +319,16 @@ export function Header({ user }: { user: UserInfo | null }) {
                   {item.name}
                 </button>
               ))}
+
+              {hasDashboardAccess && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="font-secondary text-base text-left transition-colors duration-300 py-1.5 text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                >
+                  Dashboard
+                </Link>
+              )}
 
               <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1" />
 
@@ -318,7 +371,10 @@ export function Header({ user }: { user: UserInfo | null }) {
                     asChild
                     className="font-primary relative cursor-pointer overflow-hidden px-5 py-2 rounded-full text-sm text-white shadow-md hover:shadow-xl transition-all duration-500 h-auto border-none w-full bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)]"
                   >
-                    <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
+                    <Link
+                      href="/sign-up"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       Get Started
                     </Link>
                   </Button>

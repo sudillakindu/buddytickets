@@ -1,8 +1,9 @@
 // lib/utils/session.ts
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
-import { cookies } from 'next/headers';
+import { SignJWT, jwtVerify, type JWTPayload } from "jose";
+import { cookies } from "next/headers";
+import { logger } from "@/lib/logger";
 
-const COOKIE_NAME = 'bt_session';
+const COOKIE_NAME = "bt_session";
 const MAX_AGE_SECONDS = 60 * 60 * 24;
 
 let SESSION_SECRET: Uint8Array | null = null;
@@ -10,7 +11,8 @@ let SESSION_SECRET: Uint8Array | null = null;
 function getSecret(): Uint8Array {
   if (!SESSION_SECRET) {
     const secret = process.env.SESSION_SECRET;
-    if (!secret) throw new Error('Missing SESSION_SECRET environment variable.');
+    if (!secret)
+      throw new Error("Missing SESSION_SECRET environment variable.");
     SESSION_SECRET = new TextEncoder().encode(secret);
   }
   return SESSION_SECRET;
@@ -38,7 +40,7 @@ export async function createSession(user: {
     role: user.role,
     imageUrl: user.image_url,
   })
-    .setProtectedHeader({ alg: 'HS256' })
+    .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE_SECONDS}s`)
     .sign(getSecret());
@@ -46,9 +48,9 @@ export async function createSession(user: {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
     maxAge: MAX_AGE_SECONDS,
   });
 }
@@ -61,7 +63,8 @@ export async function getSession(): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "getSession", message: "Invalid session token", meta: err });
     return null;
   }
 }
@@ -71,11 +74,14 @@ export async function destroySession(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function verifySessionToken(token: string): Promise<SessionUser | null> {
+export async function verifySessionToken(
+  token: string,
+): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     return payload as SessionUser;
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "verifySessionToken", message: "Invalid session token", meta: err });
     return null;
   }
 }

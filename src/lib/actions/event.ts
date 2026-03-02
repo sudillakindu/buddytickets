@@ -1,9 +1,10 @@
 // lib/actions/event.ts
-'use server';
+"use server";
 
-import { supabaseAdmin } from '@/lib/supabase/admin';
-import { getSession } from '@/lib/utils/session';
-import type { Event, EventDetail } from '@/lib/types/event';
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
+import { getSession } from "@/lib/utils/session";
+import type { Event, EventDetail } from "@/lib/types/event";
 
 export interface EventsResult {
   success: boolean;
@@ -26,7 +27,7 @@ interface EventRow {
   location: string;
   start_at: string;
   end_at: string;
-  status: Event['status'];
+  status: Event["status"];
   is_vip: boolean;
   organizer_id?: string;
   category_id?: string;
@@ -38,16 +39,31 @@ interface EventRow {
   updated_at?: string | null;
   categories?: { name: string }[] | null;
   event_images?: { priority_order: number; image_url: string }[];
-  ticket_types?: { ticket_type_id?: string; name?: string; description?: string; inclusions?: string[]; price: number; capacity?: number; qty_sold?: number; sale_start_at?: string | null; sale_end_at?: string | null; is_active: boolean }[];
+  ticket_types?: {
+    ticket_type_id?: string;
+    name?: string;
+    description?: string;
+    inclusions?: string[];
+    price: number;
+    capacity?: number;
+    qty_sold?: number;
+    sale_start_at?: string | null;
+    sale_end_at?: string | null;
+    is_active: boolean;
+  }[];
 }
 
 function mapToEvent(row: EventRow): Event {
-  const images: { priority_order: number; image_url: string }[] = row.event_images ?? [];
+  const images: { priority_order: number; image_url: string }[] =
+    row.event_images ?? [];
   images.sort((a, b) => a.priority_order - b.priority_order);
   const primaryImage = images[0]?.image_url ?? null;
 
-  const ticketTypes: { price: number; is_active: boolean }[] = row.ticket_types ?? [];
-  const activePrices = ticketTypes.filter((t) => t.is_active).map((t) => Number(t.price));
+  const ticketTypes: { price: number; is_active: boolean }[] =
+    row.ticket_types ?? [];
+  const activePrices = ticketTypes
+    .filter((t) => t.is_active)
+    .map((t) => Number(t.price));
   const startPrice = activePrices.length > 0 ? Math.min(...activePrices) : null;
 
   return {
@@ -60,7 +76,7 @@ function mapToEvent(row: EventRow): Event {
     status: row.status,
     is_vip: row.is_vip,
     primary_image: primaryImage,
-    category: row.categories?.[0]?.name ?? '—',
+    category: row.categories?.[0]?.name ?? "—",
     start_ticket_price: startPrice,
   };
 }
@@ -70,38 +86,43 @@ function mapToEvent(row: EventRow): Event {
 export async function getEvents(): Promise<EventsResult> {
   try {
     const { data, error } = await supabaseAdmin
-      .from('events')
-      .select(`
+      .from("events")
+      .select(
+        `
         event_id, name, subtitle, location, start_at, end_at,
         status, is_vip,
         categories ( name ),
         event_images ( priority_order, image_url ),
         ticket_types ( price, is_active )
-      `)
-      .eq('is_active', true)
-      .not('status', 'in', '("DRAFT")')
-      .order('start_at', { ascending: true });
+      `,
+      )
+      .eq("is_active", true)
+      .not("status", "in", '("DRAFT")')
+      .order("start_at", { ascending: true });
 
     if (error) {
-      console.error('[getEvents] DB error:', error.message);
-      return { success: false, message: 'Failed to load events.' };
+      logger.error({ fn: "getEvents", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load events." };
     }
 
     const events = (data ?? []).map(mapToEvent);
-    return { success: true, message: 'Events loaded.', events };
+    return { success: true, message: "Events loaded.", events };
   } catch (err) {
-    console.error('[getEvents]', err);
-    return { success: false, message: 'An unexpected error occurred.' };
+    logger.error({ fn: "getEvents", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
   }
 }
 
-export async function getEventById(eventId: string): Promise<EventDetailResult> {
+export async function getEventById(
+  eventId: string,
+): Promise<EventDetailResult> {
   try {
-    if (!eventId) return { success: false, message: 'Event ID is required.' };
+    if (!eventId) return { success: false, message: "Event ID is required." };
 
     const { data, error } = await supabaseAdmin
-      .from('events')
-      .select(`
+      .from("events")
+      .select(
+        `
         event_id, organizer_id, category_id, name, subtitle, description,
         requirements, location, map_link, start_at, end_at, status,
         is_active, is_vip, created_at, updated_at,
@@ -111,18 +132,21 @@ export async function getEventById(eventId: string): Promise<EventDetailResult> 
           ticket_type_id, name, description, inclusions,
           price, capacity, qty_sold, sale_start_at, sale_end_at, is_active
         )
-      `)
-      .eq('event_id', eventId)
-      .eq('is_active', true)
+      `,
+      )
+      .eq("event_id", eventId)
+      .eq("is_active", true)
       .maybeSingle();
 
     if (error) {
-      console.error('[getEventById] DB error:', error.message);
-      return { success: false, message: 'Failed to load event.' };
+      logger.error({ fn: "getEventById", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load event." };
     }
-    if (!data) return { success: false, message: 'Event not found.' };
+    if (!data) return { success: false, message: "Event not found." };
 
-    const images = (data.event_images ?? []).sort((a, b) => a.priority_order - b.priority_order);
+    const images = (data.event_images ?? []).sort(
+      (a, b) => a.priority_order - b.priority_order,
+    );
 
     const event: EventDetail = {
       ...mapToEvent(data),
@@ -138,69 +162,73 @@ export async function getEventById(eventId: string): Promise<EventDetailResult> 
       ticket_types: data.ticket_types ?? [],
     };
 
-    return { success: true, message: 'Event loaded.', event };
+    return { success: true, message: "Event loaded.", event };
   } catch (err) {
-    console.error('[getEventById]', err);
-    return { success: false, message: 'An unexpected error occurred.' };
+    logger.error({ fn: "getEventById", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
   }
 }
 
 export async function getFeaturedEvents(): Promise<EventsResult> {
   try {
     const { data, error } = await supabaseAdmin
-      .from('events')
-      .select(`
+      .from("events")
+      .select(
+        `
         event_id, name, subtitle, location, start_at, end_at,
         status, is_vip,
         categories ( name ),
         event_images ( priority_order, image_url ),
         ticket_types ( price, is_active )
-      `)
-      .eq('is_active', true)
-      .in('status', ['ON_SALE', 'PUBLISHED', 'ONGOING'])
-      .order('is_vip', { ascending: false })
-      .order('start_at', { ascending: true })
+      `,
+      )
+      .eq("is_active", true)
+      .in("status", ["ON_SALE", "PUBLISHED", "ONGOING"])
+      .order("is_vip", { ascending: false })
+      .order("start_at", { ascending: true })
       .limit(8);
 
     if (error) {
-      console.error('[getFeaturedEvents] DB error:', error.message);
-      return { success: false, message: 'Failed to load featured events.' };
+      logger.error({ fn: "getFeaturedEvents", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load featured events." };
     }
 
     const events = (data ?? []).map(mapToEvent);
-    return { success: true, message: 'Featured events loaded.', events };
+    return { success: true, message: "Featured events loaded.", events };
   } catch (err) {
-    console.error('[getFeaturedEvents]', err);
-    return { success: false, message: 'An unexpected error occurred.' };
+    logger.error({ fn: "getFeaturedEvents", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
   }
 }
 
 export async function getMyEvents(): Promise<EventsResult> {
   try {
     const session = await getSession();
-    if (!session) return { success: false, message: 'Unauthorized.' };
+    if (!session) return { success: false, message: "Unauthorized." };
 
     const { data, error } = await supabaseAdmin
-      .from('events')
-      .select(`
+      .from("events")
+      .select(
+        `
         event_id, name, subtitle, location, start_at, end_at,
         status, is_vip,
         categories ( name ),
         event_images ( priority_order, image_url ),
         ticket_types ( price, is_active )
-      `)
-      .eq('organizer_id', session.sub)
-      .order('created_at', { ascending: false });
+      `,
+      )
+      .eq("organizer_id", session.sub)
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('[getMyEvents] DB error:', error.message);
-      return { success: false, message: 'Failed to load your events.' };
+      logger.error({ fn: "getMyEvents", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load your events." };
     }
 
     const events = (data ?? []).map(mapToEvent);
-    return { success: true, message: 'Events loaded.', events };
+    return { success: true, message: "Events loaded.", events };
   } catch (err) {
-    console.error('[getMyEvents]', err);
-    return { success: false, message: 'An unexpected error occurred.' };
+    logger.error({ fn: "getMyEvents", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
   }
 }

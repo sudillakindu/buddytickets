@@ -1,16 +1,17 @@
 // app/(main)/events/page.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, CalendarX } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Calendar, CalendarX } from "lucide-react";
 
-import { EventCard } from '@/components/shared/event/event-card';
-import { EventGridSkeleton } from '@/components/shared/event/event-skeleton';
-import { Toast } from '@/components/ui/toast';
+import { EventCard } from "@/components/shared/event/event-card";
+import { EventGridSkeleton } from "@/components/shared/event/event-skeleton";
+import { Toast } from "@/components/ui/toast";
+import { logger } from "@/lib/logger";
 
-import { getEvents } from '@/lib/actions/event';
-import type { Event } from '@/lib/types/event';
+import { getEvents } from "@/lib/actions/event";
+import type { Event } from "@/lib/types/event";
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -27,12 +28,21 @@ export default function EventsPage() {
           if (result.success) {
             setEvents(result.events ?? []);
           } else {
-            Toast('Error', result.message, 'error');
+            Toast("Error", result.message, "error");
           }
         }
-      } catch {
+      } catch (error) {
+        logger.error({
+          fn: "EventsPage.load",
+          message: "Failed to load events",
+          meta: error,
+        });
         if (!cancelled) {
-          Toast('Error', 'Failed to load events. Please check your connection.', 'error');
+          Toast(
+            "Error",
+            "Failed to load events. Please check your connection.",
+            "error",
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -40,18 +50,19 @@ export default function EventsPage() {
     };
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
     <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center justify-between w-full">
             <div>
               <h1 className="font-primary text-2xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
-                All{' '}
+                All{" "}
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
                   Events
                 </span>
@@ -61,9 +72,12 @@ export default function EventsPage() {
 
             {!loading && events.length > 0 && (
               <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                <Calendar
+                  className="w-4 h-4 text-[hsl(270,70%,50%)]"
+                  aria-hidden="true"
+                />
                 <span className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)]">
-                  {events.length} event{events.length !== 1 ? 's' : ''}
+                  {events.length} event{events.length !== 1 ? "s" : ""}
                 </span>
               </div>
             )}
@@ -87,7 +101,8 @@ export default function EventsPage() {
               No Events Right Now
             </h3>
             <p className="font-secondary text-base sm:text-lg text-[hsl(215.4,16.3%,46.9%)] max-w-md mx-auto">
-              We&apos;re currently planning our next exciting events. Check back soon!
+              We&apos;re currently planning our next exciting events. Check back
+              soon!
             </p>
           </motion.div>
         ) : (
