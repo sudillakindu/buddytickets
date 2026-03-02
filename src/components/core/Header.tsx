@@ -6,8 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  Menu, X, ChevronDown, User,
-  Ticket, LogOut, LayoutDashboard,
+  Menu,
+  X,
+  ChevronDown,
+  User,
+  Ticket,
+  LogOut,
+  LayoutDashboard,
 } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
@@ -247,7 +252,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                         <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1 mx-3" />
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary text-red-500 hover:bg-red-50 transition-colors w-full text-left cursor-pointer"
+                          className="flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-secondary text-red-500 hover:bg-red-50 transition-colors w-full cursor-pointer"
                         >
                           <LogOut className="w-4 h-4" />
                           Sign Out
@@ -320,16 +325,6 @@ export function Header({ user }: { user: UserInfo | null }) {
                 </button>
               ))}
 
-              {hasDashboardAccess && (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="font-secondary text-base text-left transition-colors duration-300 py-1.5 text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
-                >
-                  Dashboard
-                </Link>
-              )}
-
               <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1" />
 
               {user ? (
@@ -350,9 +345,19 @@ export function Header({ user }: { user: UserInfo | null }) {
                     <Ticket className="w-4 h-4" />
                     My Tickets
                   </Link>
+                  {hasDashboardAccess && (
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      Dashboard
+                    </Link>
+                  )}
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center gap-2.5 font-secondary text-sm py-1.5 text-red-500 hover:text-red-600 transition-colors text-left cursor-pointer"
+                    className="flex items-center justify-center gap-2.5 font-secondary text-sm py-1.5 text-red-500 hover:text-red-600 transition-colors cursor-pointer w-full"
                   >
                     <LogOut className="w-4 h-4" />
                     Sign Out

@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Toast } from "@/components/ui/toast";
 import { cn } from "@/lib/ui/utils";
-import { logger } from "@/lib/logger";
 
 import {
   getOrganizerOnboardingState,
@@ -32,7 +31,9 @@ import type {
   OrganizerOnboardingUser,
 } from "@/lib/types/organizer";
 
-// ─── Internal Types & State ───────────────────────────────────────────────────
+import { logger } from "@/lib/logger";
+
+// ─── Internal Types & Helpers ────────────────────────────────────────────────
 
 interface OrganizerFormState {
   nic_number: string;
@@ -55,8 +56,6 @@ const INITIAL_FORM_STATE: OrganizerFormState = {
   nic_front_image: null,
   nic_back_image: null,
 };
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isValidSriLankanNic(value: string): boolean {
   const nic = value.trim().toUpperCase();
@@ -122,7 +121,7 @@ function validateForm(
   return null;
 }
 
-// ─── Components ───────────────────────────────────────────────────────────────
+// ─── Components ──────────────────────────────────────────────────────────────
 
 const StepItem = memo(
   ({
@@ -180,7 +179,7 @@ const StepItem = memo(
 
 StepItem.displayName = "StepItem";
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function BecomeAnOrganizerPage() {
   const [loading, setLoading] = useState(true);
@@ -201,6 +200,7 @@ export default function BecomeAnOrganizerPage() {
     setLoading(true);
     try {
       const result = await getOrganizerOnboardingState();
+
       if (result.success) {
         setUser(result.user);
         setOrganizerDetails(result.organizerDetails);
@@ -208,11 +208,11 @@ export default function BecomeAnOrganizerPage() {
       } else {
         Toast("Error", result.message, "error");
       }
-    } catch (error) {
+    } catch (err) {
       logger.error({
-        fn: "BecomeAnOrganizerPage.loadState",
+        fn: "loadState",
         message: "Failed to load organizer onboarding state",
-        meta: error,
+        meta: err,
       });
       Toast("Error", "Failed to load organizer onboarding state.", "error");
     } finally {
@@ -236,18 +236,26 @@ export default function BecomeAnOrganizerPage() {
 
   const isSignedIn = Boolean(user);
   const isOrganizer = user?.role === "ORGANIZER";
-  const hasSubmittedDetails = organizerDetails?.is_submitted === true;
-  const shouldShowStep3Button =
-    !hasSubmittedDetails || organizerDetails?.status === "REJECTED";
+  const detailsStatus = organizerDetails?.status ?? null;
+
+  const isStep3Complete =
+    organizerDetails?.is_submitted === true && detailsStatus !== "REJECTED";
+  const isStep4Complete = detailsStatus === "APPROVED";
+
+  const shouldShowSubmitButton =
+    isOrganizer &&
+    (organizerDetails === null ||
+      !organizerDetails.is_submitted ||
+      detailsStatus === "REJECTED");
 
   const stepState = useMemo(
     () => ({
       step1: isSignedIn,
       step2: isOrganizer,
-      step3: hasSubmittedDetails,
-      step4: hasSubmittedDetails,
+      step3: isStep3Complete,
+      step4: isStep4Complete,
     }),
-    [isOrganizer, isSignedIn, hasSubmittedDetails],
+    [isSignedIn, isOrganizer, isStep3Complete, isStep4Complete],
   );
 
   const whatsappLink = useMemo(() => {
@@ -309,6 +317,7 @@ export default function BecomeAnOrganizerPage() {
         payload.append("nic_back_image", form.nic_back_image as File);
 
         const result = await submitOrganizerDetails(payload);
+
         if (!result.success) {
           if (result.fieldErrors) setFieldErrors(result.fieldErrors);
           Toast("Error", result.message, "error");
@@ -320,11 +329,11 @@ export default function BecomeAnOrganizerPage() {
         setForm(INITIAL_FORM_STATE);
         setFieldErrors({});
         await loadState();
-      } catch (error) {
+      } catch (err) {
         logger.error({
-          fn: "BecomeAnOrganizerPage.handleSubmit",
+          fn: "handleSubmit",
           message: "Failed to submit organizer details",
-          meta: error,
+          meta: err,
         });
         Toast("Error", "Failed to submit organizer details.", "error");
       } finally {
@@ -388,7 +397,7 @@ export default function BecomeAnOrganizerPage() {
                 title="Status Review"
                 description="Track approval status and next actions."
                 completed={stepState.step4}
-                active={stepState.step3}
+                active={stepState.step3 && !stepState.step4}
               />
             </motion.div>
 
@@ -419,14 +428,22 @@ export default function BecomeAnOrganizerPage() {
                             asChild
                             className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                           >
-                            <Link href="/sign-in">Sign In</Link>
+                            <Link href="/sign-in?redirect=/become-an-organizer">
+                              Sign In
+                            </Link>
                           </Button>
                           <Button
                             asChild
                             variant="outline"
-                            className="h-auto py-2.5 px-5 rounded-xl border-[hsl(214.3,31.8%,91.4%)] font-primary text-sm"
+                            className="font-primary relative group overflow-hidden inline-flex items-center justify-center h-auto py-2.5 px-5 rounded-xl border-2 transition-all duration-500 shadow-lg hover:bg-transparent border-[hsl(222.2,47.4%,11.2%)]/20 text-[hsl(222.2,47.4%,11.2%)] text-sm"
                           >
-                            <Link href="/sign-up">Sign Up</Link>
+                            <Link href="/sign-up">
+                              <span className="relative z-10">Sign Up</span>
+                              <span
+                                className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-300 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)]/10 to-[hsl(270,70%,50%)]/10"
+                                aria-hidden="true"
+                              />
+                            </Link>
                           </Button>
                         </div>
                       </div>
@@ -472,7 +489,7 @@ export default function BecomeAnOrganizerPage() {
                   </div>
                 )}
 
-                {isOrganizer && (
+                {isOrganizer && shouldShowSubmitButton && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-[hsl(210,40%,98%)] p-4 sm:p-5">
                     <div className="flex items-start gap-3">
                       <FileText
@@ -483,34 +500,26 @@ export default function BecomeAnOrganizerPage() {
                         <h2 className="font-primary text-base sm:text-lg font-semibold text-[hsl(222.2,47.4%,11.2%)]">
                           Step 3: Submit Organizer Details
                         </h2>
-                        <p
-                          className={cn(
-                            "font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1",
-                            shouldShowStep3Button ? "mb-4" : "mb-0",
-                          )}
-                        >
+                        <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1 mb-4">
                           Provide identity and bank payout details to complete
                           organizer onboarding.
                         </p>
-
-                        {shouldShowStep3Button && (
-                          <Button
-                            onClick={openDetailsModal}
-                            className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
-                          >
-                            {organizerDetails?.status === "REJECTED"
-                              ? "Resubmit Details"
-                              : "Submit Details"}
-                          </Button>
-                        )}
+                        <Button
+                          onClick={openDetailsModal}
+                          className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
+                        >
+                          {detailsStatus === "REJECTED"
+                            ? "Resubmit Details"
+                            : "Submit Details"}
+                        </Button>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {hasSubmittedDetails && organizerDetails && (
+                {organizerDetails && detailsStatus !== "REJECTED" && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-white p-4 sm:p-5">
-                    {organizerDetails.status === "PENDING" && (
+                    {detailsStatus === "PENDING" && (
                       <div className="flex items-start gap-3">
                         <Clock3
                           className="w-5 h-5 text-[hsl(32,95%,44%)] mt-0.5"
@@ -528,25 +537,7 @@ export default function BecomeAnOrganizerPage() {
                       </div>
                     )}
 
-                    {organizerDetails.status === "REJECTED" && (
-                      <div className="flex items-start gap-3">
-                        <XCircle
-                          className="w-5 h-5 text-red-500 mt-0.5"
-                          aria-hidden="true"
-                        />
-                        <div className="w-full">
-                          <h3 className="font-primary text-base font-semibold text-red-600">
-                            Submission Rejected
-                          </h3>
-                          <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
-                            {organizerDetails.remarks?.trim() ||
-                              "Your previous submission was rejected. Please correct and resubmit."}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {organizerDetails.status === "APPROVED" && (
+                    {detailsStatus === "APPROVED" && (
                       <div className="flex items-start gap-3">
                         {user?.is_active ? (
                           <ShieldCheck
@@ -559,9 +550,15 @@ export default function BecomeAnOrganizerPage() {
                             aria-hidden="true"
                           />
                         )}
-
                         <div className="w-full">
-                          <h3 className="font-primary text-base font-semibold text-[hsl(142,71%,45%)]">
+                          <h3
+                            className={cn(
+                              "font-primary text-base font-semibold",
+                              user?.is_active
+                                ? "text-[hsl(142,71%,45%)]"
+                                : "text-red-600",
+                            )}
+                          >
                             {user?.is_active
                               ? "Organizer Approved"
                               : "Account Suspended"}
@@ -571,7 +568,6 @@ export default function BecomeAnOrganizerPage() {
                               ? "Your organizer account is active. You can now create your first event."
                               : "Your organizer profile is approved, but your account is currently suspended."}
                           </p>
-
                           {user?.is_active && (
                             <Button
                               asChild
@@ -585,6 +581,26 @@ export default function BecomeAnOrganizerPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {organizerDetails && detailsStatus === "REJECTED" && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 sm:p-5">
+                    <div className="flex items-start gap-3">
+                      <XCircle
+                        className="w-5 h-5 text-red-500 mt-0.5"
+                        aria-hidden="true"
+                      />
+                      <div className="w-full">
+                        <h3 className="font-primary text-base font-semibold text-red-600">
+                          Previous Submission Rejected
+                        </h3>
+                        <p className="font-secondary text-sm text-[hsl(215.4,16.3%,46.9%)] mt-1">
+                          {organizerDetails.remarks?.trim() ||
+                            "Your previous submission was rejected. Please correct and resubmit."}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

@@ -2,11 +2,8 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
-const DOCUMENTS_PATH = "profiles";
+const PROFILE_PATH = "profiles";
 
 export interface ProfileImageUploadResult {
   success: boolean;
@@ -16,12 +13,11 @@ export interface ProfileImageUploadResult {
 }
 
 function getBucketName(): string {
-  const bucket = BUCKET_NAME;
-  if (!bucket)
+  if (!BUCKET_NAME)
     throw new Error(
       "Missing NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET environment variable.",
     );
-  return bucket;
+  return BUCKET_NAME;
 }
 
 function extensionFromFile(file: File): string {
@@ -32,8 +28,8 @@ function extensionFromFile(file: File): string {
   };
 
   if (byMime[file.type]) return byMime[file.type];
-  const fromName = file.name.split(".").pop()?.toLowerCase();
 
+  const fromName = file.name.split(".").pop()?.toLowerCase();
   return fromName && /^[a-z0-9]+$/.test(fromName) ? fromName : "jpg";
 }
 
@@ -42,27 +38,11 @@ export async function uploadProfileImageToStorage(
   userId: string,
 ): Promise<ProfileImageUploadResult> {
   try {
-    if (!(file instanceof File)) {
-      return { success: false, message: "Invalid image file." };
-    }
-
-    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
-      return {
-        success: false,
-        message: "Only JPG, PNG, or WEBP images are allowed.",
-      };
-    }
-
-    if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
-      return { success: false, message: "Image must be smaller than 1MB." };
-    }
-
     const bucket = getBucketName();
     const ext = extensionFromFile(file);
-    const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const objectPath = `${PROFILE_PATH}/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
 
-    const arrayBuffer = await file.arrayBuffer();
-    const body = new Uint8Array(arrayBuffer);
+    const body = new Uint8Array(await file.arrayBuffer());
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(bucket)
@@ -75,7 +55,7 @@ export async function uploadProfileImageToStorage(
     if (uploadError) {
       logger.error({
         fn: "uploadProfileImageToStorage",
-        message: "Upload error",
+        message: "Supabase storage upload error",
         meta: uploadError.message,
       });
       return {
@@ -94,11 +74,11 @@ export async function uploadProfileImageToStorage(
       imageUrl: data.publicUrl,
       objectPath,
     };
-  } catch (error) {
+  } catch (err) {
     logger.error({
       fn: "uploadProfileImageToStorage",
-      message: "Unexpected error",
-      meta: error,
+      message: "Unexpected error during profile image upload",
+      meta: err,
     });
     return {
       success: false,
