@@ -8,16 +8,26 @@ A Next.js 16 (App Router) ticket-selling platform with a complete, custom authen
 
 ```
 public/
+<<<<<<< Updated upstream
 ├── email-logo.png                       # Logo used in OTP emails
 └── og-image.png                         # Open Graph social preview image
 src/
 ├── proxy.ts                             # (Legacy) maintenance-mode proxy
+=======
+├── email-logo.png                          # Logo used in OTP emails
+└── og-image.png                            # Open Graph social preview image
+scripts/
+└── audit_schema_alignment.py
+src/
+├── proxy.ts                                # Request proxy/middleware logic
+>>>>>>> Stashed changes
 ├── app/
 │   ├── globals.css
 │   ├── favicon.ico
-│   ├── layout.tsx                       # Root layout (fonts, metadata, Toaster)
+│   ├── layout.tsx                          # Root layout (fonts, metadata, Toaster)
 │   ├── not-found.tsx
 │   ├── (auth)/
+<<<<<<< Updated upstream
 │   │   ├── layout.tsx                   # Auth background wrapper
 │   │   ├── sign-in/page.tsx             # Sign-in page
 │   │   ├── sign-up/page.tsx             # Sign-up page
@@ -36,19 +46,52 @@ src/
 │   │           └── page.tsx             # User tickets page
 │   ├── assets/
 │   │   ├── fonts/                       # Custom typefaces (Bagel Fat One, Geom, Montserrat Alternates, etc.)
+=======
+│   │   ├── layout.tsx                      # Auth background wrapper
+│   │   ├── sign-in/page.tsx                # Sign-in page
+│   │   ├── sign-up/page.tsx                # Sign-up page
+│   │   ├── verify-email/page.tsx           # OTP verification page
+│   │   ├── forget-password/page.tsx        # Forgot password page
+│   │   └── reset-password/page.tsx         # Reset password page
+│   ├── (main)/
+│   │   ├── layout.tsx                      # Main layout (revalidated session + AuthProvider)
+│   │   ├── main-shell.tsx                  # Client shell (AuthProvider + Header + Footer)
+│   │   ├── page.tsx                        # Home page
+│   │   ├── (account)/
+│   │   │   ├── profile/page.tsx            # User profile page
+│   │   │   └── tickets/page.tsx            # User tickets page
+│   │   ├── become-an-organizer/page.tsx
+│   │   ├── events/page.tsx
+│   │   └── dashboard/
+│   │       ├── layout.tsx                  # Role guard (DB-revalidated session)
+│   │       ├── page.tsx                    # Role-based view switcher
+│   │       ├── (system)/view.tsx           # System admin dashboard view
+│   │       ├── (organizer)/view.tsx        # Organizer dashboard view
+│   │       └── (staff)/view.tsx            # Staff dashboard view
+│   ├── assets/
+│   │   ├── fonts/                          # Custom typefaces
+│   │   │   ├── bagel-fat-one-regular.ttf
+│   │   │   ├── blockat-demo-regular.otf
+│   │   │   ├── geom-regular.ttf
+│   │   │   ├── momo-trust-display-regular.ttf
+│   │   │   ├── montserrat-alternates-regular.ttf
+│   │   │   ├── sugar-pie-regular.ttf
+│   │   │   └── tanheadline-regular.ttf
+>>>>>>> Stashed changes
 │   │   └── images/
 │   │       ├── icons/
 │   │       └── logo/
 │   │           └── upscale_media_logo.png
 │   └── maintenance/
-│       └── page.tsx                     # Maintenance mode page
+│       └── page.tsx                        # Maintenance mode page
 ├── components/
 │   ├── core/
-│   │   ├── FeaturedEvents.tsx           # Featured events section
-│   │   ├── Footer.tsx                   # Site footer
-│   │   ├── Header.tsx                   # Dynamic navbar (guest vs authenticated)
-│   │   └── Hero.tsx                     # Landing hero section
+│   │   ├── FeaturedEvents.tsx              # Featured events section
+│   │   ├── Footer.tsx                      # Site footer
+│   │   ├── Header.tsx                      # Dynamic navbar (guest vs authenticated)
+│   │   └── Hero.tsx                        # Landing hero section
 │   ├── shared/
+<<<<<<< Updated upstream
 │   │   └── target-cursor.tsx            # Custom animated cursor
 │   └── ui/
 │       ├── button.tsx                   # Button component (CVA variants)
@@ -80,6 +123,53 @@ supabase/
 ├── config.toml
 └── migrations/
     └── 20260223191944_initial_schema.sql
+=======
+│   │   ├── target-cursor.tsx               # Custom animated cursor
+│   │   ├── event/
+│   │   │   ├── event-card.tsx
+│   │   │   └── event-skeleton.tsx
+│   │   └── ticket/
+│   │       ├── ticket-card.tsx
+│   │       └── ticket-skeleton.tsx
+│   └── ui/
+│       ├── button.tsx                      # Button component (CVA variants)
+│       ├── input.tsx                       # Form input component
+│       ├── label.tsx                       # Form label component
+│       └── toast.tsx                       # Toast notification component
+└── lib/
+    ├── logger.ts                           # Structured logger (dev + prod)
+    ├── actions/
+    │   ├── auth.ts                         # Server Actions — auth (DB-revalidated)
+    │   ├── event.ts                        # Server Actions — events
+    │   ├── organizer.ts                    # Server Actions — organizer onboarding
+    │   ├── profile.ts                      # Server Actions — profile
+    │   └── ticket.ts                       # Server Actions — tickets
+    ├── supabase/
+    │   ├── admin.ts                        # Service-role Supabase client (server-only)
+    │   ├── client.ts                       # Browser Supabase client
+    │   ├── middleware.ts                   # Supabase SSR session helper
+    │   └── server.ts                       # SSR Supabase client
+    ├── types/
+    │   ├── auth.ts
+    │   ├── event.ts
+    │   ├── organizer.ts
+    │   ├── profile.ts
+    │   └── ticket.ts
+    ├── ui/
+    │   └── utils.ts                        # Tailwind merge utility (cn helper)
+    └── utils/
+        ├── mail.ts                         # Nodemailer OTP email delivery
+        ├── organizer-doc-upload.ts
+        ├── otp.ts                          # OTP generation/hashing/cooldown
+        ├── password.ts                     # Password hashing & comparison
+        ├── profile-image-upload.ts
+        └── session.ts                      # JWT session create/read/destroy
+supabase/
+├── config.toml
+└── migrations/
+    ├── 20260223191944_initial_schema.sql
+    └── 20260301091500_add_is_submitted_to_organizer_details.sql
+>>>>>>> Stashed changes
 ```
 
 ---

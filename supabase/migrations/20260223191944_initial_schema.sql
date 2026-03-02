@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS organizer_details (
     nic_back_image_url      VARCHAR(255) NOT NULL,
     remarks                 TEXT DEFAULT NULL,
     status                  organizer_status DEFAULT 'PENDING',
+    is_submitted            BOOLEAN DEFAULT FALSE,
     verified_by             UUID DEFAULT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
     verified_at             TIMESTAMPTZ DEFAULT NULL,
     created_at              TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

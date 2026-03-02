@@ -203,14 +203,27 @@ export default function BecomeAnOrganizerPage() {
   const isSignedIn = Boolean(user);
   const isOrganizer = user?.role === 'ORGANIZER';
   const hasSubmittedDetails = organizerDetails?.is_submitted === true;
-  const shouldShowStep3Button = !hasSubmittedDetails || organizerDetails?.status === 'REJECTED';
+  const isRejected = organizerDetails?.status === "REJECTED";
+  const isApproved = organizerDetails?.status === "APPROVED";
+  const shouldShowStep3Button =
+    !hasSubmittedDetails || isRejected;
 
-  const stepState = useMemo(() => ({
-    step1: isSignedIn,
-    step2: isOrganizer,
-    step3: hasSubmittedDetails,
-    step4: hasSubmittedDetails,
-  }), [isOrganizer, isSignedIn, hasSubmittedDetails]);
+  const stepState = useMemo(
+    () => {
+      const step1 = isSignedIn;
+      const step2 = step1 && isOrganizer;
+      const step3 = step2 && hasSubmittedDetails && !isRejected;
+      const step4 = step3 && isApproved;
+
+      return {
+        step1,
+        step2,
+        step3,
+        step4,
+      };
+    },
+    [isSignedIn, isOrganizer, hasSubmittedDetails, isRejected, isApproved],
+  );
 
   const whatsappLink = useMemo(() => {
     if (!user || !whatsappNumber) return null;
@@ -338,7 +351,7 @@ export default function BecomeAnOrganizerPage() {
                 title="Status Review"
                 description="Track approval status and next actions."
                 completed={stepState.step4}
-                active={stepState.step3}
+                active={stepState.step3 && !stepState.step4}
               />
             </motion.div>
 
@@ -366,7 +379,9 @@ export default function BecomeAnOrganizerPage() {
                             asChild
                             className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                           >
-                            <Link href="/sign-in">Sign In</Link>
+                            <Link href="/sign-in?redirect=/become-an-organizer">
+                              Sign In
+                            </Link>
                           </Button>
                           <Button
                             asChild
@@ -441,7 +456,7 @@ export default function BecomeAnOrganizerPage() {
                   </div>
                 )}
 
-                {hasSubmittedDetails && organizerDetails && (
+                {stepState.step3 && organizerDetails && (
                   <div className="rounded-xl border border-[hsl(214.3,31.8%,91.4%)] bg-white p-4 sm:p-5">
                     {organizerDetails.status === 'PENDING' && (
                       <div className="flex items-start gap-3">
