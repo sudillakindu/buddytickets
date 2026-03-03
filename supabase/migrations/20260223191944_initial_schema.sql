@@ -1,3 +1,5 @@
+ALTER DATABASE postgres SET timezone TO 'Asia/Colombo';
+
 -- 1. ENUM TYPES CREATION (PostgreSQL වලට අදාලව)
 CREATE TYPE user_role AS ENUM ('SYSTEM', 'ORGANIZER', 'CO_ORGANIZER', 'STAFF', 'USER');
 CREATE TYPE organizer_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
