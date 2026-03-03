@@ -25,67 +25,21 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
-import type { EventDetails, TicketType } from "@/lib/types/event";
+import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const formatFullDate = (iso: string): string => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-const formatTime = (iso: string): string => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const formatPrice = (price: number): string => {
-  if (price === 0) return "Free";
-  return `LKR ${price.toLocaleString()}`;
-};
-
-const formatEndAt = (saleEndAt: string | null, eventEndAt: string): string => {
-  const source = saleEndAt ?? eventEndAt;
-
-  const date = new Date(source).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  const time = new Date(source).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  return `${date} · ${time}`;
-};
-
-// ─── Status configs ───────────────────────────────────────────────────────────
-//
-// ONGOING  → Active  | navigates to buy-ticket
-// ON_SALE  → Active  | navigates to buy-ticket
-// All others → Disabled
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 interface StatusConfig {
   label: string;
-  pillClass: string;      // pill badge on detail page
+  pillClass: string;
   buttonText: string;
   buttonClass: string;
   buttonDisabled: boolean;
-  isActive: boolean;      // true → CTA navigates to buy-ticket
+  isActive: boolean;
 }
 
-const STATUS_CONFIG: Record<string, StatusConfig> = {
+const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
   ON_SALE: {
     label: "On Sale",
     pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
@@ -136,32 +90,95 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
     buttonDisabled: true,
     isActive: false,
   },
+  DRAFT: {
+    label: "Draft",
+    pillClass: "bg-gray-50 border-gray-200 text-gray-400",
+    buttonText: "Draft",
+    buttonClass: "bg-gray-200",
+    buttonDisabled: true,
+    isActive: false,
+  },
 };
 
-// ─── Image Gallery ─────────────────────────────────────────────────────────────
+const FALLBACK_STATUS_CONFIG: StatusConfig = {
+  label: "Unknown",
+  pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+  buttonText: "Unavailable",
+  buttonClass: "bg-gray-400",
+  buttonDisabled: true,
+  isActive: false,
+};
 
-interface GalleryProps {
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const formatFullDate = (iso: string): string =>
+  iso
+    ? new Date(iso).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "—";
+
+const formatTime = (iso: string): string =>
+  iso
+    ? new Date(iso).toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
+
+const formatPrice = (price: number | null): string => {
+  if (price === null) return "—";
+  if (price === 0) return "Free";
+  return `LKR ${price.toLocaleString()}`;
+};
+
+const formatSaleEnd = (
+  saleEndAt: string | null,
+  eventEndAt: string,
+): string => {
+  const source = saleEndAt ?? eventEndAt;
+  const date = new Date(source).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const time = new Date(source).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `${date} · ${time}`;
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface ImageGalleryProps {
   images: { image_url: string; priority_order: number }[];
   eventName: string;
 }
 
-const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
+const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
-  const handleError = useCallback((idx: number) => {
-    setImgErrors((prev) => ({ ...prev, [idx]: true }));
-  }, []);
+  const handleError = useCallback(
+    (idx: number) => setImgErrors((prev) => ({ ...prev, [idx]: true })),
+    [],
+  );
 
-  const handlePrevImage = useCallback(() => {
-    if (images.length <= 1) return;
-    setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
+  const handlePrev = useCallback(
+    () =>
+      images.length > 1 &&
+      setActiveIndex((p) => (p - 1 + images.length) % images.length),
+    [images.length],
+  );
 
-  const handleNextImage = useCallback(() => {
-    if (images.length <= 1) return;
-    setActiveIndex((prev) => (prev + 1) % images.length);
-  }, [images.length]);
+  const handleNext = useCallback(
+    () => images.length > 1 && setActiveIndex((p) => (p + 1) % images.length),
+    [images.length],
+  );
 
   const activeImage = images[activeIndex] ?? null;
 
@@ -180,8 +197,10 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
           >
             {!activeImage || imgErrors[activeIndex] ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-3 bg-gray-50">
-                <ImageOff className="w-10 h-10" />
-                <span className="text-sm font-secondary">Image unavailable</span>
+                <ImageOff className="w-10 h-10" aria-hidden="true" />
+                <span className="text-sm font-secondary">
+                  Image unavailable
+                </span>
               </div>
             ) : (
               <Image
@@ -198,28 +217,21 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Image counter */}
-        {images.length > 1 && (
-          <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-secondary px-2.5 py-1 rounded-full backdrop-blur-sm">
-            {activeIndex + 1} / {images.length}
-          </div>
-        )}
-
-        {/* Arrow controls */}
         {images.length > 1 && (
           <>
+            <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-secondary px-2.5 py-1 rounded-full backdrop-blur-sm">
+              {activeIndex + 1} / {images.length}
+            </div>
             <button
-              type="button"
-              onClick={handlePrevImage}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              onClick={handlePrev}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 transition-colors"
               aria-label="Previous image"
             >
               <ChevronLeft className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
-              type="button"
-              onClick={handleNextImage}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              onClick={handleNext}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 transition-colors"
               aria-label="Next image"
             >
               <ChevronRight className="w-5 h-5" aria-hidden="true" />
@@ -227,18 +239,59 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
           </>
         )}
       </div>
+
+      {/* Thumbnail strip — shown when there are multiple images */}
+      {images.length > 1 && (
+        <div className="grid grid-cols-4 gap-2">
+          {images.slice(0, 4).map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveIndex(idx)}
+              className={cn(
+                "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200",
+                activeIndex === idx
+                  ? "border-[hsl(270,70%,50%)] shadow-md"
+                  : "border-transparent opacity-60 hover:opacity-100",
+              )}
+              aria-label={`View image ${idx + 1}`}
+            >
+              {imgErrors[idx] ? (
+                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                  <ImageOff
+                    className="w-4 h-4 text-gray-400"
+                    aria-hidden="true"
+                  />
+                </div>
+              ) : (
+                <Image
+                  src={img.image_url}
+                  alt={`${eventName} thumbnail ${idx + 1}`}
+                  fill
+                  sizes="10vw"
+                  unoptimized
+                  className="object-cover"
+                  onError={() => handleError(idx)}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 });
+
 ImageGallery.displayName = "ImageGallery";
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface EventTicketCardProps {
   ticket: TicketType;
-  eventStatus: string;
+  eventStatus: EventStatus;
   eventEndAt: string;
 }
 
-const EventTicketCard: React.FC<EventTicketCardProps> = memo(
+const EventTicketCard = memo<EventTicketCardProps>(
   ({ ticket, eventStatus, eventEndAt }) => {
     const available = Math.max(0, ticket.capacity - ticket.qty_sold);
     const soldPct =
@@ -253,45 +306,43 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
     const notStarted = ticket.sale_start_at
       ? new Date(ticket.sale_start_at) > new Date()
       : false;
-
     const canBook =
       !isTicketSoldOut &&
       !isExpired &&
       !notStarted &&
       (eventStatus === "ON_SALE" || eventStatus === "ONGOING");
 
-    const inclusions: string[] = Array.isArray(ticket.inclusions)
+    const inclusions = Array.isArray(ticket.inclusions)
       ? ticket.inclusions
       : [];
+    const accentColor = canBook ? "hsl(262 83% 58%)" : "hsl(220 9% 70%)";
 
-    const accentHue = canBook ? "hsl(262 83% 58%)" : "hsl(220 9% 70%)";
     const barColor =
       soldPct >= 90
         ? "bg-red-500"
         : soldPct >= 60
-        ? "bg-amber-400"
-        : "bg-emerald-500";
+          ? "bg-amber-400"
+          : "bg-emerald-500";
 
     const statusBadge = isTicketSoldOut
       ? { label: "Sold Out", cls: "bg-red-100 text-red-600" }
       : isExpired
-      ? { label: "Sale Ended", cls: "bg-gray-100 text-gray-500" }
-      : notStarted
-      ? { label: "Coming Soon", cls: "bg-amber-100 text-amber-600" }
-      : null;
+        ? { label: "Sale Ended", cls: "bg-gray-100 text-gray-500" }
+        : notStarted
+          ? { label: "Coming Soon", cls: "bg-amber-100 text-amber-600" }
+          : null;
 
     return (
       <div
         className={cn(
-          "relative flex flex-col sm:flex-row rounded-2xl overflow-hidden",
-          "shadow-[0_2px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300",
+          "relative flex flex-col sm:flex-row rounded-2xl overflow-hidden shadow-[0_2px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300",
           canBook ? "hover:shadow-[0_6px_28px_rgba(0,0,0,0.14)]" : "opacity-80",
         )}
-        style={{ fontFamily: "inherit" }}
       >
+        {/* Accent bar */}
         <div
           className="w-full sm:w-2 h-2 sm:h-auto shrink-0"
-          style={{ background: accentHue }}
+          style={{ background: accentColor }}
         />
 
         <div
@@ -300,12 +351,14 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
             canBook ? "bg-white" : "bg-gray-50",
           )}
         >
+          {/* Left: Details */}
           <div className="flex-1 min-w-0 px-5 pt-5 pb-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Ticket
                   className="w-4 h-4 shrink-0"
-                  style={{ color: accentHue }}
+                  style={{ color: accentColor }}
+                  aria-hidden="true"
                 />
                 <h4
                   className={cn(
@@ -316,7 +369,6 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
                   {ticket.name}
                 </h4>
               </div>
-
               {statusBadge && (
                 <span
                   className={cn(
@@ -342,18 +394,22 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
                     key={i}
                     className="inline-flex items-center gap-1.5 text-[11px] font-secondary font-semibold px-2.5 py-1 rounded-full border"
                     style={{
-                      background: `${accentHue}18`,
-                      color: accentHue,
-                      borderColor: `${accentHue}45`,
+                      background: `${accentColor}18`,
+                      color: accentColor,
+                      borderColor: `${accentColor}45`,
                     }}
                   >
-                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    <CheckCircle2
+                      className="w-3 h-3 shrink-0"
+                      aria-hidden="true"
+                    />
                     {item}
                   </span>
                 ))}
               </div>
             )}
 
+            {/* Capacity bar */}
             <div className="mt-auto space-y-1.5">
               <div className="flex justify-between text-[10px] font-secondary text-gray-400">
                 <span>{ticket.qty_sold.toLocaleString()} sold</span>
@@ -375,23 +431,16 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
             </div>
           </div>
 
+          {/* Divider with notches */}
           <div className="relative flex sm:flex-col items-center justify-center">
             <span
-              className={cn(
-                "absolute rounded-full w-4 h-4 border border-gray-200 z-10",
-                "left-0 sm:left-auto sm:top-0",
-                "-translate-x-1/2 sm:translate-x-0 sm:-translate-y-1/2",
-              )}
+              className="absolute rounded-full w-4 h-4 border border-gray-200 z-10 left-0 sm:left-auto sm:top-0 -translate-x-1/2 sm:translate-x-0 sm:-translate-y-1/2"
               style={{
                 background: canBook ? "hsl(210 40% 96.1%)" : "hsl(220 9% 95%)",
               }}
             />
             <span
-              className={cn(
-                "absolute rounded-full w-4 h-4 border border-gray-200 z-10",
-                "right-0 sm:right-auto sm:bottom-0",
-                "translate-x-1/2 sm:translate-x-0 sm:translate-y-1/2",
-              )}
+              className="absolute rounded-full w-4 h-4 border border-gray-200 z-10 right-0 sm:right-auto sm:bottom-0 translate-x-1/2 sm:translate-x-0 sm:translate-y-1/2"
               style={{
                 background: canBook ? "hsl(210 40% 96.1%)" : "hsl(220 9% 95%)",
               }}
@@ -399,6 +448,7 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
             <div className="w-full sm:w-px h-px sm:h-full border-t-2 sm:border-t-0 sm:border-l-2 border-dashed border-gray-200 mx-2 sm:mx-0 my-0 sm:my-2" />
           </div>
 
+          {/* Right: Price & sale end */}
           <div
             className={cn(
               "w-full sm:w-40 shrink-0 px-5 py-4 flex sm:flex-col justify-between gap-3",
@@ -418,7 +468,6 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
                 {formatPrice(ticket.price)}
               </p>
             </div>
-
             <div>
               <p className="font-secondary text-[9px] uppercase tracking-widest text-gray-400 mb-1">
                 Sale Ends
@@ -426,9 +475,10 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
               <div className="flex items-start gap-1.5">
                 <Calendar
                   className="w-3 h-3 mt-0.5 shrink-0 text-gray-400"
+                  aria-hidden="true"
                 />
                 <p className="font-secondary text-[11px] leading-snug text-gray-600">
-                  {formatEndAt(ticket.sale_end_at, eventEndAt)}
+                  {formatSaleEnd(ticket.sale_end_at, eventEndAt)}
                 </p>
               </div>
             </div>
@@ -438,6 +488,7 @@ const EventTicketCard: React.FC<EventTicketCardProps> = memo(
     );
   },
 );
+
 EventTicketCard.displayName = "EventTicketCard";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -449,53 +500,35 @@ interface EventDetailProps {
 export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
   const router = useRouter();
   const buyTicketHref = `/events/${event.event_id}/buy-ticket`;
-  const detailHref = `/events/${event.event_id}`;
-
-  const statusCfg = STATUS_CONFIG[event.status] ?? {
-    label: event.status,
-    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
-    buttonText: event.status,
-    buttonClass: "bg-gray-400",
-    buttonDisabled: true,
-    isActive: false,
-  };
-
-  const handleMainCTA = () => {
-    if (statusCfg.isActive) {
-      router.push(buyTicketHref);
-    }
-  };
+  const statusCfg = STATUS_CONFIG[event.status] ?? FALLBACK_STATUS_CONFIG;
 
   const handleShare = useCallback(async () => {
-    const shareUrl = typeof window !== "undefined"
-      ? window.location.href
-      : detailHref;
-
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
+    const shareUrl =
+      typeof window !== "undefined"
+        ? window.location.href
+        : `/events/${event.event_id}`;
+    try {
+      if (navigator.share) {
         await navigator.share({
           title: event.name,
           text: event.subtitle || event.description,
           url: shareUrl,
         });
         return;
-      } catch {
-        return;
       }
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      // Share / clipboard not available — fail silently
     }
+  }, [event.event_id, event.name, event.subtitle, event.description]);
 
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-      } catch {
-        return;
-      }
-    }
-  }, [detailHref, event.description, event.name, event.subtitle]);
+  const handleCTA = useCallback(() => {
+    if (statusCfg.isActive) router.push(buyTicketHref);
+  }, [statusCfg.isActive, buyTicketHref, router]);
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
-      {/* ── Banner Image (priority_order = 2) / Logo fallback ───────── */}
+      {/* ── Banner ── */}
       <div className="relative w-full h-48 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
         {event.banner_image ? (
           <>
@@ -517,16 +550,16 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               alt="BuddyTickets Logo"
               width={180}
               height={180}
-              className="w-28 h-28 sm:w-36 sm:h-36 lg:w-44 lg:h-44 object-contain"
+              className="w-28 h-28 sm:w-36 lg:w-44 object-contain"
               priority
             />
           </div>
         )}
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-          {/* ── LEFT: Gallery (thumbnail = priority_order 1) ────────── */}
+          {/* ── Left Column: Gallery + Organizer ── */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -535,6 +568,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           >
             <ImageGallery images={event.images} eventName={event.name} />
 
+            {/* Organizer card */}
             <div className="flex items-center gap-3 p-4 mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
                 {event.organizer.image_url ? (
@@ -548,7 +582,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                    <User
+                      className="w-5 h-5 text-[hsl(270,70%,50%)]"
+                      aria-hidden="true"
+                    />
                   </div>
                 )}
               </div>
@@ -566,14 +603,14 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             </div>
           </motion.div>
 
-          {/* ── RIGHT: Event info ────────────────────────────────────── */}
+          {/* ── Right Column: Event Info ── */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="flex flex-col gap-6"
           >
-            {/* Badges */}
+            {/* Badges + actions */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 {event.is_vip && (
@@ -591,7 +628,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                     statusCfg.pillClass,
                   )}
                 >
-                  {event.status === "ONGOING" && (
+                  {event.status === "ONGOING" ? (
                     <span className="inline-flex items-center gap-1.5">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -599,28 +636,27 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                       </span>
                       {statusCfg.label}
                     </span>
+                  ) : (
+                    statusCfg.label
                   )}
-                  {event.status !== "ONGOING" && statusCfg.label}
                 </span>
               </div>
-
               <div className="ml-auto flex items-center gap-2">
                 <Button
                   asChild
                   variant="outline"
                   className="h-8 px-3 rounded-full text-xs font-secondary"
                 >
-                  <Link href="/events" aria-label="Back to events">
+                  <Link href="/events">
                     <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
                     Back to Events
                   </Link>
                 </Button>
-
                 <Button
                   variant="outline"
                   onClick={handleShare}
                   className="h-8 px-3 rounded-full text-xs font-secondary"
-                  aria-label="Share event"
+                  aria-label="Share this event"
                 >
                   <Share2 className="w-3 h-3" aria-hidden="true" />
                   Share
@@ -628,7 +664,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             </div>
 
-            {/* Title + subtitle */}
+            {/* Title */}
             <div>
               <h1 className="font-primary font-black text-2xl sm:text-3xl lg:text-4xl uppercase leading-tight text-[hsl(222.2,47.4%,11.2%)]">
                 {event.name}
@@ -641,12 +677,14 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               <div className="h-1 w-16 rounded-full mt-3 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
             </div>
 
-            {/* Meta info */}
+            {/* Date / Time / Location info */}
             <div className="flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50">
-              {/* Date */}
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-                  <Calendar className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  <Calendar
+                    className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
@@ -657,28 +695,34 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   </p>
                 </div>
               </div>
-
-              {/* Time */}
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-                  <Clock className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  <Clock
+                    className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div>
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
                     Time
                   </p>
                   <p className="font-secondary text-sm font-semibold text-[hsl(222.2,47.4%,11.2%)]">
-                    <time dateTime={event.start_at}>{formatTime(event.start_at)}</time>
+                    <time dateTime={event.start_at}>
+                      {formatTime(event.start_at)}
+                    </time>
                     {" — "}
-                    <time dateTime={event.end_at}>{formatTime(event.end_at)}</time>
+                    <time dateTime={event.end_at}>
+                      {formatTime(event.end_at)}
+                    </time>
                   </p>
                 </div>
               </div>
-
-              {/* Location */}
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-                  <MapPin className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  <MapPin
+                    className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
@@ -693,9 +737,8 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                         href={event.map_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 text-[11px] font-secondary text-[hsl(270,70%,50%)] hover:underline"
-                        aria-label="Open map"
+                        aria-label="Open location on map"
                       >
                         <ExternalLink className="w-3 h-3" aria-hidden="true" />
                         Map
@@ -706,24 +749,29 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             </div>
 
-            {/* Main CTA */}
+            {/* CTA button */}
             <Button
               disabled={statusCfg.buttonDisabled}
-              onClick={handleMainCTA}
+              onClick={handleCTA}
               className={cn(
                 "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300",
-                !statusCfg.buttonDisabled && "hover:shadow-xl hover:-translate-y-0.5",
+                !statusCfg.buttonDisabled &&
+                  "hover:shadow-xl hover:-translate-y-0.5",
                 statusCfg.buttonClass,
               )}
             >
               <span className="flex items-center justify-center gap-2">
-                {event.status === "ON_SALE" && <Ticket className="w-4 h-4" />}
-                {event.status === "ONGOING" && <Radio className="w-4 h-4" />}
+                {event.status === "ON_SALE" && (
+                  <Ticket className="w-4 h-4" aria-hidden="true" />
+                )}
+                {event.status === "ONGOING" && (
+                  <Radio className="w-4 h-4" aria-hidden="true" />
+                )}
                 {statusCfg.buttonText}
               </span>
             </Button>
 
-            {/* Description */}
+            {/* About */}
             <div>
               <h2 className="font-primary font-bold text-sm uppercase tracking-wider text-[hsl(222.2,47.4%,11.2%)] mb-2">
                 About
@@ -750,11 +798,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                 </div>
               </div>
             )}
-
           </motion.div>
         </div>
 
-        {/* ── Tickets Section ──────────────────────────────────────── */}
+        {/* ── Tickets Section ── */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -763,7 +810,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           aria-label="Ticket Types"
         >
           <div className="flex items-center gap-3 mb-6">
-            <Ticket className="w-6 h-6 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+            <Ticket
+              className="w-6 h-6 text-[hsl(270,70%,50%)]"
+              aria-hidden="true"
+            />
             <h2 className="font-primary font-black text-xl sm:text-2xl uppercase text-[hsl(222.2,47.4%,11.2%)]">
               Tickets
             </h2>
@@ -772,13 +822,16 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
 
           {event.ticket_types.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Ticket className="w-12 h-12 text-gray-300 mb-3" aria-hidden="true" />
+              <Ticket
+                className="w-12 h-12 text-gray-300 mb-3"
+                aria-hidden="true"
+              />
               <p className="font-secondary text-gray-400">
                 No tickets available at this time.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
               {event.ticket_types.map((ticket) => (
                 <EventTicketCard
                   key={ticket.ticket_type_id}

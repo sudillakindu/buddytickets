@@ -12,10 +12,10 @@ import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 import { getFeaturedEvents } from "@/lib/actions/event";
-
 import type { Event } from "@/lib/types/event";
 
-// DRAFT is always excluded from server action, but double-check here too
+// ─── Constants ───────────────────────────────────────────────────────────────
+
 const VISIBLE_STATUSES = new Set<Event["status"]>([
   "ON_SALE",
   "ONGOING",
@@ -30,9 +30,8 @@ interface SectionHeaderProps {
   link: string;
 }
 
-const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
+const SectionHeader = memo<SectionHeaderProps>(({ highlight, title, link }) => {
   const router = useRouter();
-
   return (
     <div className="flex flex-row items-center justify-between mb-8 sm:mb-10 w-full">
       <motion.div
@@ -73,7 +72,10 @@ const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
     </div>
   );
 });
+
 SectionHeader.displayName = "SectionHeader";
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const EmptyState = memo(() => (
   <motion.div
@@ -94,10 +96,13 @@ const EmptyState = memo(() => (
     </p>
   </motion.div>
 ));
+
 EmptyState.displayName = "EmptyState";
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 const EventGrid = memo(({ events }: { events: Event[] }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
     {events.map((event, index) => (
       <motion.div
         key={event.event_id}
@@ -106,17 +111,17 @@ const EventGrid = memo(({ events }: { events: Event[] }) => (
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: index * 0.08 }}
       >
-        {/* EventCard handles card click → /events/[id], button click → /events/[id]/buy-ticket */}
         <EventCard event={event} index={index} />
       </motion.div>
     ))}
   </div>
 ));
+
 EventGrid.displayName = "EventGrid";
 
-// ─── Custom hook ──────────────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────────────────
 
-function useFeaturedEvents() {
+export default function FeaturedEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -127,25 +132,29 @@ function useFeaturedEvents() {
       setIsLoading(true);
       try {
         const result = await getFeaturedEvents();
-        if (!cancelled) {
-          if (result.success) {
-            // Extra guard: never show DRAFT or inactive events client-side
-            const safe = (result.events ?? []).filter(
+        if (cancelled) return;
+
+        if (result.success) {
+          setEvents(
+            (result.events ?? []).filter(
               (e) => e.is_active && VISIBLE_STATUSES.has(e.status),
-            );
-            setEvents(safe);
-          } else {
-            Toast("Error", result.message || "Failed to load events.", "error");
-          }
+            ),
+          );
+        } else {
+          Toast("Error", result.message ?? "Failed to load events.", "error");
         }
       } catch (error) {
         logger.error({
-          fn: "FeaturedEvents.useFeaturedEvents.load",
-          message: "Failed to load featured events",
+          fn: "FeaturedEvents.load",
+          message: "Failed to load",
           meta: error,
         });
         if (!cancelled)
-          Toast("Connection Error", "Failed to connect to the server.", "error");
+          Toast(
+            "Connection Error",
+            "Failed to connect to the server.",
+            "error",
+          );
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -157,28 +166,16 @@ function useFeaturedEvents() {
     };
   }, []);
 
-  // Latest = ONGOING + ON_SALE
   const activeEvents = useMemo(
     () =>
-      events.filter(
-        (e) => e.status === "ON_SALE" || e.status === "ONGOING",
-      ),
+      events.filter((e) => e.status === "ON_SALE" || e.status === "ONGOING"),
     [events],
   );
 
-  // Upcoming = PUBLISHED
   const upcomingEvents = useMemo(
     () => events.filter((e) => e.status === "PUBLISHED"),
     [events],
   );
-
-  return { events, isLoading, activeEvents, upcomingEvents };
-}
-
-// ─── Page component ───────────────────────────────────────────────────────────
-
-export default function FeaturedEvents() {
-  const { events, isLoading, activeEvents, upcomingEvents } = useFeaturedEvents();
 
   return (
     <section
@@ -186,6 +183,7 @@ export default function FeaturedEvents() {
       className="py-16 sm:py-24 relative overflow-hidden bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] w-full"
       aria-label="Featured Events"
     >
+      {/* Background blobs */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         aria-hidden="true"
@@ -194,7 +192,7 @@ export default function FeaturedEvents() {
         <div className="absolute bottom-[20%] right-[-5%] w-[300px] h-[300px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px]" />
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16 sm:space-y-20">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 space-y-16 sm:space-y-20">
         {isLoading ? (
           <EventGridSkeleton />
         ) : events.length === 0 ? (
