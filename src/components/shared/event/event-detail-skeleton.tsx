@@ -11,7 +11,7 @@ export const EventDetailSkeleton: React.FC = memo(() => {
         <div className="h-4 w-40 bg-gray-200 rounded mb-8" />
 
         {/* Banner */}
-        <div className="w-full h-48 sm:h-64 lg:h-80 rounded-2xl bg-gray-200 mb-8" />
+        <div className="w-full aspect-video rounded-2xl bg-gray-200 mb-8" />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Left: Gallery */}
