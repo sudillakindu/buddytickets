@@ -114,19 +114,19 @@ const FALLBACK_STATUS_CONFIG: StatusConfig = {
 const formatFullDate = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
     : "—";
 
 const formatTime = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "—";
 
 const formatPrice = (price: number | null): string => {
@@ -135,10 +135,10 @@ const formatPrice = (price: number | null): string => {
   return `LKR ${price.toLocaleString()}`;
 };
 
-const formatSaleEnd = (
+const formatSaleEndParts = (
   saleEndAt: string | null,
   eventEndAt: string,
-): string => {
+): { date: string; time: string } => {
   const source = saleEndAt ?? eventEndAt;
   const date = new Date(source).toLocaleDateString("en-US", {
     month: "short",
@@ -149,7 +149,7 @@ const formatSaleEnd = (
     hour: "2-digit",
     minute: "2-digit",
   });
-  return `${date} · ${time}`;
+  return { date, time };
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -239,44 +239,6 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
           </>
         )}
       </div>
-
-      {/* Thumbnail strip — shown when there are multiple images */}
-      {images.length > 1 && (
-        <div className="grid grid-cols-4 gap-2">
-          {images.slice(0, 4).map((img, idx) => (
-            <button
-              key={idx}
-              onClick={() => setActiveIndex(idx)}
-              className={cn(
-                "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200",
-                activeIndex === idx
-                  ? "border-[hsl(270,70%,50%)] shadow-md"
-                  : "border-transparent opacity-60 hover:opacity-100",
-              )}
-              aria-label={`View image ${idx + 1}`}
-            >
-              {imgErrors[idx] ? (
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                  <ImageOff
-                    className="w-4 h-4 text-gray-400"
-                    aria-hidden="true"
-                  />
-                </div>
-              ) : (
-                <Image
-                  src={img.image_url}
-                  alt={`${eventName} thumbnail ${idx + 1}`}
-                  fill
-                  sizes="10vw"
-                  unoptimized
-                  className="object-cover"
-                  onError={() => handleError(idx)}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 });
@@ -468,18 +430,19 @@ const EventTicketCard = memo<EventTicketCardProps>(
                 {formatPrice(ticket.price)}
               </p>
             </div>
-            <div>
+            <div className="text-right">
               <p className="font-secondary text-[9px] uppercase tracking-widest text-gray-400 mb-1">
                 Sale Ends
               </p>
-              <div className="flex items-start gap-1.5">
-                <Calendar
-                  className="w-3 h-3 mt-0.5 shrink-0 text-gray-400"
-                  aria-hidden="true"
-                />
-                <p className="font-secondary text-[11px] leading-snug text-gray-600">
-                  {formatSaleEnd(ticket.sale_end_at, eventEndAt)}
-                </p>
+              <div className="flex items-start gap-1.5 justify-end">
+                <div className="text-right">
+                  <p className="font-secondary text-[11px] leading-snug text-gray-600">
+                    {formatSaleEndParts(ticket.sale_end_at, eventEndAt).date}
+                  </p>
+                  <p className="font-secondary text-[11px] leading-snug text-gray-500">
+                    {formatSaleEndParts(ticket.sale_end_at, eventEndAt).time}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -527,7 +490,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
   }, [statusCfg.isActive, buyTicketHref, router]);
 
   return (
-    <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
+    <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]  pb-12">
       {/* ── Banner ── */}
       <div className="relative w-full h-48 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
         {event.banner_image ? (
@@ -541,7 +504,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               className="object-cover object-center"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/60" />
+            {/* Main soft overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.4))]" />
           </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -557,42 +523,44 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
         )}
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
           {/* ── Left Column: Gallery + Organizer ── */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative z-20 -mt-24 sm:-mt-28 lg:-mt-32"
+            className="relative z-20 -mt-24 sm:-mt-28 lg:-mt-56"
           >
             <ImageGallery images={event.images} eventName={event.name} />
 
             {/* Organizer card */}
-            <div className="flex items-center gap-3 p-4 mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
-                {event.organizer.image_url ? (
-                  <Image
-                    src={event.organizer.image_url}
-                    alt={event.organizer.name}
-                    fill
-                    sizes="40px"
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User
-                      className="w-5 h-5 text-[hsl(270,70%,50%)]"
-                      aria-hidden="true"
+            <div className="flex items-center justify-between p-4 mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
+                  {event.organizer.image_url ? (
+                    <Image
+                      src={event.organizer.image_url}
+                      alt={event.organizer.name}
+                      fill
+                      sizes="40px"
+                      unoptimized
+                      className="object-cover"
                     />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User
+                        className="w-5 h-5 text-[hsl(270,70%,50%)]"
+                        aria-hidden="true"
+                      />
+                    </div>
+                  )}
+                </div>
+                <p className="font-secondary text-[14px] uppercase tracking-wider text-gray-400 font-semibold">
                   Organizer
                 </p>
+              </div>
+              <div className="text-right min-w-0">
                 <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
                   {event.organizer.name}
                 </p>
@@ -608,7 +576,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex flex-col gap-6"
+            className="flex flex-col gap-3"
           >
             {/* Badges + actions */}
             <div className="flex flex-wrap items-center gap-2">
@@ -666,20 +634,20 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
 
             {/* Title */}
             <div>
-              <h1 className="font-primary font-black text-2xl sm:text-3xl lg:text-4xl uppercase leading-tight text-[hsl(222.2,47.4%,11.2%)]">
+              <h1 className="font-primary font-black text-2xl sm:text-3xl lg:text-4xl uppercase leading-tight text-[hsl(222.2,47.4%,11.2%)] mb-1">
                 {event.name}
               </h1>
               {event.subtitle && (
-                <p className="font-secondary text-base text-[hsl(215.4,16.3%,46.9%)] mt-2">
+                <p className="font-secondary text-base text-[hsl(215.4,16.3%,46.9%)] mt-1">
                   {event.subtitle}
                 </p>
               )}
-              <div className="h-1 w-16 rounded-full mt-3 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
+              <div className="h-1 w-16 rounded-full mt-2 mb-2 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
             </div>
 
             {/* Date / Time / Location info */}
-            <div className="flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50">
-              <div className="flex items-center gap-4 px-5 py-4">
+            <div className="flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50 pt-2 pb-2">
+              <div className="flex items-center gap-4 px-5 py-3">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
                   <Calendar
                     className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
@@ -695,7 +663,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 px-5 py-4">
+              <div className="flex items-center gap-4 px-5 py-3">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
                   <Clock
                     className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
@@ -717,7 +685,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4 px-5 py-4">
+              <div className="flex items-center gap-4 px-5 py-3">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
                   <MapPin
                     className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
@@ -728,7 +696,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
                     Location
                   </p>
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <p className="font-secondary text-sm font-semibold text-[hsl(222.2,47.4%,11.2%)]">
                       {event.location}
                     </p>
@@ -737,7 +705,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                         href={event.map_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-secondary text-[hsl(270,70%,50%)] hover:underline"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-[hsl(270,70%,50%)] bg-[hsl(270,70%,97%)] text-[11px] font-secondary text-[hsl(270,70%,50%)] hover:bg-[hsl(270,70%,92%)] hover:underline transition-colors"
                         aria-label="Open location on map"
                       >
                         <ExternalLink className="w-3 h-3" aria-hidden="true" />
@@ -756,7 +724,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               className={cn(
                 "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300",
                 !statusCfg.buttonDisabled &&
-                  "hover:shadow-xl hover:-translate-y-0.5",
+                "hover:shadow-xl hover:-translate-y-0.5",
                 statusCfg.buttonClass,
               )}
             >
@@ -806,17 +774,19 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 sm:mt-16"
+          className="mt-12 sm:mt-8"
           aria-label="Ticket Types"
         >
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-4">
             <Ticket
-              className="w-6 h-6 text-[hsl(270,70%,50%)]"
+              className="w-8 h-8 text-[hsl(270,70%,50%)]"
               aria-hidden="true"
             />
-            <h2 className="font-primary font-black text-xl sm:text-2xl uppercase text-[hsl(222.2,47.4%,11.2%)]">
-              Tickets
-            </h2>
+            <h1 className="font-primary text-xl sm:text-3xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
+                Tickets
+              </span>
+            </h1>
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
