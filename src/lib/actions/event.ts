@@ -15,6 +15,8 @@ import type {
   GetEventByIdResult,
 } from "@/lib/types/event";
 
+// ─── Constants ───────────────────────────────────────────────────────────────
+
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
 
@@ -27,6 +29,7 @@ const STATUS_PRIORITY: Record<string, number> = {
   CANCELLED: 6,
 };
 
+// Matches all columns used in EVENT_CARD_SELECT against the DB schema
 const EVENT_CARD_SELECT = `
   event_id, organizer_id, category_id, name, subtitle, description, requirements,
   location, map_link, start_at, end_at, status, is_active, is_vip, created_at, updated_at,
@@ -36,17 +39,35 @@ const EVENT_CARD_SELECT = `
   vip_events ( priority_order )
 ` as const;
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Maps a raw Supabase row from EVENT_CARD_SELECT to a typed Event object
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapRowToEvent(row: any): Event {
-  const images = (row.event_images ?? []) as { image_url: string; priority_order: number }[];
-  const tickets = (row.ticket_types ?? []) as { price: number; is_active: boolean }[];
+  const images = (row.event_images ?? []) as {
+    image_url: string;
+    priority_order: number;
+  }[];
+  const tickets = (row.ticket_types ?? []) as {
+    price: number;
+    is_active: boolean;
+  }[];
+  // vip_events PK is (event_id, priority_order) — array always has at most 1 row per event
   const vipRows = (row.vip_events ?? []) as { priority_order: number }[];
 
-  const sortedImages = [...images].sort((a, b) => a.priority_order - b.priority_order);
-  const thumbnailImage = sortedImages.find((i) => i.priority_order === 1)?.image_url ?? sortedImages[0]?.image_url ?? null;
+  const sortedImages = [...images].sort(
+    (a, b) => a.priority_order - b.priority_order,
+  );
+  const thumbnailImage =
+    sortedImages.find((i) => i.priority_order === 1)?.image_url ??
+    sortedImages[0]?.image_url ??
+    null;
 
-  const activeTicketPrices = tickets.filter((t) => t.is_active).map((t) => Number(t.price));
-  const startTicketPrice = activeTicketPrices.length > 0 ? Math.min(...activeTicketPrices) : null;
+  const activeTicketPrices = tickets
+    .filter((t) => t.is_active)
+    .map((t) => Number(t.price));
+  const startTicketPrice =
+    activeTicketPrices.length > 0 ? Math.min(...activeTicketPrices) : null;
 
   return {
     event_id: row.event_id,
@@ -72,6 +93,7 @@ function mapRowToEvent(row: any): Event {
   };
 }
 
+// Sort: VIP first (by priority_order), then by date, then by status priority
 function sortEvents(a: Event, b: Event): number {
   if (a.is_vip && b.is_vip) {
     return (a.vip_priority_order ?? 9999) - (b.vip_priority_order ?? 9999);
@@ -79,11 +101,14 @@ function sortEvents(a: Event, b: Event): number {
   if (a.is_vip) return -1;
   if (b.is_vip) return 1;
 
-  const dateDiff = new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
+  const dateDiff =
+    new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
   if (dateDiff !== 0) return dateDiff;
 
   return (STATUS_PRIORITY[a.status] ?? 7) - (STATUS_PRIORITY[b.status] ?? 7);
 }
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
 
 export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
   try {
@@ -92,18 +117,25 @@ export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
       .from("events")
       .select(EVENT_CARD_SELECT)
       .eq("is_active", true)
-      .in("status", ["ONGOING", "ON_SALE", "PUBLISHED"])
-      .neq("status", "DRAFT");
+      .in("status", ["ONGOING", "ON_SALE", "PUBLISHED"]);
 
     if (error) throw error;
 
-    const rows = (data ?? []).map(mapRowToEvent).sort(sortEvents);
-    const activeEvents = rows.filter((e) => ["ON_SALE", "ONGOING"].includes(e.status)).slice(0, FEATURED_ACTIVE_LIMIT);
-    const upcomingEvents = rows.filter((e) => e.status === "PUBLISHED").slice(0, FEATURED_UPCOMING_LIMIT);
+    const sorted = (data ?? []).map(mapRowToEvent).sort(sortEvents);
+    const activeEvents = sorted
+      .filter((e) => e.status === "ON_SALE" || e.status === "ONGOING")
+      .slice(0, FEATURED_ACTIVE_LIMIT);
+    const upcomingEvents = sorted
+      .filter((e) => e.status === "PUBLISHED")
+      .slice(0, FEATURED_UPCOMING_LIMIT);
 
     return { success: true, events: [...activeEvents, ...upcomingEvents] };
   } catch (err) {
-    logger.error({ fn: "getFeaturedEvents", message: "Error fetching featured events", meta: err });
+    logger.error({
+      fn: "getFeaturedEvents",
+      message: "Error fetching featured events",
+      meta: err,
+    });
     return { success: false, message: "Failed to load featured events." };
   }
 }
@@ -115,87 +147,150 @@ export async function getAllEvents(): Promise<GetAllEventsResult> {
       .from("events")
       .select(EVENT_CARD_SELECT)
       .eq("is_active", true)
-      .in("status", ["ONGOING", "ON_SALE", "PUBLISHED", "SOLD_OUT", "COMPLETED", "CANCELLED"])
-      .neq("status", "DRAFT");
+      .in("status", [
+        "ONGOING",
+        "ON_SALE",
+        "PUBLISHED",
+        "SOLD_OUT",
+        "COMPLETED",
+        "CANCELLED",
+      ]);
 
     if (error) throw error;
 
-    return { success: true, events: (data ?? []).map(mapRowToEvent).sort(sortEvents) };
+    return {
+      success: true,
+      events: (data ?? []).map(mapRowToEvent).sort(sortEvents),
+    };
   } catch (err) {
-    logger.error({ fn: "getAllEvents", message: "Error fetching all events", meta: err });
+    logger.error({
+      fn: "getAllEvents",
+      message: "Error fetching all events",
+      meta: err,
+    });
     return { success: false, message: "Failed to load events." };
   }
 }
 
-export async function getEventById(eventId: string): Promise<GetEventByIdResult> {
+export async function getEventById(
+  eventId: string,
+): Promise<GetEventByIdResult> {
   if (!eventId) return { success: false, message: "Event ID is required." };
 
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("events")
-      .select(`
-        *,
+      .select(
+        `
+        event_id, organizer_id, category_id, name, subtitle, description,
+        requirements, location, map_link, start_at, end_at, status,
+        is_active, is_vip, created_at, updated_at,
         categories ( category_id, name, description ),
         event_images ( event_id, priority_order, image_url, created_at ),
-        ticket_types ( * ),
+        ticket_types (
+          ticket_type_id, event_id, name, description, inclusions,
+          price, capacity, qty_sold, sale_start_at, sale_end_at,
+          is_active, version, created_at, updated_at
+        ),
         users!events_organizer_id_fkey ( user_id, name, image_url, email, username ),
         vip_events ( priority_order )
-      `)
+      `,
+      )
       .eq("event_id", eventId)
       .eq("is_active", true)
       .neq("status", "DRAFT")
       .maybeSingle();
 
-    if (error || !data) throw error || new Error("Event not found.");
+    if (error) throw error;
+    if (!data) return { success: false, message: "Event not found." };
 
-    const rawImages = ((data.event_images as EventImage[]) ?? []).sort((a, b) => a.priority_order - b.priority_order);
-    const thumbnailImage = rawImages.find((i) => i.priority_order === 1)?.image_url ?? rawImages[0]?.image_url ?? null;
-    const bannerImage = rawImages.find((i) => i.priority_order === 2)?.image_url ?? null;
+    // Sort images by priority_order ascending (priority_order=1 is thumbnail, 2 is banner)
+    const sortedImages = ((data.event_images as EventImage[]) ?? []).sort(
+      (a, b) => a.priority_order - b.priority_order,
+    );
+    const thumbnailImage =
+      sortedImages.find((i) => i.priority_order === 1)?.image_url ??
+      sortedImages[0]?.image_url ??
+      null;
+    const bannerImage =
+      sortedImages.find((i) => i.priority_order === 2)?.image_url ?? null;
 
-    const rawTickets = ((data.ticket_types as TicketType[]) ?? [])
+    const ticketTypes: TicketType[] = (
+      (data.ticket_types as TicketType[]) ?? []
+    )
       .filter((t) => t.is_active)
       .map((t) => ({
-      ...t,
-      price: Number(t.price),
-      qty_sold: t.qty_sold ?? 0,
-      inclusions: Array.isArray(t.inclusions) ? t.inclusions.filter((i): i is string => typeof i === "string") : [],
-      version: t.version ?? 1,
-      })) as TicketType[];
+        ...t,
+        price: Number(t.price),
+        qty_sold: t.qty_sold ?? 0,
+        inclusions: Array.isArray(t.inclusions)
+          ? t.inclusions.filter((i): i is string => typeof i === "string")
+          : [],
+        version: t.version ?? 1,
+      }));
+
+    // Supabase types FK joins as arrays — safely unwrap the first element
+    const rawUser = Array.isArray(data.users) ? data.users[0] : data.users;
 
     const organizer: Organizer = {
-      user_id: data.users?.user_id ?? "",
-      name: data.users?.name ?? "Unknown Organizer",
-      image_url: data.users?.image_url ?? null,
-      email: data.users?.email ?? "",
-      username: data.users?.username ?? "",
+      user_id: rawUser?.user_id ?? "",
+      name: rawUser?.name ?? "Unknown Organizer",
+      image_url: rawUser?.image_url ?? null,
+      email: rawUser?.email ?? "",
+      username: rawUser?.username ?? "",
     };
+
+    const rawCategory = Array.isArray(data.categories)
+      ? data.categories[0]
+      : data.categories;
 
     const categoryDetails: CategoryDetails = {
-      category_id: data.categories?.category_id ?? data.category_id,
-      name: data.categories?.name ?? "General",
-      description: data.categories?.description ?? null,
+      category_id: rawCategory?.category_id ?? data.category_id,
+      name: rawCategory?.name ?? "General",
+      description: rawCategory?.description ?? null,
     };
 
-    const activeTicketPrices = rawTickets.map((t) => t.price);
-    const startTicketPrice = activeTicketPrices.length > 0 ? Math.min(...activeTicketPrices) : null;
+    const activeTicketPrices = ticketTypes.map((t) => t.price);
+    const startTicketPrice =
+      activeTicketPrices.length > 0 ? Math.min(...activeTicketPrices) : null;
 
+    // Build EventDetails without leaking raw Supabase join fields
     const event: EventDetails = {
-      ...data,
+      event_id: data.event_id,
+      organizer_id: data.organizer_id,
+      category_id: data.category_id,
+      name: data.name,
+      subtitle: data.subtitle,
+      description: data.description,
+      requirements: data.requirements ?? null,
+      location: data.location,
+      map_link: data.map_link,
+      start_at: data.start_at,
+      end_at: data.end_at,
+      status: data.status,
+      is_active: data.is_active,
+      is_vip: data.is_vip,
+      created_at: data.created_at,
+      updated_at: data.updated_at ?? null,
       category: categoryDetails.name,
       thumbnail_image: thumbnailImage,
       banner_image: bannerImage,
       start_ticket_price: startTicketPrice,
       vip_priority_order: data.vip_events?.[0]?.priority_order ?? null,
-      images: rawImages,
-      ticket_types: rawTickets,
+      images: sortedImages,
+      ticket_types: ticketTypes,
       organizer,
       category_details: categoryDetails,
     };
 
     return { success: true, event };
   } catch (err) {
-    logger.error({ fn: "getEventById", message: "Error fetching event details", meta: err });
+    logger.error({
+      fn: "getEventById",
+      message: "Error fetching event details",
+      meta: err,
+    });
     return { success: false, message: "Event not found or an error occurred." };
   }
 }

@@ -3,6 +3,8 @@
 
 import React, { memo } from "react";
 
+// ─── Single Card Skeleton ─────────────────────────────────────────────────────
+
 export const EventCardSkeleton: React.FC = memo(() => (
   <div className="animate-pulse flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm w-full">
     <div className="relative w-full aspect-square bg-gray-200">
@@ -30,16 +32,26 @@ export const EventCardSkeleton: React.FC = memo(() => (
     </div>
   </div>
 ));
+
 EventCardSkeleton.displayName = "EventCardSkeleton";
 
-export const EventGridSkeleton: React.FC<{ count?: number }> = memo(({ count = 4 }) => (
-  <div aria-label="Loading events" role="status" className="w-full">
-    <span className="sr-only">Loading events...</span>
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 md:gap-7 lg:gap-8">
-      {Array.from({ length: count }).map((_, i) => (
-        <EventCardSkeleton key={i} />
-      ))}
+// ─── Grid Skeleton ────────────────────────────────────────────────────────────
+
+interface EventGridSkeletonProps {
+  count?: number;
+}
+
+export const EventGridSkeleton: React.FC<EventGridSkeletonProps> = memo(
+  ({ count = 4 }) => (
+    <div aria-label="Loading events" role="status" className="w-full">
+      <span className="sr-only">Loading events...</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 md:gap-7 lg:gap-8">
+        {Array.from({ length: count }).map((_, i) => (
+          <EventCardSkeleton key={i} />
+        ))}
+      </div>
     </div>
-  </div>
-));
+  ),
+);
+
 EventGridSkeleton.displayName = "EventGridSkeleton";

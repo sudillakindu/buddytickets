@@ -25,6 +25,7 @@ export interface Event {
   is_vip: boolean;
   created_at: string;
   updated_at: string | null;
+  // Derived / joined fields
   category: string;
   thumbnail_image: string | null;
   start_ticket_price: number | null;
@@ -71,7 +72,6 @@ export interface CategoryDetails {
 
 export interface EventDetails extends Event {
   images: EventImage[];
-  thumbnail_image: string | null;
   banner_image: string | null;
   ticket_types: TicketType[];
   organizer: Organizer;
