@@ -4,6 +4,7 @@
 import React, { useState, memo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -17,6 +18,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Info,
+  Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -24,7 +26,7 @@ import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import type { EventDetails, TicketType } from "@/lib/types/event";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatFullDate = (iso: string): string => {
   if (!iso) return "—";
@@ -49,43 +51,75 @@ const formatPrice = (price: number): string => {
   return `LKR ${price.toLocaleString()}`;
 };
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string; bg: string }
-> = {
+// ─── Status configs ───────────────────────────────────────────────────────────
+//
+// ONGOING  → Active  | navigates to buy-ticket
+// ON_SALE  → Active  | navigates to buy-ticket
+// All others → Disabled
+
+interface StatusConfig {
+  label: string;
+  pillClass: string;      // pill badge on detail page
+  buttonText: string;
+  buttonClass: string;
+  buttonDisabled: boolean;
+  isActive: boolean;      // true → CTA navigates to buy-ticket
+}
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
   ON_SALE: {
     label: "On Sale",
-    color: "text-emerald-700",
-    bg: "bg-emerald-50 border-emerald-200",
+    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    buttonText: "Book Ticket",
+    buttonClass:
+      "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500",
+    buttonDisabled: false,
+    isActive: true,
   },
   ONGOING: {
     label: "Live Now",
-    color: "text-emerald-700",
-    bg: "bg-emerald-50 border-emerald-200",
+    pillClass: "bg-emerald-50 border-emerald-300 text-emerald-700",
+    buttonText: "Live Now",
+    buttonClass:
+      "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-emerald-500 to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500",
+    buttonDisabled: false,
+    isActive: true,
   },
   PUBLISHED: {
     label: "Upcoming",
-    color: "text-orange-700",
-    bg: "bg-orange-50 border-orange-200",
+    pillClass: "bg-orange-50 border-orange-200 text-orange-700",
+    buttonText: "Upcoming",
+    buttonClass: "bg-[#C76E00]",
+    buttonDisabled: true,
+    isActive: false,
   },
   SOLD_OUT: {
     label: "Sold Out",
-    color: "text-red-700",
-    bg: "bg-red-50 border-red-200",
+    pillClass: "bg-red-50 border-red-200 text-red-700",
+    buttonText: "Sold Out",
+    buttonClass: "bg-red-600",
+    buttonDisabled: true,
+    isActive: false,
   },
   COMPLETED: {
     label: "Completed",
-    color: "text-gray-600",
-    bg: "bg-gray-50 border-gray-200",
+    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    buttonText: "Completed",
+    buttonClass: "bg-emerald-600",
+    buttonDisabled: true,
+    isActive: false,
   },
   CANCELLED: {
     label: "Cancelled",
-    color: "text-gray-500",
-    bg: "bg-gray-50 border-gray-200",
+    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+    buttonText: "Cancelled",
+    buttonClass: "bg-gray-400",
+    buttonDisabled: true,
+    isActive: false,
   },
 };
 
-// ─── Image Gallery ────────────────────────────────────────────────────────────
+// ─── Image Gallery ─────────────────────────────────────────────────────────────
 
 interface GalleryProps {
   images: { image_url: string; priority_order: number }[];
@@ -100,8 +134,7 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
     setImgErrors((prev) => ({ ...prev, [idx]: true }));
   }, []);
 
-  const hasImages = images.length > 0;
-  const activeImage = hasImages ? images[activeIndex] : null;
+  const activeImage = images[activeIndex] ?? null;
 
   return (
     <div className="flex flex-col gap-3">
@@ -113,7 +146,7 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.2 }}
             className="absolute inset-0"
           >
             {!activeImage || imgErrors[activeIndex] ? (
@@ -136,7 +169,7 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
           </motion.div>
         </AnimatePresence>
 
-        {/* Counter pill */}
+        {/* Image counter */}
         {images.length > 1 && (
           <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-secondary px-2.5 py-1 rounded-full backdrop-blur-sm">
             {activeIndex + 1} / {images.length}
@@ -154,10 +187,10 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
               className={cn(
                 "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(270,70%,50%)]",
                 i === activeIndex
-                  ? "border-[hsl(270,70%,50%)] shadow-md"
-                  : "border-transparent opacity-60 hover:opacity-90",
+                  ? "border-[hsl(270,70%,50%)] shadow-md opacity-100"
+                  : "border-transparent opacity-55 hover:opacity-90",
               )}
-              aria-label={`View image ${i + 1}`}
+              aria-label={`View image ${i + 1}${i === 0 ? " (main)" : i === 1 ? " (banner)" : ""}`}
             >
               {imgErrors[i] ? (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -188,128 +221,146 @@ ImageGallery.displayName = "ImageGallery";
 interface TicketCardProps {
   ticket: TicketType;
   eventStatus: string;
+  onBook: () => void;
 }
 
-const TicketCard: React.FC<TicketCardProps> = memo(({ ticket, eventStatus }) => {
-  const available = ticket.capacity - ticket.qty_sold;
-  const soldPct = Math.min(
-    100,
-    Math.round((ticket.qty_sold / ticket.capacity) * 100),
-  );
-  const isSoldOut = available <= 0;
-  const isExpired =
-    ticket.sale_end_at ? new Date(ticket.sale_end_at) < new Date() : false;
-  const notStarted =
-    ticket.sale_start_at ? new Date(ticket.sale_start_at) > new Date() : false;
-  const canBook =
-    !isSoldOut &&
-    !isExpired &&
-    !notStarted &&
-    ticket.is_active &&
-    eventStatus === "ON_SALE";
+const TicketCard: React.FC<TicketCardProps> = memo(
+  ({ ticket, eventStatus, onBook }) => {
+    const available = Math.max(0, ticket.capacity - ticket.qty_sold);
+    const soldPct = ticket.capacity > 0
+      ? Math.min(100, Math.round((ticket.qty_sold / ticket.capacity) * 100))
+      : 0;
 
-  const availabilityColor =
-    soldPct >= 90
-      ? "bg-red-500"
-      : soldPct >= 60
-        ? "bg-orange-400"
-        : "bg-emerald-500";
+    // Per-ticket sold-out state (independent of event status)
+    const isTicketSoldOut = available <= 0;
+    const isExpired =
+      ticket.sale_end_at ? new Date(ticket.sale_end_at) < new Date() : false;
+    const notStarted =
+      ticket.sale_start_at ? new Date(ticket.sale_start_at) > new Date() : false;
 
-  const inclusions: string[] = Array.isArray(ticket.inclusions)
-    ? ticket.inclusions
-    : [];
+    const canBook =
+      !isTicketSoldOut &&
+      !isExpired &&
+      !notStarted &&
+      (eventStatus === "ON_SALE" || eventStatus === "ONGOING");
 
-  return (
-    <div
-      className={cn(
-        "rounded-2xl border p-5 flex flex-col gap-3 transition-shadow duration-300",
-        canBook
-          ? "border-gray-200 hover:shadow-md bg-white"
-          : "border-gray-100 bg-gray-50/50",
-      )}
-    >
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <h4
-            className={cn(
-              "font-primary font-black text-base uppercase leading-tight",
-              canBook
-                ? "text-[hsl(222.2,47.4%,11.2%)]"
-                : "text-gray-400",
-            )}
-          >
-            {ticket.name}
-          </h4>
-          <p className="font-secondary text-xs text-gray-500 mt-0.5 line-clamp-2">
-            {ticket.description}
-          </p>
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="font-primary font-bold text-lg text-[hsl(222.2,47.4%,11.2%)]">
-            {formatPrice(ticket.price)}
-          </p>
-          {isSoldOut && (
-            <span className="text-[10px] font-secondary font-semibold text-red-500 uppercase">
-              Sold out
-            </span>
-          )}
-          {isExpired && !isSoldOut && (
-            <span className="text-[10px] font-secondary font-semibold text-gray-400 uppercase">
-              Sale ended
-            </span>
-          )}
-          {notStarted && !isSoldOut && (
-            <span className="text-[10px] font-secondary font-semibold text-orange-500 uppercase">
-              Coming soon
-            </span>
-          )}
-        </div>
-      </div>
+    const availabilityColor =
+      soldPct >= 90
+        ? "bg-red-500"
+        : soldPct >= 60
+          ? "bg-orange-400"
+          : "bg-emerald-500";
 
-      {/* Inclusions */}
-      {inclusions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {inclusions.map((item, i) => (
-            <span
-              key={i}
-              className="flex items-center gap-1 text-[10px] font-secondary font-medium bg-[hsl(270,70%,50%)]/8 text-[hsl(270,70%,50%)] px-2 py-0.5 rounded-full"
+    const inclusions: string[] = Array.isArray(ticket.inclusions)
+      ? ticket.inclusions
+      : [];
+
+    return (
+      <div
+        className={cn(
+          "rounded-2xl border p-5 flex flex-col gap-3 transition-shadow duration-300",
+          canBook
+            ? "border-gray-200 hover:shadow-md bg-white"
+            : "border-gray-100 bg-gray-50/60",
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <h4
+              className={cn(
+                "font-primary font-black text-base uppercase leading-tight",
+                canBook ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
+              )}
             >
-              <CheckCircle2 className="w-3 h-3 shrink-0" />
-              {item}
-            </span>
-          ))}
+              {ticket.name}
+            </h4>
+            <p className="font-secondary text-xs text-gray-500 mt-0.5 line-clamp-2">
+              {ticket.description}
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <p
+              className={cn(
+                "font-primary font-bold text-lg",
+                canBook ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
+              )}
+            >
+              {formatPrice(ticket.price)}
+            </p>
+            {isTicketSoldOut && (
+              <span className="text-[10px] font-secondary font-semibold text-red-500 uppercase">
+                Sold out
+              </span>
+            )}
+            {isExpired && !isTicketSoldOut && (
+              <span className="text-[10px] font-secondary font-semibold text-gray-400 uppercase">
+                Sale ended
+              </span>
+            )}
+            {notStarted && !isTicketSoldOut && (
+              <span className="text-[10px] font-secondary font-semibold text-orange-500 uppercase">
+                Coming soon
+              </span>
+            )}
+          </div>
         </div>
-      )}
 
-      {/* Availability bar */}
-      <div className="space-y-1.5">
-        <div className="flex justify-between text-[10px] font-secondary text-gray-400">
-          <span>{ticket.qty_sold} sold</span>
-          <span>{available > 0 ? `${available} left` : "0 left"}</span>
+        {/* Inclusions */}
+        {inclusions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {inclusions.map((item, i) => (
+              <span
+                key={i}
+                className="flex items-center gap-1 text-[10px] font-secondary font-medium bg-[hsl(270,70%,50%)]/8 text-[hsl(270,70%,50%)] px-2 py-0.5 rounded-full"
+              >
+                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                {item}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Availability bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[10px] font-secondary text-gray-400">
+            <span>{ticket.qty_sold.toLocaleString()} sold</span>
+            <span>{available > 0 ? `${available.toLocaleString()} left` : "0 left"}</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+            <div
+              className={cn("h-full rounded-full transition-all duration-700", availabilityColor)}
+              style={{ width: `${soldPct}%` }}
+            />
+          </div>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all duration-700", availabilityColor)}
-            style={{ width: `${soldPct}%` }}
-          />
-        </div>
+
+        {/* Sale window */}
+        {(ticket.sale_start_at || ticket.sale_end_at) && (
+          <p className="text-[10px] font-secondary text-gray-400 flex items-center gap-1">
+            <Info className="w-3 h-3 shrink-0" />
+            {ticket.sale_start_at &&
+              `Opens ${new Date(ticket.sale_start_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+            {ticket.sale_start_at && ticket.sale_end_at && " · "}
+            {ticket.sale_end_at &&
+              `Closes ${new Date(ticket.sale_end_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+          </p>
+        )}
+
+        {/* Per-ticket book button (only when event is active) */}
+        {canBook && (
+          <Button
+            onClick={onBook}
+            className="w-full font-primary text-xs py-2.5 h-auto rounded-xl text-white bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] hover:opacity-90 transition-opacity"
+          >
+            <Ticket className="w-3.5 h-3.5 mr-1.5" />
+            Select
+          </Button>
+        )}
       </div>
-
-      {/* Sale window */}
-      {(ticket.sale_start_at || ticket.sale_end_at) && (
-        <p className="text-[10px] font-secondary text-gray-400 flex items-center gap-1">
-          <Info className="w-3 h-3 shrink-0" />
-          {ticket.sale_start_at &&
-            `Sale opens ${new Date(ticket.sale_start_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-          {ticket.sale_start_at && ticket.sale_end_at && " · "}
-          {ticket.sale_end_at &&
-            `Closes ${new Date(ticket.sale_end_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-        </p>
-      )}
-    </div>
-  );
-});
+    );
+  },
+);
 TicketCard.displayName = "TicketCard";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -319,19 +370,44 @@ interface EventDetailProps {
 }
 
 export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
+  const router = useRouter();
+  const buyTicketHref = `/events/${event.event_id}/buy-ticket`;
+
   const statusCfg = STATUS_CONFIG[event.status] ?? {
     label: event.status,
-    color: "text-gray-600",
-    bg: "bg-gray-50 border-gray-200",
+    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+    buttonText: event.status,
+    buttonClass: "bg-gray-400",
+    buttonDisabled: true,
+    isActive: false,
   };
 
-  const activeTickets = event.ticket_types.filter((t) => t.is_active);
-  const hasTickets = activeTickets.length > 0;
+  const handleMainCTA = () => {
+    if (statusCfg.isActive) {
+      router.push(buyTicketHref);
+    }
+  };
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
+      {/* ── Banner Image (priority_order = 2) ──────────────────────── */}
+      {event.banner_image && (
+        <div className="relative w-full h-48 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
+          <Image
+            src={event.banner_image}
+            alt={`${event.name} banner`}
+            fill
+            sizes="100vw"
+            unoptimized
+            className="object-cover object-center"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/60" />
+        </div>
+      )}
+
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* ── Breadcrumb ────────────────────────────────────────────── */}
+        {/* ── Breadcrumb ──────────────────────────────────────────── */}
         <nav aria-label="Breadcrumb" className="mb-8">
           <Link
             href="/events"
@@ -346,7 +422,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
-          {/* ── LEFT: Gallery ──────────────────────────────────────── */}
+          {/* ── LEFT: Gallery (thumbnail = priority_order 1) ────────── */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -355,14 +431,14 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             <ImageGallery images={event.images} eventName={event.name} />
           </motion.div>
 
-          {/* ── RIGHT: Info ────────────────────────────────────────── */}
+          {/* ── RIGHT: Event info ────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="flex flex-col gap-6"
           >
-            {/* Badges row */}
+            {/* Badges */}
             <div className="flex flex-wrap items-center gap-2">
               {event.is_vip && (
                 <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full border border-yellow-300 text-xs font-bold uppercase tracking-wide">
@@ -376,11 +452,19 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               <span
                 className={cn(
                   "px-3 py-1 text-xs font-secondary font-semibold rounded-full border",
-                  statusCfg.bg,
-                  statusCfg.color,
+                  statusCfg.pillClass,
                 )}
               >
-                {statusCfg.label}
+                {event.status === "ONGOING" && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    {statusCfg.label}
+                  </span>
+                )}
+                {event.status !== "ONGOING" && statusCfg.label}
               </span>
             </div>
 
@@ -397,12 +481,12 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               <div className="h-1 w-16 rounded-full mt-3 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
             </div>
 
-            {/* Meta info cards */}
-            <div className="flex flex-col gap-0 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50">
+            {/* Meta info */}
+            <div className="flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50">
               {/* Date */}
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-                  <Calendar className="w-4.5 h-4.5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  <Calendar className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
@@ -417,7 +501,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               {/* Time */}
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-                  <Clock className="w-4.5 h-4.5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  <Clock className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
@@ -434,7 +518,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               {/* Location */}
               <div className="flex items-center gap-4 px-5 py-4">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-                  <MapPin className="w-4.5 h-4.5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  <MapPin className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
@@ -449,8 +533,9 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                         href={event.map_link}
                         target="_blank"
                         rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
                         className="inline-flex items-center gap-1 text-[11px] font-secondary text-[hsl(270,70%,50%)] hover:underline"
-                        aria-label="Open in maps"
+                        aria-label="Open map"
                       >
                         <ExternalLink className="w-3 h-3" aria-hidden="true" />
                         Map
@@ -460,6 +545,23 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                 </div>
               </div>
             </div>
+
+            {/* Main CTA */}
+            <Button
+              disabled={statusCfg.buttonDisabled}
+              onClick={handleMainCTA}
+              className={cn(
+                "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300",
+                !statusCfg.buttonDisabled && "hover:shadow-xl hover:-translate-y-0.5",
+                statusCfg.buttonClass,
+              )}
+            >
+              <span className="flex items-center justify-center gap-2">
+                {event.status === "ON_SALE" && <Ticket className="w-4 h-4" />}
+                {event.status === "ONGOING" && <Radio className="w-4 h-4" />}
+                {statusCfg.buttonText}
+              </span>
+            </Button>
 
             {/* Description */}
             <div>
@@ -522,7 +624,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           </motion.div>
         </div>
 
-        {/* ── Tickets Section ────────────────────────────────────────── */}
+        {/* ── Tickets Section ──────────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -536,25 +638,31 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               Tickets
             </h2>
             <div className="flex-1 h-px bg-gray-100" />
+            {event.start_ticket_price !== null && (
+              <p className="font-secondary text-xs text-gray-400 shrink-0">
+                From{" "}
+                <span className="font-bold text-[hsl(222.2,47.4%,11.2%)]">
+                  {formatPrice(event.start_ticket_price)}
+                </span>
+              </p>
+            )}
           </div>
 
-          {!hasTickets ? (
+          {event.ticket_types.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Ticket
-                className="w-12 h-12 text-gray-300 mb-3"
-                aria-hidden="true"
-              />
+              <Ticket className="w-12 h-12 text-gray-300 mb-3" aria-hidden="true" />
               <p className="font-secondary text-gray-400">
                 No tickets available at this time.
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {activeTickets.map((ticket) => (
+              {event.ticket_types.map((ticket) => (
                 <TicketCard
                   key={ticket.ticket_type_id}
                   ticket={ticket}
                   eventStatus={event.status}
+                  onBook={() => router.push(buyTicketHref)}
                 />
               ))}
             </div>

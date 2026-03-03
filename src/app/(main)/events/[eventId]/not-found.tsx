@@ -20,8 +20,8 @@ export default function EventNotFound() {
         <div className="h-1 w-16 rounded-full mb-5 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
 
         <p className="font-secondary text-[hsl(215.4,16.3%,46.9%)] text-base sm:text-lg mb-8 leading-relaxed">
-          This event doesn&apos;t exist or may have been removed. Browse our
-          other upcoming events below.
+          This event doesn&apos;t exist, may have been removed, or is not
+          currently available. Browse our other events below.
         </p>
 
         <Link

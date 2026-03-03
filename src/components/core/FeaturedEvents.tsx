@@ -9,15 +9,20 @@ import { ChevronRight, CalendarX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/shared/event/event-card";
 import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import { getFeaturedEvents } from "@/lib/actions/event";
 
 import type { Event } from "@/lib/types/event";
 
-const ACTIVE_STATUSES = new Set(["ON_SALE", "ONGOING"]);
+// DRAFT is always excluded from server action, but double-check here too
+const VISIBLE_STATUSES = new Set<Event["status"]>([
+  "ON_SALE",
+  "ONGOING",
+  "PUBLISHED",
+]);
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface SectionHeaderProps {
   highlight: string;
@@ -68,7 +73,6 @@ const SectionHeader = memo(({ highlight, title, link }: SectionHeaderProps) => {
     </div>
   );
 });
-
 SectionHeader.displayName = "SectionHeader";
 
 const EmptyState = memo(() => (
@@ -90,7 +94,6 @@ const EmptyState = memo(() => (
     </p>
   </motion.div>
 ));
-
 EmptyState.displayName = "EmptyState";
 
 const EventGrid = memo(({ events }: { events: Event[] }) => (
@@ -101,19 +104,17 @@ const EventGrid = memo(({ events }: { events: Event[] }) => (
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: index * 0.1 }}
+        transition={{ duration: 0.5, delay: index * 0.08 }}
       >
-        <EventCard
-          event={event}
-          index={index}
-          href={`/events/${event.event_id}`}
-        />
+        {/* EventCard handles card click → /events/[id], button click → /events/[id]/buy-ticket */}
+        <EventCard event={event} index={index} />
       </motion.div>
     ))}
   </div>
 ));
-
 EventGrid.displayName = "EventGrid";
+
+// ─── Custom hook ──────────────────────────────────────────────────────────────
 
 function useFeaturedEvents() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -128,7 +129,11 @@ function useFeaturedEvents() {
         const result = await getFeaturedEvents();
         if (!cancelled) {
           if (result.success) {
-            setEvents(result.events ?? []);
+            // Extra guard: never show DRAFT or inactive events client-side
+            const safe = (result.events ?? []).filter(
+              (e) => e.is_active && VISIBLE_STATUSES.has(e.status),
+            );
+            setEvents(safe);
           } else {
             Toast("Error", result.message || "Failed to load events.", "error");
           }
@@ -140,11 +145,7 @@ function useFeaturedEvents() {
           meta: error,
         });
         if (!cancelled)
-          Toast(
-            "Connection Error",
-            "Failed to connect to the server.",
-            "error",
-          );
+          Toast("Connection Error", "Failed to connect to the server.", "error");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -156,10 +157,16 @@ function useFeaturedEvents() {
     };
   }, []);
 
+  // Latest = ONGOING + ON_SALE
   const activeEvents = useMemo(
-    () => events.filter((e) => ACTIVE_STATUSES.has(e.status)),
+    () =>
+      events.filter(
+        (e) => e.status === "ON_SALE" || e.status === "ONGOING",
+      ),
     [events],
   );
+
+  // Upcoming = PUBLISHED
   const upcomingEvents = useMemo(
     () => events.filter((e) => e.status === "PUBLISHED"),
     [events],
@@ -168,9 +175,10 @@ function useFeaturedEvents() {
   return { events, isLoading, activeEvents, upcomingEvents };
 }
 
+// ─── Page component ───────────────────────────────────────────────────────────
+
 export default function FeaturedEvents() {
-  const { events, isLoading, activeEvents, upcomingEvents } =
-    useFeaturedEvents();
+  const { events, isLoading, activeEvents, upcomingEvents } = useFeaturedEvents();
 
   return (
     <section

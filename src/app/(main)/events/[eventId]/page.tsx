@@ -13,6 +13,7 @@ interface PageProps {
 }
 
 // ─── Dynamic metadata ─────────────────────────────────────────────────────────
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { eventId } = await params;
   const result = await getEventById(eventId);
@@ -21,25 +22,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Event Not Found" };
   }
 
+  const { event } = result;
+
   return {
-    title: result.event.name,
-    description: result.event.subtitle || result.event.description.slice(0, 160),
+    title: event.name,
+    description:
+      event.subtitle || event.description.slice(0, 160),
     openGraph: {
-      title: result.event.name,
-      description: result.event.subtitle || result.event.description.slice(0, 160),
-      images: result.event.primary_image ? [{ url: result.event.primary_image }] : [],
+      title: event.name,
+      description: event.subtitle || event.description.slice(0, 160),
+      images: event.banner_image
+        ? [{ url: event.banner_image }]
+        : event.thumbnail_image
+          ? [{ url: event.thumbnail_image }]
+          : [],
     },
   };
 }
 
-// ─── Inner async component (wrapped in Suspense) ──────────────────────────────
+// ─── Async data loader (inside Suspense) ──────────────────────────────────────
+
 async function EventDetailLoader({ eventId }: { eventId: string }) {
   const result = await getEventById(eventId);
 
   if (!result.success || !result.event) {
     logger.error({
-      fn: "EventDetailPage",
-      message: result.message ?? "Event not found",
+      fn: "EventDetailPage.EventDetailLoader",
+      message: result.message ?? "Event not found or not accessible",
       meta: { eventId },
     });
     notFound();
@@ -49,6 +58,7 @@ async function EventDetailLoader({ eventId }: { eventId: string }) {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function EventDetailPage({ params }: PageProps) {
   const { eventId } = await params;
 

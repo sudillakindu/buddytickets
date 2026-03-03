@@ -12,10 +12,12 @@ import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton
 import { getAllEvents } from "@/lib/actions/event";
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import type { Event, EventStatus } from "@/lib/types/event";
 
-// ─── Filter tabs config ───────────────────────────────────────────────────────
+// ─── Filter tabs ──────────────────────────────────────────────────────────────
+// All Events page ordering:
+//   ONGOING → ON_SALE → PUBLISHED → SOLD_OUT → COMPLETED → CANCELLED
+// DRAFT is never fetched or shown.
 
 interface FilterTab {
   label: string;
@@ -87,7 +89,7 @@ export default function EventsPage() {
   const [events, setEvents]     = useState<Event[]>([]);
   const [isLoading, setLoading] = useState(true);
 
-  // ── Fetch all events once ─────────────────────────────────────────────────
+  // ── Fetch once ────────────────────────────────────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
@@ -97,7 +99,11 @@ export default function EventsPage() {
         const result = await getAllEvents();
         if (!cancelled) {
           if (result.success) {
-            setEvents(result.events ?? []);
+            // Extra guard: never display DRAFT or inactive events client-side
+            const safe = (result.events ?? []).filter(
+              (e) => e.is_active && e.status !== "DRAFT",
+            );
+            setEvents(safe);
           } else {
             Toast("Error", result.message ?? "Failed to load events.", "error");
           }
@@ -116,9 +122,7 @@ export default function EventsPage() {
     };
 
     load();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   // ── Client-side filter ────────────────────────────────────────────────────
@@ -150,7 +154,8 @@ export default function EventsPage() {
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        {/* ── Page header ──────────────────────────────────────── */}
+
+        {/* ── Page header ──────────────────────────────────────────── */}
         <div className="mb-10 sm:mb-14">
           <h1 className="font-primary font-black text-3xl sm:text-4xl lg:text-5xl uppercase text-[hsl(222.2,47.4%,11.2%)]">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
@@ -164,7 +169,7 @@ export default function EventsPage() {
           </p>
         </div>
 
-        {/* ── Filter tabs ──────────────────────────────────────── */}
+        {/* ── Filter tabs ──────────────────────────────────────────── */}
         <div
           role="tablist"
           aria-label="Filter events"
@@ -190,7 +195,7 @@ export default function EventsPage() {
           })}
         </div>
 
-        {/* ── Content ──────────────────────────────────────────── */}
+        {/* ── Content ──────────────────────────────────────────────── */}
         {isLoading ? (
           <EventGridSkeleton count={8} />
         ) : filtered.length === 0 ? (
@@ -204,11 +209,8 @@ export default function EventsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.4) }}
               >
-                <EventCard
-                  event={event}
-                  index={index}
-                  href={`/events/${event.event_id}`}
-                />
+                {/* EventCard: card click → detail, active button → buy-ticket */}
+                <EventCard event={event} index={index} />
               </motion.div>
             ))}
           </div>
