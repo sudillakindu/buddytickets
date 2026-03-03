@@ -8,7 +8,7 @@ import { ChevronRight, CalendarX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/shared/event/event-card";
-import { EventGridSkeleton } from "@/components/shared/event/event-skeleton";
+import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton";
 
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
@@ -103,7 +103,11 @@ const EventGrid = memo(({ events }: { events: Event[] }) => (
         viewport={{ once: true }}
         transition={{ duration: 0.5, delay: index * 0.1 }}
       >
-        <EventCard event={event} />
+        <EventCard
+          event={event}
+          index={index}
+          href={`/events/${event.event_id}`}
+        />
       </motion.div>
     ))}
   </div>

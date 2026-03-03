@@ -1,1 +1,568 @@
-// add code
+// components/shared/event/event-detail.tsx
+"use client";
+
+import React, { useState, memo, useCallback } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  ExternalLink,
+  Crown,
+  User,
+  Ticket,
+  ChevronLeft,
+  ImageOff,
+  CheckCircle2,
+  AlertCircle,
+  Info,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+import { cn } from "@/lib/ui/utils";
+import { Button } from "@/components/ui/button";
+import type { EventDetails, TicketType } from "@/lib/types/event";
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const formatFullDate = (iso: string): string => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
+const formatTime = (iso: string): string => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const formatPrice = (price: number): string => {
+  if (price === 0) return "Free";
+  return `LKR ${price.toLocaleString()}`;
+};
+
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; bg: string }
+> = {
+  ON_SALE: {
+    label: "On Sale",
+    color: "text-emerald-700",
+    bg: "bg-emerald-50 border-emerald-200",
+  },
+  ONGOING: {
+    label: "Live Now",
+    color: "text-emerald-700",
+    bg: "bg-emerald-50 border-emerald-200",
+  },
+  PUBLISHED: {
+    label: "Upcoming",
+    color: "text-orange-700",
+    bg: "bg-orange-50 border-orange-200",
+  },
+  SOLD_OUT: {
+    label: "Sold Out",
+    color: "text-red-700",
+    bg: "bg-red-50 border-red-200",
+  },
+  COMPLETED: {
+    label: "Completed",
+    color: "text-gray-600",
+    bg: "bg-gray-50 border-gray-200",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    color: "text-gray-500",
+    bg: "bg-gray-50 border-gray-200",
+  },
+};
+
+// ─── Image Gallery ────────────────────────────────────────────────────────────
+
+interface GalleryProps {
+  images: { image_url: string; priority_order: number }[];
+  eventName: string;
+}
+
+const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
+
+  const handleError = useCallback((idx: number) => {
+    setImgErrors((prev) => ({ ...prev, [idx]: true }));
+  }, []);
+
+  const hasImages = images.length > 0;
+  const activeImage = hasImages ? images[activeIndex] : null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Main image */}
+      <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0"
+          >
+            {!activeImage || imgErrors[activeIndex] ? (
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-3 bg-gray-50">
+                <ImageOff className="w-10 h-10" />
+                <span className="text-sm font-secondary">Image unavailable</span>
+              </div>
+            ) : (
+              <Image
+                src={activeImage.image_url}
+                alt={`${eventName} — image ${activeIndex + 1}`}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                unoptimized
+                className="object-cover"
+                onError={() => handleError(activeIndex)}
+                priority={activeIndex === 0}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Counter pill */}
+        {images.length > 1 && (
+          <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-secondary px-2.5 py-1 rounded-full backdrop-blur-sm">
+            {activeIndex + 1} / {images.length}
+          </div>
+        )}
+      </div>
+
+      {/* Thumbnails */}
+      {images.length > 1 && (
+        <div className="grid grid-cols-4 gap-2">
+          {images.map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveIndex(i)}
+              className={cn(
+                "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(270,70%,50%)]",
+                i === activeIndex
+                  ? "border-[hsl(270,70%,50%)] shadow-md"
+                  : "border-transparent opacity-60 hover:opacity-90",
+              )}
+              aria-label={`View image ${i + 1}`}
+            >
+              {imgErrors[i] ? (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <ImageOff className="w-4 h-4 text-gray-400" />
+                </div>
+              ) : (
+                <Image
+                  src={img.image_url}
+                  alt={`${eventName} thumbnail ${i + 1}`}
+                  fill
+                  sizes="80px"
+                  unoptimized
+                  className="object-cover"
+                  onError={() => handleError(i)}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+ImageGallery.displayName = "ImageGallery";
+
+// ─── Ticket Card ──────────────────────────────────────────────────────────────
+
+interface TicketCardProps {
+  ticket: TicketType;
+  eventStatus: string;
+}
+
+const TicketCard: React.FC<TicketCardProps> = memo(({ ticket, eventStatus }) => {
+  const available = ticket.capacity - ticket.qty_sold;
+  const soldPct = Math.min(
+    100,
+    Math.round((ticket.qty_sold / ticket.capacity) * 100),
+  );
+  const isSoldOut = available <= 0;
+  const isExpired =
+    ticket.sale_end_at ? new Date(ticket.sale_end_at) < new Date() : false;
+  const notStarted =
+    ticket.sale_start_at ? new Date(ticket.sale_start_at) > new Date() : false;
+  const canBook =
+    !isSoldOut &&
+    !isExpired &&
+    !notStarted &&
+    ticket.is_active &&
+    eventStatus === "ON_SALE";
+
+  const availabilityColor =
+    soldPct >= 90
+      ? "bg-red-500"
+      : soldPct >= 60
+        ? "bg-orange-400"
+        : "bg-emerald-500";
+
+  const inclusions: string[] = Array.isArray(ticket.inclusions)
+    ? ticket.inclusions
+    : [];
+
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border p-5 flex flex-col gap-3 transition-shadow duration-300",
+        canBook
+          ? "border-gray-200 hover:shadow-md bg-white"
+          : "border-gray-100 bg-gray-50/50",
+      )}
+    >
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h4
+            className={cn(
+              "font-primary font-black text-base uppercase leading-tight",
+              canBook
+                ? "text-[hsl(222.2,47.4%,11.2%)]"
+                : "text-gray-400",
+            )}
+          >
+            {ticket.name}
+          </h4>
+          <p className="font-secondary text-xs text-gray-500 mt-0.5 line-clamp-2">
+            {ticket.description}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="font-primary font-bold text-lg text-[hsl(222.2,47.4%,11.2%)]">
+            {formatPrice(ticket.price)}
+          </p>
+          {isSoldOut && (
+            <span className="text-[10px] font-secondary font-semibold text-red-500 uppercase">
+              Sold out
+            </span>
+          )}
+          {isExpired && !isSoldOut && (
+            <span className="text-[10px] font-secondary font-semibold text-gray-400 uppercase">
+              Sale ended
+            </span>
+          )}
+          {notStarted && !isSoldOut && (
+            <span className="text-[10px] font-secondary font-semibold text-orange-500 uppercase">
+              Coming soon
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Inclusions */}
+      {inclusions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {inclusions.map((item, i) => (
+            <span
+              key={i}
+              className="flex items-center gap-1 text-[10px] font-secondary font-medium bg-[hsl(270,70%,50%)]/8 text-[hsl(270,70%,50%)] px-2 py-0.5 rounded-full"
+            >
+              <CheckCircle2 className="w-3 h-3 shrink-0" />
+              {item}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Availability bar */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-[10px] font-secondary text-gray-400">
+          <span>{ticket.qty_sold} sold</span>
+          <span>{available > 0 ? `${available} left` : "0 left"}</span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className={cn("h-full rounded-full transition-all duration-700", availabilityColor)}
+            style={{ width: `${soldPct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Sale window */}
+      {(ticket.sale_start_at || ticket.sale_end_at) && (
+        <p className="text-[10px] font-secondary text-gray-400 flex items-center gap-1">
+          <Info className="w-3 h-3 shrink-0" />
+          {ticket.sale_start_at &&
+            `Sale opens ${new Date(ticket.sale_start_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+          {ticket.sale_start_at && ticket.sale_end_at && " · "}
+          {ticket.sale_end_at &&
+            `Closes ${new Date(ticket.sale_end_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+        </p>
+      )}
+    </div>
+  );
+});
+TicketCard.displayName = "TicketCard";
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+interface EventDetailProps {
+  event: EventDetails;
+}
+
+export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
+  const statusCfg = STATUS_CONFIG[event.status] ?? {
+    label: event.status,
+    color: "text-gray-600",
+    bg: "bg-gray-50 border-gray-200",
+  };
+
+  const activeTickets = event.ticket_types.filter((t) => t.is_active);
+  const hasTickets = activeTickets.length > 0;
+
+  return (
+    <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* ── Breadcrumb ────────────────────────────────────────────── */}
+        <nav aria-label="Breadcrumb" className="mb-8">
+          <Link
+            href="/events"
+            className="inline-flex items-center gap-1.5 text-sm font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors group"
+          >
+            <ChevronLeft
+              className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
+              aria-hidden="true"
+            />
+            Back to Events
+          </Link>
+        </nav>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
+          {/* ── LEFT: Gallery ──────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <ImageGallery images={event.images} eventName={event.name} />
+          </motion.div>
+
+          {/* ── RIGHT: Info ────────────────────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="flex flex-col gap-6"
+          >
+            {/* Badges row */}
+            <div className="flex flex-wrap items-center gap-2">
+              {event.is_vip && (
+                <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full border border-yellow-300 text-xs font-bold uppercase tracking-wide">
+                  <Crown className="w-3.5 h-3.5" aria-hidden="true" />
+                  VIP
+                </span>
+              )}
+              <span className="px-3 py-1 text-xs font-primary font-bold bg-white rounded-full text-[hsl(222.2,47.4%,11.2%)] border border-gray-200 uppercase tracking-wide shadow-sm">
+                {event.category}
+              </span>
+              <span
+                className={cn(
+                  "px-3 py-1 text-xs font-secondary font-semibold rounded-full border",
+                  statusCfg.bg,
+                  statusCfg.color,
+                )}
+              >
+                {statusCfg.label}
+              </span>
+            </div>
+
+            {/* Title + subtitle */}
+            <div>
+              <h1 className="font-primary font-black text-2xl sm:text-3xl lg:text-4xl uppercase leading-tight text-[hsl(222.2,47.4%,11.2%)]">
+                {event.name}
+              </h1>
+              {event.subtitle && (
+                <p className="font-secondary text-base text-[hsl(215.4,16.3%,46.9%)] mt-2">
+                  {event.subtitle}
+                </p>
+              )}
+              <div className="h-1 w-16 rounded-full mt-3 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
+            </div>
+
+            {/* Meta info cards */}
+            <div className="flex flex-col gap-0 rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50">
+              {/* Date */}
+              <div className="flex items-center gap-4 px-5 py-4">
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
+                  <Calendar className="w-4.5 h-4.5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                    Date
+                  </p>
+                  <p className="font-secondary text-sm font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+                    {formatFullDate(event.start_at)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Time */}
+              <div className="flex items-center gap-4 px-5 py-4">
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
+                  <Clock className="w-4.5 h-4.5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                    Time
+                  </p>
+                  <p className="font-secondary text-sm font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+                    <time dateTime={event.start_at}>{formatTime(event.start_at)}</time>
+                    {" — "}
+                    <time dateTime={event.end_at}>{formatTime(event.end_at)}</time>
+                  </p>
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-center gap-4 px-5 py-4">
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
+                  <MapPin className="w-4.5 h-4.5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                    Location
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-secondary text-sm font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+                      {event.location}
+                    </p>
+                    {event.map_link && (
+                      <a
+                        href={event.map_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-secondary text-[hsl(270,70%,50%)] hover:underline"
+                        aria-label="Open in maps"
+                      >
+                        <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                        Map
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <h2 className="font-primary font-bold text-sm uppercase tracking-wider text-[hsl(222.2,47.4%,11.2%)] mb-2">
+                About
+              </h2>
+              <p className="font-secondary text-sm leading-relaxed text-gray-600 whitespace-pre-line">
+                {event.description}
+              </p>
+            </div>
+
+            {/* Requirements */}
+            {event.requirements && (
+              <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-4 flex gap-3">
+                <AlertCircle
+                  className="w-5 h-5 text-orange-500 shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
+                <div>
+                  <h3 className="font-primary font-bold text-xs uppercase tracking-wider text-orange-700 mb-1">
+                    Requirements
+                  </h3>
+                  <p className="font-secondary text-sm text-orange-800 leading-relaxed whitespace-pre-line">
+                    {event.requirements}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Organizer */}
+            <div className="flex items-center gap-3 p-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
+                {event.organizer.image_url ? (
+                  <Image
+                    src={event.organizer.image_url}
+                    alt={event.organizer.name}
+                    fill
+                    sizes="40px"
+                    unoptimized
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                  Organizer
+                </p>
+                <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
+                  {event.organizer.name}
+                </p>
+                <p className="font-secondary text-xs text-gray-400 truncate">
+                  @{event.organizer.username}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* ── Tickets Section ────────────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-12 sm:mt-16"
+          aria-label="Ticket Types"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <Ticket className="w-5 h-5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+            <h2 className="font-primary font-black text-xl sm:text-2xl uppercase text-[hsl(222.2,47.4%,11.2%)]">
+              Tickets
+            </h2>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+
+          {!hasTickets ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Ticket
+                className="w-12 h-12 text-gray-300 mb-3"
+                aria-hidden="true"
+              />
+              <p className="font-secondary text-gray-400">
+                No tickets available at this time.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {activeTickets.map((ticket) => (
+                <TicketCard
+                  key={ticket.ticket_type_id}
+                  ticket={ticket}
+                  eventStatus={event.status}
+                />
+              ))}
+            </div>
+          )}
+        </motion.section>
+      </div>
+    </main>
+  );
+});
+
+EventDetail.displayName = "EventDetail";

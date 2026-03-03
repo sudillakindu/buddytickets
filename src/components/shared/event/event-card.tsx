@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, memo } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, Ticket, ImageOff, Crown } from "lucide-react";
@@ -14,6 +15,7 @@ import type { Event } from "@/lib/types/event";
 export interface EventCardProps {
   event: Event;
   index?: number;
+  href?: string; // optional — wraps card in a Link when provided
 }
 
 const formatDate = (iso: string): string => {
@@ -40,7 +42,7 @@ const formatPrice = (price: number | null): string => {
 };
 
 export const EventCard: React.FC<EventCardProps> = memo(
-  ({ event, index = 0 }) => {
+  ({ event, index = 0, href }) => {
     const [imgError, setImgError] = useState(false);
 
     const getStatusUI = () => {
@@ -53,41 +55,17 @@ export const EventCard: React.FC<EventCardProps> = memo(
             disabled: false,
           };
         case "SOLD_OUT":
-          return {
-            text: "Sold Out",
-            className: "bg-[#333333]",
-            disabled: true,
-          };
+          return { text: "Sold Out", className: "bg-[#333333]", disabled: true };
         case "ONGOING":
-          return {
-            text: "Live Now",
-            className: "bg-emerald-500",
-            disabled: true,
-          };
+          return { text: "Live Now", className: "bg-emerald-500", disabled: true };
         case "COMPLETED":
-          return {
-            text: "Completed",
-            className: "bg-[#333333]",
-            disabled: true,
-          };
+          return { text: "Completed", className: "bg-[#333333]", disabled: true };
         case "CANCELLED":
-          return {
-            text: "Cancelled",
-            className: "bg-[#333333]",
-            disabled: true,
-          };
+          return { text: "Cancelled", className: "bg-[#333333]", disabled: true };
         case "DRAFT":
-          return {
-            text: "Upcoming",
-            className: "bg-[#C76E00]",
-            disabled: true,
-          };
+          return { text: "Upcoming", className: "bg-[#C76E00]", disabled: true };
         case "PUBLISHED":
-          return {
-            text: "Upcoming",
-            className: "bg-[#C76E00]",
-            disabled: true,
-          };
+          return { text: "Upcoming", className: "bg-[#C76E00]", disabled: true };
         default:
           return {
             text: "Book Ticket",
@@ -99,7 +77,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
 
     const status = getStatusUI();
 
-    return (
+    const cardContent = (
       <motion.article
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -110,9 +88,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
           {imgError || !event.primary_image ? (
             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 bg-gray-50">
               <ImageOff className="w-6 h-6" aria-hidden="true" />
-              <span className="text-[10px] font-secondary">
-                Image unavailable
-              </span>
+              <span className="text-[10px] font-secondary">Image unavailable</span>
             </div>
           ) : (
             <Image
@@ -130,9 +106,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
             <div className="absolute top-3 left-3">
               <span className="bg-yellow-400/90 text-yellow-900 px-2 py-1 rounded-lg backdrop-blur-md shadow-sm border border-yellow-300 flex items-center gap-1">
                 <Crown className="w-3.5 h-3.5" aria-hidden="true" />
-                <span className="text-[10px] font-bold uppercase tracking-wide">
-                  VIP
-                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wide">VIP</span>
               </span>
             </div>
           )}
@@ -148,15 +122,11 @@ export const EventCard: React.FC<EventCardProps> = memo(
           <div className="flex items-center justify-between w-full font-secondary text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
             <div className="flex items-center gap-1 shrink-0">
               <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <time dateTime={event.start_at}>
-                {formatDate(event.start_at)}
-              </time>
+              <time dateTime={event.start_at}>{formatDate(event.start_at)}</time>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <time dateTime={event.start_at}>
-                {formatTime(event.start_at)}
-              </time>
+              <time dateTime={event.start_at}>{formatTime(event.start_at)}</time>
             </div>
           </div>
 
@@ -165,10 +135,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
               {event.name}
             </h3>
             <div className="font-secondary flex items-start gap-1 text-gray-500 text-[11px]">
-              <MapPin
-                className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400"
-                aria-hidden="true"
-              />
+              <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
               <span className="line-clamp-2">{event.location}</span>
             </div>
           </div>
@@ -187,6 +154,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
           <Button
             aria-label={`${event.name} — ${status.text}`}
             disabled={status.disabled}
+            onClick={(e) => href && e.stopPropagation()}
             className={cn(
               "font-primary w-full relative overflow-hidden py-3 h-auto rounded-xl text-xs text-white shadow-md mt-2 transition-all duration-500 group-hover:shadow-lg group-hover:-translate-y-0.5",
               status.className,
@@ -202,6 +170,16 @@ export const EventCard: React.FC<EventCardProps> = memo(
         </div>
       </motion.article>
     );
+
+    if (href) {
+      return (
+        <Link href={href} className="block h-full" aria-label={`View details for ${event.name}`}>
+          {cardContent}
+        </Link>
+      );
+    }
+
+    return cardContent;
   },
 );
 

@@ -1,4 +1,4 @@
-// components/shared/event/event-skeleton.tsx
+// components/shared/event/event-card-skeleton.tsx
 "use client";
 
 import React, { memo } from "react";
