@@ -14,10 +14,11 @@ import {
   User,
   Ticket,
   ChevronLeft,
+  ChevronRight,
+  Share2,
   ImageOff,
   CheckCircle2,
   AlertCircle,
-  Info,
   Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import type { EventDetails, TicketType } from "@/lib/types/event";
+import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,23 @@ const formatTime = (iso: string): string => {
 const formatPrice = (price: number): string => {
   if (price === 0) return "Free";
   return `LKR ${price.toLocaleString()}`;
+};
+
+const formatEndAt = (saleEndAt: string | null, eventEndAt: string): string => {
+  const source = saleEndAt ?? eventEndAt;
+
+  const date = new Date(source).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const time = new Date(source).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `${date} · ${time}`;
 };
 
 // ─── Status configs ───────────────────────────────────────────────────────────
@@ -134,6 +153,16 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
     setImgErrors((prev) => ({ ...prev, [idx]: true }));
   }, []);
 
+  const handlePrevImage = useCallback(() => {
+    if (images.length <= 1) return;
+    setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const handleNextImage = useCallback(() => {
+    if (images.length <= 1) return;
+    setActiveIndex((prev) => (prev + 1) % images.length);
+  }, [images.length]);
+
   const activeImage = images[activeIndex] ?? null;
 
   return (
@@ -175,68 +204,55 @@ const ImageGallery: React.FC<GalleryProps> = memo(({ images, eventName }) => {
             {activeIndex + 1} / {images.length}
           </div>
         )}
-      </div>
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div className="grid grid-cols-4 gap-2">
-          {images.map((img, i) => (
+        {/* Arrow controls */}
+        {images.length > 1 && (
+          <>
             <button
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={cn(
-                "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(270,70%,50%)]",
-                i === activeIndex
-                  ? "border-[hsl(270,70%,50%)] shadow-md opacity-100"
-                  : "border-transparent opacity-55 hover:opacity-90",
-              )}
-              aria-label={`View image ${i + 1}${i === 0 ? " (main)" : i === 1 ? " (banner)" : ""}`}
+              type="button"
+              onClick={handlePrevImage}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              aria-label="Previous image"
             >
-              {imgErrors[i] ? (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                  <ImageOff className="w-4 h-4 text-gray-400" />
-                </div>
-              ) : (
-                <Image
-                  src={img.image_url}
-                  alt={`${eventName} thumbnail ${i + 1}`}
-                  fill
-                  sizes="80px"
-                  unoptimized
-                  className="object-cover"
-                  onError={() => handleError(i)}
-                />
-              )}
+              <ChevronLeft className="w-5 h-5" aria-hidden="true" />
             </button>
-          ))}
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={handleNextImage}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/55 text-white flex items-center justify-center backdrop-blur-sm hover:bg-black/70 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-5 h-5" aria-hidden="true" />
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 });
 ImageGallery.displayName = "ImageGallery";
 
-// ─── Ticket Card ──────────────────────────────────────────────────────────────
-
-interface TicketCardProps {
+interface EventTicketCardProps {
   ticket: TicketType;
   eventStatus: string;
-  onBook: () => void;
+  eventEndAt: string;
 }
 
-const TicketCard: React.FC<TicketCardProps> = memo(
-  ({ ticket, eventStatus, onBook }) => {
+const EventTicketCard: React.FC<EventTicketCardProps> = memo(
+  ({ ticket, eventStatus, eventEndAt }) => {
     const available = Math.max(0, ticket.capacity - ticket.qty_sold);
-    const soldPct = ticket.capacity > 0
-      ? Math.min(100, Math.round((ticket.qty_sold / ticket.capacity) * 100))
-      : 0;
+    const soldPct =
+      ticket.capacity > 0
+        ? Math.min(100, Math.round((ticket.qty_sold / ticket.capacity) * 100))
+        : 0;
 
-    // Per-ticket sold-out state (independent of event status)
     const isTicketSoldOut = available <= 0;
-    const isExpired =
-      ticket.sale_end_at ? new Date(ticket.sale_end_at) < new Date() : false;
-    const notStarted =
-      ticket.sale_start_at ? new Date(ticket.sale_start_at) > new Date() : false;
+    const isExpired = ticket.sale_end_at
+      ? new Date(ticket.sale_end_at) < new Date()
+      : false;
+    const notStarted = ticket.sale_start_at
+      ? new Date(ticket.sale_start_at) > new Date()
+      : false;
 
     const canBook =
       !isTicketSoldOut &&
@@ -244,124 +260,185 @@ const TicketCard: React.FC<TicketCardProps> = memo(
       !notStarted &&
       (eventStatus === "ON_SALE" || eventStatus === "ONGOING");
 
-    const availabilityColor =
-      soldPct >= 90
-        ? "bg-red-500"
-        : soldPct >= 60
-          ? "bg-orange-400"
-          : "bg-emerald-500";
-
     const inclusions: string[] = Array.isArray(ticket.inclusions)
       ? ticket.inclusions
       : [];
 
+    const accentHue = canBook ? "hsl(262 83% 58%)" : "hsl(220 9% 70%)";
+    const barColor =
+      soldPct >= 90
+        ? "bg-red-500"
+        : soldPct >= 60
+        ? "bg-amber-400"
+        : "bg-emerald-500";
+
+    const statusBadge = isTicketSoldOut
+      ? { label: "Sold Out", cls: "bg-red-100 text-red-600" }
+      : isExpired
+      ? { label: "Sale Ended", cls: "bg-gray-100 text-gray-500" }
+      : notStarted
+      ? { label: "Coming Soon", cls: "bg-amber-100 text-amber-600" }
+      : null;
+
     return (
       <div
         className={cn(
-          "rounded-2xl border p-5 flex flex-col gap-3 transition-shadow duration-300",
-          canBook
-            ? "border-gray-200 hover:shadow-md bg-white"
-            : "border-gray-100 bg-gray-50/60",
+          "relative flex flex-col sm:flex-row rounded-2xl overflow-hidden",
+          "shadow-[0_2px_16px_rgba(0,0,0,0.08)] transition-shadow duration-300",
+          canBook ? "hover:shadow-[0_6px_28px_rgba(0,0,0,0.14)]" : "opacity-80",
         )}
+        style={{ fontFamily: "inherit" }}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <h4
-              className={cn(
-                "font-primary font-black text-base uppercase leading-tight",
-                canBook ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
-              )}
-            >
-              {ticket.name}
-            </h4>
-            <p className="font-secondary text-xs text-gray-500 mt-0.5 line-clamp-2">
-              {ticket.description}
-            </p>
-          </div>
-          <div className="shrink-0 text-right">
-            <p
-              className={cn(
-                "font-primary font-bold text-lg",
-                canBook ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
-              )}
-            >
-              {formatPrice(ticket.price)}
-            </p>
-            {isTicketSoldOut && (
-              <span className="text-[10px] font-secondary font-semibold text-red-500 uppercase">
-                Sold out
-              </span>
-            )}
-            {isExpired && !isTicketSoldOut && (
-              <span className="text-[10px] font-secondary font-semibold text-gray-400 uppercase">
-                Sale ended
-              </span>
-            )}
-            {notStarted && !isTicketSoldOut && (
-              <span className="text-[10px] font-secondary font-semibold text-orange-500 uppercase">
-                Coming soon
-              </span>
-            )}
-          </div>
-        </div>
+        <div
+          className="w-full sm:w-2 h-2 sm:h-auto shrink-0"
+          style={{ background: accentHue }}
+        />
 
-        {/* Inclusions */}
-        {inclusions.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {inclusions.map((item, i) => (
-              <span
-                key={i}
-                className="flex items-center gap-1 text-[10px] font-secondary font-medium bg-[hsl(270,70%,50%)]/8 text-[hsl(270,70%,50%)] px-2 py-0.5 rounded-full"
-              >
-                <CheckCircle2 className="w-3 h-3 shrink-0" />
-                {item}
-              </span>
-            ))}
-          </div>
-        )}
+        <div
+          className={cn(
+            "flex-1 flex flex-col sm:flex-row",
+            canBook ? "bg-white" : "bg-gray-50",
+          )}
+        >
+          <div className="flex-1 min-w-0 px-5 pt-5 pb-4 flex flex-col gap-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Ticket
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: accentHue }}
+                />
+                <h4
+                  className={cn(
+                    "font-primary font-black text-sm uppercase tracking-wide leading-tight truncate",
+                    canBook ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
+                  )}
+                >
+                  {ticket.name}
+                </h4>
+              </div>
 
-        {/* Availability bar */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-[10px] font-secondary text-gray-400">
-            <span>{ticket.qty_sold.toLocaleString()} sold</span>
-            <span>{available > 0 ? `${available.toLocaleString()} left` : "0 left"}</span>
+              {statusBadge && (
+                <span
+                  className={cn(
+                    "shrink-0 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full",
+                    statusBadge.cls,
+                  )}
+                >
+                  {statusBadge.label}
+                </span>
+              )}
+            </div>
+
+            {ticket.description && (
+              <p className="font-secondary text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                {ticket.description}
+              </p>
+            )}
+
+            {inclusions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {inclusions.map((item, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-secondary font-semibold px-2.5 py-1 rounded-full border"
+                    style={{
+                      background: `${accentHue}18`,
+                      color: accentHue,
+                      borderColor: `${accentHue}45`,
+                    }}
+                  >
+                    <CheckCircle2 className="w-3 h-3 shrink-0" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-auto space-y-1.5">
+              <div className="flex justify-between text-[10px] font-secondary text-gray-400">
+                <span>{ticket.qty_sold.toLocaleString()} sold</span>
+                <span>
+                  {available > 0
+                    ? `${available.toLocaleString()} left`
+                    : "0 left"}
+                </span>
+              </div>
+              <div className="h-1 w-full rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-700",
+                    barColor,
+                  )}
+                  style={{ width: `${soldPct}%` }}
+                />
+              </div>
+            </div>
           </div>
-          <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
-            <div
-              className={cn("h-full rounded-full transition-all duration-700", availabilityColor)}
-              style={{ width: `${soldPct}%` }}
+
+          <div className="relative flex sm:flex-col items-center justify-center">
+            <span
+              className={cn(
+                "absolute rounded-full w-4 h-4 border border-gray-200 z-10",
+                "left-0 sm:left-auto sm:top-0",
+                "-translate-x-1/2 sm:translate-x-0 sm:-translate-y-1/2",
+              )}
+              style={{
+                background: canBook ? "hsl(210 40% 96.1%)" : "hsl(220 9% 95%)",
+              }}
             />
+            <span
+              className={cn(
+                "absolute rounded-full w-4 h-4 border border-gray-200 z-10",
+                "right-0 sm:right-auto sm:bottom-0",
+                "translate-x-1/2 sm:translate-x-0 sm:translate-y-1/2",
+              )}
+              style={{
+                background: canBook ? "hsl(210 40% 96.1%)" : "hsl(220 9% 95%)",
+              }}
+            />
+            <div className="w-full sm:w-px h-px sm:h-full border-t-2 sm:border-t-0 sm:border-l-2 border-dashed border-gray-200 mx-2 sm:mx-0 my-0 sm:my-2" />
+          </div>
+
+          <div
+            className={cn(
+              "w-full sm:w-40 shrink-0 px-5 py-4 flex sm:flex-col justify-between gap-3",
+              canBook ? "bg-white" : "bg-gray-50",
+            )}
+          >
+            <div>
+              <p className="font-secondary text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
+                Price
+              </p>
+              <p
+                className={cn(
+                  "font-primary font-black text-2xl leading-none",
+                  canBook ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
+                )}
+              >
+                {formatPrice(ticket.price)}
+              </p>
+            </div>
+
+            <div>
+              <p className="font-secondary text-[9px] uppercase tracking-widest text-gray-400 mb-1">
+                Sale Ends
+              </p>
+              <div className="flex items-start gap-1.5">
+                <Calendar
+                  className="w-3 h-3 mt-0.5 shrink-0 text-gray-400"
+                />
+                <p className="font-secondary text-[11px] leading-snug text-gray-600">
+                  {formatEndAt(ticket.sale_end_at, eventEndAt)}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Sale window */}
-        {(ticket.sale_start_at || ticket.sale_end_at) && (
-          <p className="text-[10px] font-secondary text-gray-400 flex items-center gap-1">
-            <Info className="w-3 h-3 shrink-0" />
-            {ticket.sale_start_at &&
-              `Opens ${new Date(ticket.sale_start_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-            {ticket.sale_start_at && ticket.sale_end_at && " · "}
-            {ticket.sale_end_at &&
-              `Closes ${new Date(ticket.sale_end_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
-          </p>
-        )}
-
-        {/* Per-ticket book button (only when event is active) */}
-        {canBook && (
-          <Button
-            onClick={onBook}
-            className="w-full font-primary text-xs py-2.5 h-auto rounded-xl text-white bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)] hover:opacity-90 transition-opacity"
-          >
-            <Ticket className="w-3.5 h-3.5 mr-1.5" />
-            Select
-          </Button>
-        )}
       </div>
     );
   },
 );
-TicketCard.displayName = "TicketCard";
+EventTicketCard.displayName = "EventTicketCard";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -372,6 +449,7 @@ interface EventDetailProps {
 export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
   const router = useRouter();
   const buyTicketHref = `/events/${event.event_id}/buy-ticket`;
+  const detailHref = `/events/${event.event_id}`;
 
   const statusCfg = STATUS_CONFIG[event.status] ?? {
     label: event.status,
@@ -388,47 +466,104 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
     }
   };
 
+  const handleShare = useCallback(async () => {
+    const shareUrl = typeof window !== "undefined"
+      ? window.location.href
+      : detailHref;
+
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: event.name,
+          text: event.subtitle || event.description,
+          url: shareUrl,
+        });
+        return;
+      } catch {
+        return;
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+      } catch {
+        return;
+      }
+    }
+  }, [detailHref, event.description, event.name, event.subtitle]);
+
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
-      {/* ── Banner Image (priority_order = 2) ──────────────────────── */}
-      {event.banner_image && (
-        <div className="relative w-full h-48 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
-          <Image
-            src={event.banner_image}
-            alt={`${event.name} banner`}
-            fill
-            sizes="100vw"
-            unoptimized
-            className="object-cover object-center"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/60" />
-        </div>
-      )}
+      {/* ── Banner Image (priority_order = 2) / Logo fallback ───────── */}
+      <div className="relative w-full h-48 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
+        {event.banner_image ? (
+          <>
+            <Image
+              src={event.banner_image}
+              alt={`${event.name} banner`}
+              fill
+              sizes="100vw"
+              unoptimized
+              className="object-cover object-center"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/60" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Image
+              src={LogoSrc}
+              alt="BuddyTickets Logo"
+              width={180}
+              height={180}
+              className="w-28 h-28 sm:w-36 sm:h-36 lg:w-44 lg:h-44 object-contain"
+              priority
+            />
+          </div>
+        )}
+      </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        {/* ── Breadcrumb ──────────────────────────────────────────── */}
-        <nav aria-label="Breadcrumb" className="mb-8">
-          <Link
-            href="/events"
-            className="inline-flex items-center gap-1.5 text-sm font-secondary text-[hsl(215.4,16.3%,46.9%)] hover:text-[hsl(270,70%,50%)] transition-colors group"
-          >
-            <ChevronLeft
-              className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform"
-              aria-hidden="true"
-            />
-            Back to Events
-          </Link>
-        </nav>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
           {/* ── LEFT: Gallery (thumbnail = priority_order 1) ────────── */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
+            className="relative z-20 -mt-24 sm:-mt-28 lg:-mt-32"
           >
             <ImageGallery images={event.images} eventName={event.name} />
+
+            <div className="flex items-center gap-3 p-4 mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
+                {event.organizer.image_url ? (
+                  <Image
+                    src={event.organizer.image_url}
+                    alt={event.organizer.name}
+                    fill
+                    sizes="40px"
+                    unoptimized
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
+                  Organizer
+                </p>
+                <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
+                  {event.organizer.name}
+                </p>
+                <p className="font-secondary text-xs text-gray-400 truncate">
+                  @{event.organizer.username}
+                </p>
+              </div>
+            </div>
           </motion.div>
 
           {/* ── RIGHT: Event info ────────────────────────────────────── */}
@@ -440,32 +575,57 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           >
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2">
-              {event.is_vip && (
-                <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full border border-yellow-300 text-xs font-bold uppercase tracking-wide">
-                  <Crown className="w-3.5 h-3.5" aria-hidden="true" />
-                  VIP
-                </span>
-              )}
-              <span className="px-3 py-1 text-xs font-primary font-bold bg-white rounded-full text-[hsl(222.2,47.4%,11.2%)] border border-gray-200 uppercase tracking-wide shadow-sm">
-                {event.category}
-              </span>
-              <span
-                className={cn(
-                  "px-3 py-1 text-xs font-secondary font-semibold rounded-full border",
-                  statusCfg.pillClass,
-                )}
-              >
-                {event.status === "ONGOING" && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                    </span>
-                    {statusCfg.label}
+              <div className="flex flex-wrap items-center gap-2">
+                {event.is_vip && (
+                  <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full border border-yellow-300 text-xs font-bold uppercase tracking-wide">
+                    <Crown className="w-3.5 h-3.5" aria-hidden="true" />
+                    VIP
                   </span>
                 )}
-                {event.status !== "ONGOING" && statusCfg.label}
-              </span>
+                <span className="px-3 py-1 text-xs font-primary font-bold bg-white rounded-full text-[hsl(222.2,47.4%,11.2%)] border border-gray-200 uppercase tracking-wide shadow-sm">
+                  {event.category}
+                </span>
+                <span
+                  className={cn(
+                    "px-3 py-1 text-xs font-secondary font-semibold rounded-full border",
+                    statusCfg.pillClass,
+                  )}
+                >
+                  {event.status === "ONGOING" && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      </span>
+                      {statusCfg.label}
+                    </span>
+                  )}
+                  {event.status !== "ONGOING" && statusCfg.label}
+                </span>
+              </div>
+
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-8 px-3 rounded-full text-xs font-secondary"
+                >
+                  <Link href="/events" aria-label="Back to events">
+                    <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                    Back to Events
+                  </Link>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleShare}
+                  className="h-8 px-3 rounded-full text-xs font-secondary"
+                  aria-label="Share event"
+                >
+                  <Share2 className="w-3 h-3" aria-hidden="true" />
+                  Share
+                </Button>
+              </div>
             </div>
 
             {/* Title + subtitle */}
@@ -591,36 +751,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             )}
 
-            {/* Organizer */}
-            <div className="flex items-center gap-3 p-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
-                {event.organizer.image_url ? (
-                  <Image
-                    src={event.organizer.image_url}
-                    alt={event.organizer.name}
-                    fill
-                    sizes="40px"
-                    unoptimized
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 font-semibold">
-                  Organizer
-                </p>
-                <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
-                  {event.organizer.name}
-                </p>
-                <p className="font-secondary text-xs text-gray-400 truncate">
-                  @{event.organizer.username}
-                </p>
-              </div>
-            </div>
           </motion.div>
         </div>
 
@@ -633,19 +763,11 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           aria-label="Ticket Types"
         >
           <div className="flex items-center gap-3 mb-6">
-            <Ticket className="w-5 h-5 text-[hsl(270,70%,50%)]" aria-hidden="true" />
+            <Ticket className="w-6 h-6 text-[hsl(270,70%,50%)]" aria-hidden="true" />
             <h2 className="font-primary font-black text-xl sm:text-2xl uppercase text-[hsl(222.2,47.4%,11.2%)]">
               Tickets
             </h2>
             <div className="flex-1 h-px bg-gray-100" />
-            {event.start_ticket_price !== null && (
-              <p className="font-secondary text-xs text-gray-400 shrink-0">
-                From{" "}
-                <span className="font-bold text-[hsl(222.2,47.4%,11.2%)]">
-                  {formatPrice(event.start_ticket_price)}
-                </span>
-              </p>
-            )}
           </div>
 
           {event.ticket_types.length === 0 ? (
@@ -656,13 +778,13 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {event.ticket_types.map((ticket) => (
-                <TicketCard
+                <EventTicketCard
                   key={ticket.ticket_type_id}
                   ticket={ticket}
                   eventStatus={event.status}
-                  onBook={() => router.push(buyTicketHref)}
+                  eventEndAt={event.end_at}
                 />
               ))}
             </div>
