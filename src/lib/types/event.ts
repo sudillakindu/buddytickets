@@ -1,7 +1,4 @@
 // lib/types/event.ts
-
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
 export type EventStatus =
   | "DRAFT"
   | "PUBLISHED"
@@ -10,10 +7,6 @@ export type EventStatus =
   | "ONGOING"
   | "COMPLETED"
   | "CANCELLED";
-
-// ─── Card-level Event ─────────────────────────────────────────────────────────
-// Used in event listings (FeaturedEvents, /events page, event cards).
-// Computed fields are derived during data mapping in server actions.
 
 export interface Event {
   event_id: string;
@@ -32,16 +25,11 @@ export interface Event {
   is_vip: boolean;
   created_at: string;
   updated_at: string | null;
-  // ── Computed / joined ──────────────────────────────────────────────────────
   category: string;
-  /** priority_order = 1 image → used as card thumbnail */
   thumbnail_image: string | null;
-  /** Lowest active ticket price */
   start_ticket_price: number | null;
   vip_priority_order: number | null;
 }
-
-// ─── Sub-types ────────────────────────────────────────────────────────────────
 
 export interface EventImage {
   event_id: string;
@@ -81,38 +69,28 @@ export interface CategoryDetails {
   description: string | null;
 }
 
-// ─── Full Event Details ───────────────────────────────────────────────────────
-// Used on /events/[eventId] page. Extends Event with all joined relations.
-
 export interface EventDetails extends Event {
-  /** All images sorted by priority_order ASC */
   images: EventImage[];
-  /** priority_order = 1 → thumbnail / main card image */
   thumbnail_image: string | null;
-  /** priority_order = 2 → banner / hero image */
   banner_image: string | null;
-  /** Only is_active = TRUE ticket types */
   ticket_types: TicketType[];
   organizer: Organizer;
   category_details: CategoryDetails;
 }
 
-// ─── Server Action Response Types ────────────────────────────────────────────
-
-export interface GetFeaturedEventsResult {
+export interface BaseActionResponse {
   success: boolean;
-  events?: Event[];
   message?: string;
 }
 
-export interface GetAllEventsResult {
-  success: boolean;
+export interface GetFeaturedEventsResult extends BaseActionResponse {
   events?: Event[];
-  message?: string;
 }
 
-export interface GetEventByIdResult {
-  success: boolean;
+export interface GetAllEventsResult extends BaseActionResponse {
+  events?: Event[];
+}
+
+export interface GetEventByIdResult extends BaseActionResponse {
   event?: EventDetails;
-  message?: string;
 }
