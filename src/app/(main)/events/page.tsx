@@ -5,7 +5,6 @@ import { useEffect, useState, useMemo, memo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Calendar,
   CalendarX,
   ChevronDown,
   Search,
@@ -208,7 +207,11 @@ export default function EventsPage() {
 
   const setFilter = (value: string) => {
     const sp = new URLSearchParams(params.toString());
-    value === "all" ? sp.delete("filter") : sp.set("filter", value);
+    if (value === "all") {
+      sp.delete("filter");
+    } else {
+      sp.set("filter", value);
+    }
     router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
       scroll: false,
     });
@@ -216,7 +219,11 @@ export default function EventsPage() {
 
   const setSearch = (value: string) => {
     const sp = new URLSearchParams(params.toString());
-    value.trim() ? sp.set("q", value.trim()) : sp.delete("q");
+    if (value.trim()) {
+      sp.set("q", value.trim());
+    } else {
+      sp.delete("q");
+    }
     router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
       scroll: false,
     });
@@ -224,7 +231,11 @@ export default function EventsPage() {
 
   const setCategory = (value: string) => {
     const sp = new URLSearchParams(params.toString());
-    value === "all" ? sp.delete("category") : sp.set("category", value);
+    if (value === "all") {
+      sp.delete("category");
+    } else {
+      sp.set("category", value);
+    }
     router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
       scroll: false,
     });
@@ -232,7 +243,11 @@ export default function EventsPage() {
 
   const setSort = (value: SortValue) => {
     const sp = new URLSearchParams(params.toString());
-    value === "date-desc" ? sp.delete("sort") : sp.set("sort", value);
+    if (value === "date-desc") {
+      sp.delete("sort");
+    } else {
+      sp.set("sort", value);
+    }
     router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
       scroll: false,
     });
