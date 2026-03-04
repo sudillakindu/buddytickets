@@ -114,19 +114,19 @@ const FALLBACK_STATUS_CONFIG: StatusConfig = {
 const formatFullDate = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
     : "—";
 
 const formatTime = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "—";
 
 const formatPrice = (price: number | null): string => {
@@ -727,7 +727,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               className={cn(
                 "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300 mt-1",
                 !statusCfg.buttonDisabled &&
-                "hover:shadow-xl hover:-translate-y-0.5",
+                  "hover:shadow-xl hover:-translate-y-0.5",
                 statusCfg.buttonClass,
               )}
             >
@@ -861,7 +861,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             className={cn(
               "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300",
               !statusCfg.buttonDisabled &&
-              "hover:shadow-xl hover:-translate-y-0.5",
+                "hover:shadow-xl hover:-translate-y-0.5",
               statusCfg.buttonClass,
             )}
           >

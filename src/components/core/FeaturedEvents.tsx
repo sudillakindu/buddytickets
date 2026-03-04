@@ -192,7 +192,7 @@ export default function FeaturedEvents() {
         <div className="absolute bottom-[20%] right-[-5%] w-[300px] h-[300px] bg-[hsl(270,70%,50%)]/5 rounded-full blur-[80px]" />
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 space-y-16 sm:space-y-20">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 relative z-10 space-y-12">
         {isLoading ? (
           <EventGridSkeleton />
         ) : events.length === 0 ? (
