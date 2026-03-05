@@ -14,31 +14,42 @@ export interface TicketsResult {
 
 // ─── Internal Helpers ────────────────────────────────────────────────────────
 
+interface TicketTypeJoin {
+  ticket_type_id: string;
+  name: string;
+  description: string;
+}
+
+interface EventJoin {
+  event_id: string;
+  name: string;
+  location: string;
+  start_at: string;
+  end_at: string;
+  status: string;
+  event_images?: { priority_order: number; image_url: string }[];
+}
+
 interface TicketRow {
   ticket_id: string;
   qr_hash: string;
   status: Ticket["status"];
   price_purchased: string;
   created_at: string;
-  ticket_types?:
-    | { ticket_type_id: string; name: string; description: string }[]
-    | null;
-  events?:
-    | {
-        event_id: string;
-        name: string;
-        location: string;
-        start_at: string;
-        end_at: string;
-        status: string;
-        event_images?: { priority_order: number; image_url: string }[];
-      }[]
-    | null;
+  // PostgREST returns single objects for many-to-one FK joins
+  ticket_types?: TicketTypeJoin | TicketTypeJoin[] | null;
+  events?: EventJoin | EventJoin[] | null;
 }
 
 function mapToTicket(row: TicketRow): Ticket {
-  const ticketType = row.ticket_types?.[0] ?? null;
-  const event = row.events?.[0] ?? null;
+  // Supabase PostgREST returns many-to-one FK joins as single objects,
+  // but type declarations may vary — safely handle both forms
+  const ticketType: TicketTypeJoin | null = Array.isArray(row.ticket_types)
+    ? row.ticket_types[0] ?? null
+    : row.ticket_types ?? null;
+  const event: EventJoin | null = Array.isArray(row.events)
+    ? row.events[0] ?? null
+    : row.events ?? null;
   const images: { priority_order: number; image_url: string }[] =
     event?.event_images ?? [];
   images.sort((a, b) => a.priority_order - b.priority_order);
