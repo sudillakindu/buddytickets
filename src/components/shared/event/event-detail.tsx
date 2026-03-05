@@ -462,7 +462,7 @@ interface EventDetailProps {
 
 export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
   const router = useRouter();
-  const buyTicketHref = `/events/${event.event_id}/buy-ticket`;
+  const buyTicketHref = `/events/${event.event_id}/buy-tickets`;
   const statusCfg = STATUS_CONFIG[event.status] ?? FALLBACK_STATUS_CONFIG;
 
   const handleShare = useCallback(async () => {

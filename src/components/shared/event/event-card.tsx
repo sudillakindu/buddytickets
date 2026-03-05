@@ -122,7 +122,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
 
     const statusUI = STATUS_UI_MAP[event.status] ?? FALLBACK_STATUS_UI;
     const detailHref = `/events/${event.event_id}`;
-    const buyTicketHref = `/events/${event.event_id}/buy-ticket`;
+    const buyTicketHref = `/events/${event.event_id}/buy-tickets`;
 
     const handleButtonClick = useCallback(
       (e: React.MouseEvent) => {
