@@ -11,99 +11,123 @@ docs/
 ├── RunCodes.txt
 └── schema-alignment-report.md
 public/
-├── email-logo.png                       # Logo used in OTP emails
-└── og-image.png                         # Open Graph social preview image
+├── email-logo.png
+└── og-image.png
 scripts/
 └── audit_schema_alignment.py
 src/
-├── proxy.ts                             # Request proxy/middleware logic
+├── proxy.ts
 ├── app/
 │   ├── globals.css
 │   ├── favicon.ico
-│   ├── layout.tsx                       # Root layout (fonts, metadata, Toaster)
+│   ├── layout.tsx
 │   ├── not-found.tsx
 │   ├── (auth)/
-│   │   ├── layout.tsx                   # Auth background wrapper
-│   │   ├── sign-in/page.tsx             # Sign-in page
-│   │   ├── sign-up/page.tsx             # Sign-up page
-│   │   ├── verify-email/page.tsx        # OTP verification page
-│   │   ├── forget-password/page.tsx     # Forgot password page
-│   │   └── reset-password/page.tsx      # Reset password page
+│   │   ├── layout.tsx
+│   │   ├── forget-password/page.tsx
+│   │   ├── reset-password/page.tsx
+│   │   ├── sign-in/page.tsx
+│   │   ├── sign-up/page.tsx
+│   │   └── verify-email/page.tsx
 │   ├── (main)/
-│   │   ├── layout.tsx                   # Main layout (server session + shell props)
-│   │   ├── main-shell.tsx               # Client shell (Header + Footer wrapper)
-│   │   ├── page.tsx                     # Home page
+│   │   ├── layout.tsx
+│   │   ├── main-shell.tsx
+│   │   ├── page.tsx
 │   │   ├── (account)/
-│   │   │   ├── profile/page.tsx         # User profile page
-│   │   │   └── tickets/page.tsx         # User tickets page
+│   │   │   ├── profile/page.tsx
+│   │   │   └── tickets/page.tsx
 │   │   ├── become-an-organizer/page.tsx
+│   │   ├── checkout/
+│   │   │   ├── [reservationId]/
+│   │   │   ├── cancel/
+│   │   │   └── success/
+│   │   ├── dashboard/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── (organizer)/
+│   │   │   ├── (staff)/
+│   │   │   └── (system)/
 │   │   ├── events/page.tsx
-│   │   └── dashboard/
-│   │       ├── layout.tsx
-│   │       ├── (system)/page.tsx
-│   │       ├── (organizer)/page.tsx
-│   │       ├── (co-organizer)/page.tsx
-│   │       └── (staff)/page.tsx
+│   │   └── events/[eventId]/
+│   ├── api/
+│   │   └── webhooks/
+│   │       └── payhere/
+│   │           └── route.ts
 │   ├── assets/
-│   │   ├── fonts/                       # Custom typefaces
+│   │   ├── fonts/
 │   │   └── images/
 │   │       ├── icons/
 │   │       └── logo/
-│   │           └── upscale_media_logo.png
 │   └── maintenance/
-│       └── page.tsx                     # Maintenance mode page
+│       └── page.tsx
 ├── components/
 │   ├── core/
-│   │   ├── FeaturedEvents.tsx           # Featured events section
-│   │   ├── Footer.tsx                   # Site footer
-│   │   ├── Header.tsx                   # Dynamic navbar (guest vs authenticated)
-│   │   └── Hero.tsx                     # Landing hero section
+│   │   ├── FeaturedEvents.tsx
+│   │   ├── Footer.tsx
+│   │   ├── Header.tsx
+│   │   └── Hero.tsx
 │   ├── shared/
-│   │   ├── target-cursor.tsx            # Custom animated cursor
+│   │   ├── target-cursor.tsx
+│   │   ├── buy-ticket/
+│   │   │   ├── ticket-cart-skeleton.tsx
+│   │   │   └── ticket-cart.tsx
+│   │   ├── checkout/
+│   │   │   ├── order-summary-skeleton.tsx
+│   │   │   └── order-summary.tsx
 │   │   ├── event/
 │   │   │   ├── event-card.tsx
-│   │   │   └── event-skeleton.tsx
+│   │   │   ├── event-card-skeleton.tsx
+│   │   │   ├── event-detail.tsx
+│   │   │   └── event-detail-skeleton.tsx
 │   │   └── ticket/
 │   │       ├── ticket-card.tsx
 │   │       └── ticket-skeleton.tsx
 │   └── ui/
-│       ├── button.tsx                   # Button component (CVA variants)
-│       ├── input.tsx                    # Form input component
-│       ├── label.tsx                    # Form label component
-│       └── toast.tsx                    # Toast notification component
+│       ├── button.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       └── toast.tsx
 └── lib/
-  ├── logger.ts
-  ├── actions/
-  │   ├── auth.ts                      # Server Actions — auth
-  │   ├── event.ts                     # Server Actions — events
-  │   ├── organizer.ts                 # Server Actions — organizer onboarding
-  │   ├── profile.ts                   # Server Actions — profile
-  │   └── ticket.ts                    # Server Actions — tickets
-  ├── supabase/
-  │   ├── admin.ts                     # Service-role Supabase client (server-only)
-  │   ├── client.ts                    # Browser Supabase client
-  │   ├── middleware.ts                # Legacy helper
-  │   └── server.ts                    # SSR Supabase client
-  ├── types/
-  │   ├── auth.ts
-  │   ├── event.ts
-  │   ├── organizer.ts
-  │   ├── profile.ts
-  │   └── ticket.ts
-  ├── ui/
-  │   └── utils.ts                     # Tailwind merge utility (cn helper)
-  └── utils/
-    ├── mail.ts                      # Nodemailer OTP email delivery
-    ├── organizer-doc-upload.ts
-    ├── otp.ts                       # OTP generation/hashing/cooldown
-    ├── password.ts                  # Password hashing & comparison
-    ├── profile-image-upload.ts
-    └── session.ts                   # JWT session create/read/destroy
+    ├── logger.ts
+    ├── actions/
+    │   ├── auth.ts
+    │   ├── checkout.ts
+    │   ├── event.ts
+    │   ├── order.ts
+    │   ├── organizer.ts
+    │   ├── payment.ts
+    │   ├── profile.ts
+    │   └── ticket.ts
+    ├── supabase/
+    │   ├── admin.ts
+    │   ├── client.ts
+    │   ├── middleware.ts
+    │   └── server.ts
+    ├── types/
+    │   ├── auth.ts
+    │   ├── checkout.ts
+    │   ├── event.ts
+    │   ├── organizer.ts
+    │   ├── payment.ts
+    │   ├── profile.ts
+    │   └── ticket.ts
+    ├── ui/
+    │   └── utils.ts
+    └── utils/
+        ├── mail.ts
+        ├── organizer-doc-upload.ts
+        ├── otp.ts
+        ├── password.ts
+        ├── payhere.ts
+        ├── profile-image-upload.ts
+        ├── qrcode.ts
+        └── session.ts
 supabase/
 ├── config.toml
 └── migrations/
   ├── 20260223191944_initial_schema.sql
-  └── 20260301091500_add_is_submitted_to_organizer_details.sql
+  ├── 20260302165835_event_lifecycle_and_vip_prioritization_helpers.sql
+  └── 20260303074222_event_automations.sql
 ```
 
 ---
