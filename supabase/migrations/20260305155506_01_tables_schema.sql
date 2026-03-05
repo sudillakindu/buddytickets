@@ -144,6 +144,44 @@ CREATE TYPE scan_result AS ENUM (
 );
 
 
+-- [UPDATED] — Platform commission & organizer payout workflow සඳහා
+-- payout lifecycle states define කිරීම.
+-- PENDING = payout request initiated, PROCESSING = bank transfer underway,
+-- COMPLETED = organizer ට funds received, FAILED = transfer error.
+-- payouts table status column භාවිතා කරයි.
+CREATE TYPE payout_status AS ENUM (
+    'PENDING',
+    'PROCESSING',
+    'COMPLETED',
+    'FAILED'
+);
+
+-- [UPDATED] — Refund request workflow states define කිරීම.
+-- PENDING = user submitted, awaiting admin review,
+-- APPROVED = admin approved + gateway refund initiated,
+-- REJECTED = admin rejected (reason required),
+-- REFUNDED = gateway confirmed refund success.
+-- refund_requests table status column භාවිතා කරයි.
+CREATE TYPE refund_status AS ENUM (
+    'PENDING',
+    'APPROVED',
+    'REJECTED',
+    'REFUNDED'
+);
+
+-- [UPDATED] — Waitlist entry states define කිරීම.
+-- WAITING = queue හි, NOTIFIED = slot available email sent,
+-- CONVERTED = waitlist → ticket purchase completed,
+-- EXPIRED = notification window lapsed without purchase.
+-- waitlists table status column භාවිතා කරයි.
+CREATE TYPE waitlist_status AS ENUM (
+    'WAITING',
+    'NOTIFIED',
+    'CONVERTED',
+    'EXPIRED'
+);
+
+
 -- ─────────────────────────────────────────────────────────────
 -- SHARED UTILITY FUNCTION — AUTO-UPDATE updated_at
 -- ─────────────────────────────────────────────────────────────
@@ -243,8 +281,7 @@ CREATE TABLE IF NOT EXISTS organizer_details (
 );
 
 -- Pending verifications admin dashboard query සඳහා composite index.
-CREATE INDEX idx_organizer_verification_status
-    ON organizer_details (status, verified_at);
+CREATE INDEX idx_organizer_verification_status ON organizer_details (status, verified_at);
 
 CREATE TRIGGER update_organizer_details_modtime
 BEFORE UPDATE ON organizer_details
@@ -290,29 +327,40 @@ EXECUTE FUNCTION update_modified_column();
 -- is_vip column trigger_vip_status_change trigger activate කරයි
 -- — vip_events table ස්වයංක්‍රීයව manage කෙරේ.
 -- ticket_types, event_images, orders, tickets, event_community,
--- ticket_reservations, promotions tables events.event_id ට
--- foreign key ලෙස link වේ.
+-- ticket_reservations, promotions, payouts, waitlists, reviews
+-- tables events.event_id ට foreign key ලෙස link වේ.
+-- [UPDATED] — platform_fee_type, platform_fee_value, platform_fee_cap
+-- columns: BuddyTicket commission structure per-event level දී
+-- configure කිරීමට. payouts table මෙම values reference කරයි.
 CREATE TABLE IF NOT EXISTS events (
-    event_id        UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-    organizer_id    UUID            NOT NULL
-                                    REFERENCES users(user_id)
-                                    ON DELETE RESTRICT ON UPDATE CASCADE,
-    category_id     UUID            NOT NULL
-                                    REFERENCES categories(category_id)
-                                    ON DELETE RESTRICT ON UPDATE CASCADE,
-    name            VARCHAR(255)    NOT NULL,
-    subtitle        VARCHAR(255)    NOT NULL,
-    description     TEXT            NOT NULL,
-    requirements    TEXT            DEFAULT NULL,
-    location        VARCHAR(100)    NOT NULL,
-    map_link        VARCHAR(255)    NOT NULL,
-    start_at        TIMESTAMPTZ     NOT NULL,
-    end_at          TIMESTAMPTZ     NOT NULL,
-    status          event_status    DEFAULT 'DRAFT',
-    is_active       BOOLEAN         DEFAULT FALSE,
-    is_vip          BOOLEAN         DEFAULT FALSE,
-    created_at      TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ     DEFAULT NULL,
+    event_id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    organizer_id        UUID            NOT NULL
+                                        REFERENCES users(user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    category_id         UUID            NOT NULL
+                                        REFERENCES categories(category_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    name                VARCHAR(255)    NOT NULL,
+    subtitle            VARCHAR(255)    NOT NULL,
+    description         TEXT            NOT NULL,
+    requirements        TEXT            DEFAULT NULL,
+    location            VARCHAR(100)    NOT NULL,
+    map_link            VARCHAR(255)    NOT NULL,
+    start_at            TIMESTAMPTZ     NOT NULL,
+    end_at              TIMESTAMPTZ     NOT NULL,
+    status              event_status    DEFAULT 'DRAFT',
+    is_active           BOOLEAN         DEFAULT FALSE,
+    is_vip              BOOLEAN         DEFAULT FALSE,
+    -- [UPDATED] Platform commission configuration (per event).
+    -- platform_fee_type: PERCENTAGE (e.g. 5%) හෝ FIXED_AMOUNT (e.g. LKR 50).
+    -- platform_fee_value: actual fee value (% හෝ LKR).
+    -- platform_fee_cap: PERCENTAGE mode හිදී maximum fee ceiling (LKR).
+    --   NULL = no cap. payouts table ගේ platform_fee_amount
+    --   calculation logic: orders.final_amount aggregate කර
+    --   fee type අනුව deduct කරයි.
+    platform_fee_type   discount_type   NOT NULL DEFAULT 'PERCENTAGE',
+    platform_fee_value  NUMERIC(15,2)   NOT NULL DEFAULT 3.00,
+    platform_fee_cap    NUMERIC(15,2)   DEFAULT NULL,
+    created_at          TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ     DEFAULT NULL,
 
     CONSTRAINT uq_event_name UNIQUE (name)
 );
@@ -393,8 +441,7 @@ CREATE TABLE IF NOT EXISTS ticket_types (
 
 -- check_and_update_event_sold_out trigger function හි
 -- SUM(capacity), SUM(qty_sold) aggregate query සඳහා index.
-CREATE INDEX idx_ticket_capacity
-    ON ticket_types (ticket_type_id, qty_sold, capacity);
+CREATE INDEX idx_ticket_capacity ON ticket_types (ticket_type_id, qty_sold, capacity);
 
 CREATE TRIGGER update_ticket_types_modtime
 BEFORE UPDATE ON ticket_types
@@ -501,8 +548,7 @@ CREATE TABLE IF NOT EXISTS promotions (
 );
 
 -- Checkout promotion validation query (code + is_active + date range) සඳහා.
-CREATE INDEX idx_promotions_validity
-    ON promotions (code, is_active, start_at, end_at);
+CREATE INDEX idx_promotions_validity ON promotions (code, is_active, start_at, end_at);
 
 CREATE TRIGGER update_promotions_modtime
 BEFORE UPDATE ON promotions
@@ -537,22 +583,17 @@ CREATE TABLE IF NOT EXISTS ticket_reservations (
     -- Payment initiated වූ පසු order_id link කෙරේ.
     -- finalize_order_tickets() RPC order_id = p_order_id filter
     -- reservation lookup සඳහා use කරයි.
-    order_id        UUID                DEFAULT NULL
-                                        REFERENCES orders(order_id) ON DELETE SET NULL
+    order_id        UUID                DEFAULT NULL REFERENCES orders(order_id) ON DELETE SET NULL
 );
 
 -- expire_stale_reservations() cron WHERE clause (status + expires_at) index.
-CREATE INDEX idx_reservation_expiry_check
-    ON ticket_reservations (status, expires_at);
+CREATE INDEX idx_reservation_expiry_check ON ticket_reservations (status, expires_at);
 
 -- User ගේ active reservations lookup (checkout page display) සඳහා.
-CREATE INDEX idx_reservation_user
-    ON ticket_reservations (user_id, status);
+CREATE INDEX idx_reservation_user ON ticket_reservations (user_id, status);
 
 -- finalize_order_tickets() RPC ORDER JOIN query සඳහා partial index.
-CREATE INDEX idx_reservation_order
-    ON ticket_reservations (order_id)
-    WHERE order_id IS NOT NULL;
+CREATE INDEX idx_reservation_order ON ticket_reservations (order_id) WHERE order_id IS NOT NULL;
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -606,21 +647,34 @@ EXECUTE FUNCTION update_modified_column();
 -- status USED → scan_logs ALLOWED entry record කෙරේ.
 -- ONGATE_PENDING tickets: cash payment pending, gate entry DENY.
 -- owner_user_id ticket transfer feature (future) සඳහා ද use කෙරේ.
+-- [UPDATED] — attendee_name, attendee_nic, attendee_email,
+-- attendee_mobile columns: buyer ටිකට් 5ක් ගත්තොත් ඒ 5
+-- දෙනාගේ individual details capture කිරීමට. Security-sensitive
+-- events (concerts, conferences) සඳහා NIC verification gate
+-- scanning process හිදී use කෙරේ. NULL allowed — organizer
+-- event settings layer දී mandatory/optional configure කළ හැක.
 CREATE TABLE IF NOT EXISTS tickets (
-    ticket_id       UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id        UUID            NOT NULL
-                                    REFERENCES orders(order_id) ON DELETE CASCADE,
-    event_id        UUID            NOT NULL
-                                    REFERENCES events(event_id) ON DELETE CASCADE,
-    ticket_type_id  UUID            NOT NULL
-                                    REFERENCES ticket_types(ticket_type_id) ON DELETE RESTRICT,
-    owner_user_id   UUID            NOT NULL
-                                    REFERENCES users(user_id) ON DELETE CASCADE,
-    qr_hash         VARCHAR(255)    NOT NULL,
-    status          ticket_status   DEFAULT 'ACTIVE',
-    price_purchased NUMERIC(15,2)   NOT NULL,
-    created_at      TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ     DEFAULT NULL,
+    ticket_id           UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id            UUID            NOT NULL
+                                        REFERENCES orders(order_id) ON DELETE CASCADE,
+    event_id            UUID            NOT NULL
+                                        REFERENCES events(event_id) ON DELETE CASCADE,
+    ticket_type_id      UUID            NOT NULL
+                                        REFERENCES ticket_types(ticket_type_id) ON DELETE RESTRICT,
+    owner_user_id       UUID            NOT NULL
+                                        REFERENCES users(user_id) ON DELETE CASCADE,
+    qr_hash             VARCHAR(255)    NOT NULL,
+    status              ticket_status   DEFAULT 'ACTIVE',
+    price_purchased     NUMERIC(15,2)   NOT NULL,
+    -- [UPDATED] Individual attendee details (buyer ≠ attendee use case).
+    -- finalize_order_tickets() RPC call time හෝ post-purchase
+    -- edit flow හරහා populate කළ හැක.
+    attendee_name       VARCHAR(150)    DEFAULT NULL,
+    attendee_nic        VARCHAR(20)     DEFAULT NULL,
+    attendee_email      VARCHAR(150)    DEFAULT NULL,
+    attendee_mobile     VARCHAR(20)     DEFAULT NULL,
+    created_at          TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMPTZ     DEFAULT NULL,
 
     CONSTRAINT uq_qr_hash UNIQUE (qr_hash)
 );
@@ -780,3 +834,196 @@ CREATE TABLE IF NOT EXISTS auth_flow_tokens (
 
 -- Auth flow token validation (token + expires_at) lookup index.
 CREATE INDEX idx_auth_flow_token ON auth_flow_tokens (token, expires_at);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: payouts
+-- Platform Commission & Organizer Payout Records
+-- ─────────────────────────────────────────────────────────────
+
+-- Event COMPLETED වූ පසු BuddyTicket platform commission (platform_fee)
+-- deduct කොට organizer ට ගෙවිය යුතු net amount track කිරීම.
+-- gross_revenue: event orders (payment_status='PAID') final_amount SUM.
+-- platform_fee_amount: events table fee config අනුව calculated amount.
+-- net_payout_amount: organizer ට ගෙවිය යුතු = gross - platform fee.
+-- bank_transfer_ref: actual bank transfer reference number (manual entry).
+-- processed_by: admin user ID (payout approve කළ staff member).
+-- Dispute resolution, financial audit, revenue reporting සඳහා
+-- central records table.
+CREATE TABLE IF NOT EXISTS payouts (
+    payout_id               UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id                UUID            NOT NULL
+                                            REFERENCES events(event_id) ON DELETE RESTRICT,
+    organizer_id            UUID            NOT NULL
+                                            REFERENCES users(user_id) ON DELETE RESTRICT,
+    -- Payout financials (admin calculated + recorded).
+    gross_revenue           NUMERIC(15,2)   NOT NULL,
+    platform_fee_amount     NUMERIC(15,2)   NOT NULL,
+    net_payout_amount       NUMERIC(15,2)   NOT NULL,
+    -- Payout execution details.
+    status                  payout_status   NOT NULL DEFAULT 'PENDING',
+    bank_transfer_ref       VARCHAR(255)    DEFAULT NULL,
+    processed_by            UUID            DEFAULT NULL
+                                            REFERENCES users(user_id) ON DELETE RESTRICT,
+    processed_at            TIMESTAMPTZ     DEFAULT NULL,
+    remarks                 TEXT            DEFAULT NULL,
+    created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ     DEFAULT NULL,
+
+    -- Event per payout one record only (event finalized once).
+    CONSTRAINT uq_payout_event UNIQUE (event_id)
+);
+
+-- Admin payout dashboard: pending payouts list query සඳහා.
+CREATE INDEX idx_payouts_status ON payouts (status, created_at);
+
+-- Organizer payout history view සඳහා.
+CREATE INDEX idx_payouts_organizer ON payouts (organizer_id, status);
+
+CREATE TRIGGER update_payouts_modtime
+BEFORE UPDATE ON payouts
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: refund_requests
+-- Refund Request Workflow Management
+-- ─────────────────────────────────────────────────────────────
+
+-- User refund requests සහ admin approval workflow track කිරීම.
+-- order_id: refund request කළ order (tickets cancel + refund).
+-- ticket_id: specific ticket একটি refund (partial refund support).
+--   NULL = full order refund.
+-- reason: user submitted refund reason (required).
+-- admin_note: admin decision note (approval/rejection reason).
+-- gateway_refund_ref: PayHere refund API call reference ID.
+--   NULL = cash desk orders (manual bank transfer needed).
+-- refund_amount: partial refund support (full order amount ට වඩා
+--   අඩු ප්‍රමාණයක් refund කළ හැකි — event organizer policy අනුව).
+-- reviewed_by: refund approve/reject කළ admin user ID.
+CREATE TABLE IF NOT EXISTS refund_requests (
+    refund_id               UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id                UUID            NOT NULL
+                                            REFERENCES orders(order_id) ON DELETE RESTRICT,
+    ticket_id               UUID            DEFAULT NULL
+                                            REFERENCES tickets(ticket_id) ON DELETE SET NULL,
+    user_id                 UUID            NOT NULL
+                                            REFERENCES users(user_id) ON DELETE RESTRICT,
+    reason                  TEXT            NOT NULL,
+    refund_amount           NUMERIC(15,2)   NOT NULL,
+    status                  refund_status   NOT NULL DEFAULT 'PENDING',
+    admin_note              TEXT            DEFAULT NULL,
+    gateway_refund_ref      VARCHAR(255)    DEFAULT NULL,
+    reviewed_by             UUID            DEFAULT NULL
+                                            REFERENCES users(user_id) ON DELETE RESTRICT,
+    reviewed_at             TIMESTAMPTZ     DEFAULT NULL,
+    created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ     DEFAULT NULL
+);
+
+-- Admin refund dashboard: pending requests queue query සඳහා.
+CREATE INDEX idx_refunds_status ON refund_requests (status, created_at);
+
+-- User ගේ refund history (profile page) query සඳහා.
+CREATE INDEX idx_refunds_user ON refund_requests (user_id, status);
+
+CREATE TRIGGER update_refund_requests_modtime
+BEFORE UPDATE ON refund_requests
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: waitlists
+-- Sold-Out Event Waitlist Queue
+-- ─────────────────────────────────────────────────────────────
+
+-- Event SOLD_OUT වූ පසු ticket available slot එකක් සඳහා
+-- user queue manage කිරීම.
+-- ticket_type_id: specific ticket type waitlist (NULL = any type).
+-- notify_email: waitlist notification email (user ගේ account email
+--   ට වෙනස් email address use කිරීමට allow — e.g. work email).
+-- notified_at: available notification email sent time.
+-- CONVERTED status: waitlist slot → actual purchase complete.
+-- Waitlist slot open trigger: ticket CANCELLED / refund approved
+--   → application layer lowest position_order WAITING entry notify.
+-- position_order: queue position (1 = first in line).
+--   (event_id, ticket_type_id, position_order) unique constraint:
+--   duplicate position prevent කිරීම.
+CREATE TABLE IF NOT EXISTS waitlists (
+    waitlist_id             UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id                UUID                NOT NULL
+                                                REFERENCES events(event_id) ON DELETE CASCADE,
+    ticket_type_id          UUID                DEFAULT NULL
+                                                REFERENCES ticket_types(ticket_type_id) ON DELETE CASCADE,
+    user_id                 UUID                NOT NULL
+                                                REFERENCES users(user_id) ON DELETE CASCADE,
+    notify_email            VARCHAR(150)        NOT NULL,
+    position_order          INT                 NOT NULL,
+    status                  waitlist_status     NOT NULL DEFAULT 'WAITING',
+    notified_at             TIMESTAMPTZ         DEFAULT NULL,
+    converted_order_id      UUID                DEFAULT NULL
+                                                REFERENCES orders(order_id) ON DELETE SET NULL,
+    created_at              TIMESTAMPTZ         DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ         DEFAULT NULL,
+
+    -- User per event/ticket_type one active waitlist entry only.
+    CONSTRAINT uq_waitlist_user_event_type UNIQUE (event_id, ticket_type_id, user_id),
+    -- Position uniqueness per event + type queue.
+    CONSTRAINT uq_waitlist_position UNIQUE (event_id, ticket_type_id, position_order)
+);
+
+-- Slot available → notify: lowest WAITING position lookup index.
+CREATE INDEX idx_waitlist_queue ON waitlists (event_id, ticket_type_id, position_order) WHERE status = 'WAITING';
+
+CREATE TRIGGER update_waitlists_modtime
+BEFORE UPDATE ON waitlists
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
+
+-- ─────────────────────────────────────────────────────────────
+-- TABLE: reviews
+-- Post-Event Attendee Reviews & Star Ratings
+-- ─────────────────────────────────────────────────────────────
+
+-- Event COMPLETED වූ පසු actual attendees (status='USED' ticket
+-- holders) ට star rating සහ written review submit කිරීමට.
+-- ticket_id FK: USED ticket verify → fake review prevent.
+--   Reviewer ගේ ticket_id = proof of attendance.
+-- rating: 1–5 star (CHECK constraint enforce).
+-- is_visible: admin moderate කළ reviews hide කිරීමට
+--   (spam / abusive content). Default TRUE.
+-- Organizer credibility score, event quality analytics,
+-- future event discovery ranking සඳහා use කෙරේ.
+CREATE TABLE IF NOT EXISTS reviews (
+    review_id               UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id                UUID            NOT NULL
+                                            REFERENCES events(event_id) ON DELETE CASCADE,
+    user_id                 UUID            NOT NULL
+                                            REFERENCES users(user_id) ON DELETE CASCADE,
+    -- Attendance proof: USED status ticket only.
+    ticket_id               UUID            NOT NULL
+                                            REFERENCES tickets(ticket_id) ON DELETE RESTRICT,
+    rating                  SMALLINT        NOT NULL
+                                            CHECK (rating BETWEEN 1 AND 5),
+    review_text             TEXT            DEFAULT NULL,
+    is_visible              BOOLEAN         DEFAULT TRUE,
+    created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ     DEFAULT NULL,
+
+    -- User per event one review only (duplicate prevent).
+    CONSTRAINT uq_review_user_event UNIQUE (event_id, user_id)
+);
+
+-- Event average rating calculation (public event page) query index.
+CREATE INDEX idx_reviews_event ON reviews (event_id, is_visible, rating);
+
+-- User ගේ submitted reviews (profile page) query index.
+CREATE INDEX idx_reviews_user ON reviews (user_id);
+
+CREATE TRIGGER update_reviews_modtime
+BEFORE UPDATE ON reviews
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
