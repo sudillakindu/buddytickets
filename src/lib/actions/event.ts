@@ -52,7 +52,7 @@ function mapRowToEvent(row: any): Event {
     price: number;
     is_active: boolean;
   }[];
-  // vip_events PK is (event_id, priority_order) — array always has at most 1 row per event
+  // vip_events PK is event_id — array always has at most 1 row per event
   const vipRows = (row.vip_events ?? []) as { priority_order: number }[];
 
   const sortedImages = [...images].sort(

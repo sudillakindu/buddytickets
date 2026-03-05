@@ -125,9 +125,8 @@ src/
 supabase/
 ├── config.toml
 └── migrations/
-  ├── 20260223191944_initial_schema.sql
-  ├── 20260302165835_event_lifecycle_and_vip_prioritization_helpers.sql
-  └── 20260303074222_event_automations.sql
+  ├── 20260305155506_01_tables_schema.sql
+  └── 20260305161828_02_procedures_triggers_views.sql
 ```
 
 ---
@@ -222,7 +221,10 @@ NEXT_ENV=development
 
 ### 3. Database
 
-Run the initial migration in your Supabase project to create the `users`, `otp_records`, and `auth_flow_tokens` tables. See `supabase/migrations/20260223191944_initial_schema.sql`.
+Run the current migrations in order to create the full production schema:
+
+- `supabase/migrations/20260305155506_01_tables_schema.sql`
+- `supabase/migrations/20260305161828_02_procedures_triggers_views.sql`
 
 ### 4. Run Development Server
 
