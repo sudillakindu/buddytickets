@@ -52,6 +52,8 @@ CREATE TYPE organizer_status AS ENUM (
 -- DRAFT හා CANCELLED auto-transitions (pg_cron, triggers) හරහා
 -- කිසිවිටෙකත් වෙනස් නොවේ — manual change පමණක් allowed.
 -- auto_update_event_time_statuses() function මෙම enum use කරයි.
+-- reserve_tickets_occ() RPC: ON_SALE status events පමණක්
+-- ticket reservations accept කරයි — FCFS gate.
 CREATE TYPE event_status AS ENUM (
     'DRAFT',
     'PUBLISHED',
@@ -64,7 +66,8 @@ CREATE TYPE event_status AS ENUM (
 
 -- Promotion discount calculation logic define කිරීම.
 -- PERCENTAGE = order amount % ක්, FIXED_AMOUNT = fixed LKR ප්‍රමාණය.
--- promotions table සහ finalize_order_tickets() RPC භාවිතා කරයි.
+-- promotions table, finalize_order_tickets() RPC,
+-- සහ events.platform_fee_type column භාවිතා කරයි.
 CREATE TYPE discount_type AS ENUM (
     'PERCENTAGE',
     'FIXED_AMOUNT'
@@ -143,8 +146,7 @@ CREATE TYPE scan_result AS ENUM (
     'DENIED_INVALID'
 );
 
-
--- [UPDATED] — Platform commission & organizer payout workflow සඳහා
+-- Platform commission & organizer payout workflow සඳහා
 -- payout lifecycle states define කිරීම.
 -- PENDING = payout request initiated, PROCESSING = bank transfer underway,
 -- COMPLETED = organizer ට funds received, FAILED = transfer error.
@@ -156,8 +158,8 @@ CREATE TYPE payout_status AS ENUM (
     'FAILED'
 );
 
--- [UPDATED] — Refund request workflow states define කිරීම.
--- PENDING = user submitted, awaiting admin review,
+-- Refund request workflow states define කිරීම.
+-- PENDING = user submitted + awaiting admin review,
 -- APPROVED = admin approved + gateway refund initiated,
 -- REJECTED = admin rejected (reason required),
 -- REFUNDED = gateway confirmed refund success.
@@ -169,7 +171,7 @@ CREATE TYPE refund_status AS ENUM (
     'REFUNDED'
 );
 
--- [UPDATED] — Waitlist entry states define කිරීම.
+-- Waitlist entry states define කිරීම.
 -- WAITING = queue හි, NOTIFIED = slot available email sent,
 -- CONVERTED = waitlist → ticket purchase completed,
 -- EXPIRED = notification window lapsed without purchase.
@@ -239,7 +241,6 @@ CREATE TABLE IF NOT EXISTS users (
 -- role-based user listings (admin dashboard) වේගවත් කිරීමට.
 CREATE INDEX idx_users_role_status ON users (role, is_active);
 
--- users table row update වන සෑම විටම updated_at auto-set කිරීම.
 CREATE TRIGGER update_users_modtime
 BEFORE UPDATE ON users
 FOR EACH ROW
@@ -257,31 +258,32 @@ EXECUTE FUNCTION update_modified_column();
 -- nic_number + bank account uniqueness enforce කිරීම financial
 -- fraud prevention සඳහා.
 CREATE TABLE IF NOT EXISTS organizer_details (
-    user_id                 UUID            PRIMARY KEY
-                                            REFERENCES users(user_id) ON DELETE CASCADE,
-    nic_number              VARCHAR(20)     NOT NULL,
-    address                 TEXT            NOT NULL,
-    bank_name               VARCHAR(100)    NOT NULL,
-    bank_branch             VARCHAR(100)    NOT NULL,
-    account_holder_name     VARCHAR(150)    NOT NULL,
-    account_number          VARCHAR(50)     NOT NULL,
-    nic_front_image_url     VARCHAR(255)    NOT NULL,
-    nic_back_image_url      VARCHAR(255)    NOT NULL,
-    remarks                 TEXT            DEFAULT NULL,
+    user_id                 UUID             PRIMARY KEY
+                                             REFERENCES users(user_id) ON DELETE CASCADE,
+    nic_number              VARCHAR(20)      NOT NULL,
+    address                 TEXT             NOT NULL,
+    bank_name               VARCHAR(100)     NOT NULL,
+    bank_branch             VARCHAR(100)     NOT NULL,
+    account_holder_name     VARCHAR(150)     NOT NULL,
+    account_number          VARCHAR(50)      NOT NULL,
+    nic_front_image_url     VARCHAR(255)     NOT NULL,
+    nic_back_image_url      VARCHAR(255)     NOT NULL,
+    remarks                 TEXT             DEFAULT NULL,
     status                  organizer_status DEFAULT 'PENDING',
-    is_submitted            BOOLEAN         DEFAULT FALSE,
-    verified_by             UUID            DEFAULT NULL
-                                            REFERENCES users(user_id) ON DELETE RESTRICT,
-    verified_at             TIMESTAMPTZ     DEFAULT NULL,
-    created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMPTZ     DEFAULT NULL,
+    is_submitted            BOOLEAN          DEFAULT FALSE,
+    verified_by             UUID             DEFAULT NULL
+                                             REFERENCES users(user_id) ON DELETE RESTRICT,
+    verified_at             TIMESTAMPTZ      DEFAULT NULL,
+    created_at              TIMESTAMPTZ      DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ      DEFAULT NULL,
 
-    CONSTRAINT uq_nic              UNIQUE (nic_number),
+    CONSTRAINT uq_nic               UNIQUE (nic_number),
     CONSTRAINT uq_user_bank_account UNIQUE (user_id, account_number)
 );
 
 -- Pending verifications admin dashboard query සඳහා composite index.
-CREATE INDEX idx_organizer_verification_status ON organizer_details (status, verified_at);
+CREATE INDEX idx_organizer_verification_status
+    ON organizer_details (status, verified_at);
 
 CREATE TRIGGER update_organizer_details_modtime
 BEFORE UPDATE ON organizer_details
@@ -308,7 +310,6 @@ CREATE TABLE IF NOT EXISTS categories (
     CONSTRAINT uq_category_name UNIQUE (name)
 );
 
--- Category filter queries (active categories only) සඳහා index.
 CREATE INDEX idx_category_status ON categories (is_active);
 
 CREATE TRIGGER update_categories_modtime
@@ -329,15 +330,19 @@ EXECUTE FUNCTION update_modified_column();
 -- ticket_types, event_images, orders, tickets, event_community,
 -- ticket_reservations, promotions, payouts, waitlists, reviews
 -- tables events.event_id ට foreign key ලෙස link වේ.
--- [UPDATED] — platform_fee_type, platform_fee_value, platform_fee_cap
--- columns: BuddyTicket commission structure per-event level දී
--- configure කිරීමට. payouts table මෙම values reference කරයි.
+-- platform_fee_type, platform_fee_value, platform_fee_cap:
+-- BuddyTicket commission structure per-event level දී configure
+-- කිරීමට. payouts table ගේ platform_fee_amount calculation
+-- event COMPLETED පසු gross revenue aggregate කර fee type
+-- අනුව deduct කරයි.
 CREATE TABLE IF NOT EXISTS events (
     event_id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     organizer_id        UUID            NOT NULL
-                                        REFERENCES users(user_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                                        REFERENCES users(user_id)
+                                        ON DELETE RESTRICT ON UPDATE CASCADE,
     category_id         UUID            NOT NULL
-                                        REFERENCES categories(category_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+                                        REFERENCES categories(category_id)
+                                        ON DELETE RESTRICT ON UPDATE CASCADE,
     name                VARCHAR(255)    NOT NULL,
     subtitle            VARCHAR(255)    NOT NULL,
     description         TEXT            NOT NULL,
@@ -349,13 +354,10 @@ CREATE TABLE IF NOT EXISTS events (
     status              event_status    DEFAULT 'DRAFT',
     is_active           BOOLEAN         DEFAULT FALSE,
     is_vip              BOOLEAN         DEFAULT FALSE,
-    -- [UPDATED] Platform commission configuration (per event).
-    -- platform_fee_type: PERCENTAGE (e.g. 5%) හෝ FIXED_AMOUNT (e.g. LKR 50).
-    -- platform_fee_value: actual fee value (% හෝ LKR).
-    -- platform_fee_cap: PERCENTAGE mode හිදී maximum fee ceiling (LKR).
-    --   NULL = no cap. payouts table ගේ platform_fee_amount
-    --   calculation logic: orders.final_amount aggregate කර
-    --   fee type අනුව deduct කරයි.
+    -- Platform commission configuration (per event).
+    -- platform_fee_type: PERCENTAGE (e.g. 3%) හෝ FIXED_AMOUNT (e.g. LKR 50 per ticket).
+    -- platform_fee_value: actual fee value (% හෝ LKR amount).
+    -- platform_fee_cap: PERCENTAGE mode maximum fee ceiling (LKR). NULL = no cap.
     platform_fee_type   discount_type   NOT NULL DEFAULT 'PERCENTAGE',
     platform_fee_value  NUMERIC(15,2)   NOT NULL DEFAULT 3.00,
     platform_fee_cap    NUMERIC(15,2)   DEFAULT NULL,
@@ -365,11 +367,11 @@ CREATE TABLE IF NOT EXISTS events (
     CONSTRAINT uq_event_name UNIQUE (name)
 );
 
--- Organizer dashboard — organizer ගේ events list query සඳහා.
+-- Organizer dashboard events list query සඳහා.
 CREATE INDEX idx_events_organizer ON events (organizer_id);
 
--- pg_cron time-based status update function (auto_update_event_time_statuses)
--- WHERE clause exact match සඳහා covering index.
+-- pg_cron time-based status function WHERE clause covering index.
+-- reserve_tickets_occ() event status + is_active validation ද use කරයි.
 CREATE INDEX idx_events_lifecycle ON events (status, start_at, end_at);
 
 -- Public events listing page filter query (status + is_active + date).
@@ -378,7 +380,7 @@ CREATE INDEX idx_events_search_status ON events (status, is_active, start_at);
 -- Location-based event search සඳහා composite index.
 CREATE INDEX idx_events_search_location ON events (location, start_at);
 
--- VIP featured section filter (view_featured_events view) සඳහා index.
+-- VIP featured section filter (view_featured_events) සඳහා index.
 CREATE INDEX idx_events_is_vip ON events (is_vip);
 
 CREATE TRIGGER update_events_modtime
@@ -397,9 +399,9 @@ EXECUTE FUNCTION update_modified_column();
 -- Event delete කළ විට ON DELETE CASCADE images ද delete කෙරේ.
 -- Supabase Storage bucket URLs image_url column හි store කෙරේ.
 CREATE TABLE IF NOT EXISTS event_images (
-    event_id        UUID    NOT NULL
-                            REFERENCES events(event_id) ON DELETE CASCADE,
-    priority_order  INT     NOT NULL,
+    event_id        UUID         NOT NULL
+                                 REFERENCES events(event_id) ON DELETE CASCADE,
+    priority_order  INT          NOT NULL,
     image_url       VARCHAR(255) NOT NULL,
     created_at      TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
 
@@ -439,9 +441,9 @@ CREATE TABLE IF NOT EXISTS ticket_types (
     CONSTRAINT uq_event_ticket UNIQUE (event_id, name)
 );
 
--- check_and_update_event_sold_out trigger function හි
--- SUM(capacity), SUM(qty_sold) aggregate query සඳහා index.
-CREATE INDEX idx_ticket_capacity ON ticket_types (ticket_type_id, qty_sold, capacity);
+-- check_and_update_event_sold_out trigger SUM aggregate query index.
+CREATE INDEX idx_ticket_capacity
+    ON ticket_types (ticket_type_id, qty_sold, capacity);
 
 CREATE TRIGGER update_ticket_types_modtime
 BEFORE UPDATE ON ticket_types
@@ -456,10 +458,9 @@ EXECUTE FUNCTION update_modified_column();
 -- Featured section VIP event priority order list.
 -- handle_vip_status_change() trigger function events.is_vip
 -- column change වන විට AUTO insert/delete/reorder කරයි.
--- event_id UNIQUE constraint: එකම event VIP list හි twice
--- appear වීම prevent කරයි. Priority reorder gap-fill logic
--- (priority_order - 1 UPDATE) නිවැරදිව work කිරීමට
--- priority_order globally unique (across all rows) විය යුතු.
+-- event_id sole PK: handle_vip_status_change ON CONFLICT (event_id)
+-- clause නිවැරදිව work වීමට composite PK නොව sole PK.
+-- priority_order global UNIQUE: gap-fill reorder logic සඳහා.
 -- view_featured_events view මෙම table JOIN කරයි.
 CREATE TABLE IF NOT EXISTS vip_events (
     event_id        UUID    NOT NULL
@@ -470,16 +471,11 @@ CREATE TABLE IF NOT EXISTS vip_events (
     created_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMPTZ DEFAULT NULL,
 
-    -- event_id sole PK: එකම event multiple VIP rows ඇතිවීම prevent කිරීම.
-    -- (composite PK ගැටළු සමාදානය — handle_vip_status_change ON CONFLICT
-    -- clause event_id uniqueness expect කරයි.)
     PRIMARY KEY (event_id),
-
-    -- priority_order global uniqueness: reorder logic නිවැරදිව work කිරීමට.
     CONSTRAINT uq_vip_priority_order UNIQUE (priority_order)
 );
 
--- view_featured_events ORDER BY priority_order query සඳහා index.
+-- view_featured_events ORDER BY priority_order query index.
 CREATE INDEX idx_vip_priority_order ON vip_events (priority_order);
 
 CREATE TRIGGER update_vip_events_modtime
@@ -512,13 +508,17 @@ CREATE TABLE IF NOT EXISTS event_community (
 -- ─────────────────────────────────────────────────────────────
 
 -- Discount coupon codes manage කිරීම.
--- scope_event_id / scope_ticket_type_id NULL නම් platform-wide
--- promotion; set නම් specific event/ticket type සඳහා පමණි.
--- version column OCC: concurrent promotion usage increment
--- collisions prevent කිරීමට finalize_order_tickets() හි use කෙරේ.
--- current_global_usage: finalize_order_tickets() RPC
--- atomically increment කරයි. promotion_usages table per-user
--- usage history track කරයි.
+-- scope_event_id / scope_ticket_type_id NULL නම් platform-wide;
+-- set නම් specific event/ticket type සඳහා පමණි.
+-- version column OCC: finalize_order_tickets() RPC හි concurrent
+-- promotion usage increment collisions prevent කිරීමට.
+-- current_global_usage: finalize_order_tickets() RPC promotions
+-- row SELECT FOR UPDATE lock + limit check සමඟ atomically increment.
+-- usage_limit_global = 0 → unlimited (no cap enforced).
+-- FCFS guarantee: finalize_order_tickets() promotions row lock
+-- කොට current_global_usage < usage_limit_global validate කරයි —
+-- concurrent users promotions table level දී serialize වේ.
+-- promotion_usages table per-user usage history track කරයි.
 CREATE TABLE IF NOT EXISTS promotions (
     promotion_id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     code                    VARCHAR(50)     NOT NULL,
@@ -547,8 +547,9 @@ CREATE TABLE IF NOT EXISTS promotions (
     CONSTRAINT uq_promo_code UNIQUE (code)
 );
 
--- Checkout promotion validation query (code + is_active + date range) සඳහා.
-CREATE INDEX idx_promotions_validity ON promotions (code, is_active, start_at, end_at);
+-- Checkout promotion validation query (code + is_active + date range).
+CREATE INDEX idx_promotions_validity
+    ON promotions (code, is_active, start_at, end_at);
 
 CREATE TRIGGER update_promotions_modtime
 BEFORE UPDATE ON promotions
@@ -560,14 +561,21 @@ EXECUTE FUNCTION update_modified_column();
 -- TABLE: ticket_reservations
 -- ─────────────────────────────────────────────────────────────
 
--- Checkout session inventory lock table.
--- reserve_tickets_occ() RPC PENDING reservations insert කරයි.
--- expire_stale_reservations() cron (every minute) expired
--- ones EXPIRED ලෙස mark කරයි.
--- finalize_order_tickets() RPC PENDING → CONFIRMED කරයි.
--- order_id: payment initiated කළ පසු orders table FK set කෙරේ.
--- reserve_tickets_occ() RPC user ගේ existing PENDING reservations
--- cancel කරලා fresh set insert කරයි — cart update safe කිරීමට.
+-- Checkout session inventory lock table — FCFS core mechanism.
+-- reserve_tickets_occ() RPC:
+--   ticket_types row SELECT FOR UPDATE lock → PENDING insert.
+--   First user to acquire the lock = first served.
+-- expire_stale_reservations() cron (every minute):
+--   expired PENDING ones EXPIRED ලෙස mark කරයි.
+-- finalize_order_tickets() RPC:
+--   PENDING + expires_at > NOW() validate → CONFIRMED.
+--   expires_at check: cron delay edge case oversell prevent
+--   — DB layer දීම enforce කෙරේ.
+-- order_id: payment initiate කළ පසු orders table FK set කෙරේ.
+--   finalize_order_tickets() RPC r.order_id = p_order_id filter
+--   reservation lookup සඳහා use කරයි.
+-- reserve_tickets_occ() RPC: user ගේ existing PENDING reservations
+--   cancel → fresh set insert — cart update safe handling.
 CREATE TABLE IF NOT EXISTS ticket_reservations (
     reservation_id  UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID                NOT NULL
@@ -581,19 +589,23 @@ CREATE TABLE IF NOT EXISTS ticket_reservations (
     expires_at      TIMESTAMPTZ         NOT NULL,
     status          reservation_status  DEFAULT 'PENDING',
     -- Payment initiated වූ පසු order_id link කෙරේ.
-    -- finalize_order_tickets() RPC order_id = p_order_id filter
-    -- reservation lookup සඳහා use කරයි.
-    order_id        UUID                DEFAULT NULL REFERENCES orders(order_id) ON DELETE SET NULL
+    -- NULL = payment not yet initiated.
+    order_id        UUID                DEFAULT NULL
+                                        REFERENCES orders(order_id) ON DELETE SET NULL
 );
 
--- expire_stale_reservations() cron WHERE clause (status + expires_at) index.
-CREATE INDEX idx_reservation_expiry_check ON ticket_reservations (status, expires_at);
+-- expire_stale_reservations() cron WHERE clause index.
+CREATE INDEX idx_reservation_expiry_check
+    ON ticket_reservations (status, expires_at);
 
--- User ගේ active reservations lookup (checkout page display) සඳහා.
-CREATE INDEX idx_reservation_user ON ticket_reservations (user_id, status);
+-- User active reservations lookup (checkout page display) index.
+CREATE INDEX idx_reservation_user
+    ON ticket_reservations (user_id, status);
 
--- finalize_order_tickets() RPC ORDER JOIN query සඳහා partial index.
-CREATE INDEX idx_reservation_order ON ticket_reservations (order_id) WHERE order_id IS NOT NULL;
+-- finalize_order_tickets() RPC order JOIN query partial index.
+CREATE INDEX idx_reservation_order
+    ON ticket_reservations (order_id)
+    WHERE order_id IS NOT NULL;
 
 
 -- ─────────────────────────────────────────────────────────────
@@ -602,10 +614,12 @@ CREATE INDEX idx_reservation_order ON ticket_reservations (order_id) WHERE order
 
 -- Confirmed checkout sessions — one order per checkout attempt.
 -- finalize_order_tickets() RPC payment_status PENDING → PAID update.
--- promotions.scope rules checkout layer දී validate කෙරේ.
+-- promotions global limit: finalize_order_tickets() DB layer
+-- FOR UPDATE lock + FCFS validate — app layer නොව DB layer enforce.
 -- tickets, transactions, promotion_usages tables order_id FK
--- ලෙස reference කරයි. payment_source column finalize_order_tickets()
--- RPC ticket_status (ACTIVE vs ONGATE_PENDING) decide කිරීමට use කෙරේ.
+-- ලෙස reference කරයි.
+-- payment_source column finalize_order_tickets() RPC ticket_status
+-- (ACTIVE vs ONGATE_PENDING) decide කිරීමට use කෙරේ.
 CREATE TABLE IF NOT EXISTS orders (
     order_id        UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID            NOT NULL
@@ -614,7 +628,6 @@ CREATE TABLE IF NOT EXISTS orders (
                                     REFERENCES events(event_id) ON DELETE RESTRICT,
     promotion_id    UUID            DEFAULT NULL
                                     REFERENCES promotions(promotion_id) ON DELETE SET NULL,
-    reservation_id  UUID            DEFAULT NULL,
     remarks         TEXT            DEFAULT NULL,
     subtotal        NUMERIC(15,2)   NOT NULL DEFAULT 0.00,
     discount_amount NUMERIC(15,2)   DEFAULT 0.00,
@@ -625,10 +638,10 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at      TIMESTAMPTZ     DEFAULT NULL
 );
 
--- User order history (wallet/profile page) pagination query සඳහා.
+-- User order history (wallet/profile page) pagination query.
 CREATE INDEX idx_orders_user ON orders (user_id, created_at);
 
--- Event sales report (organizer dashboard) query සඳහා.
+-- Event sales report (organizer dashboard) query.
 CREATE INDEX idx_orders_event_sales ON orders (event_id, payment_status);
 
 CREATE TRIGGER update_orders_modtime
@@ -647,12 +660,10 @@ EXECUTE FUNCTION update_modified_column();
 -- status USED → scan_logs ALLOWED entry record කෙරේ.
 -- ONGATE_PENDING tickets: cash payment pending, gate entry DENY.
 -- owner_user_id ticket transfer feature (future) සඳහා ද use කෙරේ.
--- [UPDATED] — attendee_name, attendee_nic, attendee_email,
--- attendee_mobile columns: buyer ටිකට් 5ක් ගත්තොත් ඒ 5
--- දෙනාගේ individual details capture කිරීමට. Security-sensitive
--- events (concerts, conferences) සඳහා NIC verification gate
--- scanning process හිදී use කෙරේ. NULL allowed — organizer
--- event settings layer දී mandatory/optional configure කළ හැක.
+-- attendee_name/nic/email/mobile: buyer ටිකට් 5ක් ගත්තොත්
+-- ඒ 5 දෙනාගේ individual details capture කිරීමට.
+-- Security-sensitive events සඳහා NIC verification gate scanning
+-- process හිදී use කෙරේ. NULL = optional (organizer configure).
 CREATE TABLE IF NOT EXISTS tickets (
     ticket_id           UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id            UUID            NOT NULL
@@ -666,7 +677,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     qr_hash             VARCHAR(255)    NOT NULL,
     status              ticket_status   DEFAULT 'ACTIVE',
     price_purchased     NUMERIC(15,2)   NOT NULL,
-    -- [UPDATED] Individual attendee details (buyer ≠ attendee use case).
+    -- Individual attendee details (buyer ≠ attendee use case).
     -- finalize_order_tickets() RPC call time හෝ post-purchase
     -- edit flow හරහා populate කළ හැක.
     attendee_name       VARCHAR(150)    DEFAULT NULL,
@@ -679,7 +690,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     CONSTRAINT uq_qr_hash UNIQUE (qr_hash)
 );
 
--- Gate scanner QR lookup (event_id + qr_hash) high-frequency query index.
+-- Gate scanner QR lookup (event_id + qr_hash) high-frequency index.
 CREATE INDEX idx_ticket_validation ON tickets (event_id, qr_hash);
 
 -- User wallet / my-tickets page (owner + status filter) index.
@@ -696,11 +707,11 @@ EXECUTE FUNCTION update_modified_column();
 -- ─────────────────────────────────────────────────────────────
 
 -- Per-user promotion usage audit log.
--- finalize_order_tickets() RPC ON CONFLICT DO NOTHING upsert
--- PayHere webhook idempotent retries handle කිරීමට use කරයි.
--- (order_id, promotion_id) UNIQUE: එකම order duplicate usage prevent.
--- usage_limit_per_user enforcement: checkout layer COUNT(*) query
--- මෙම table reference කරයි.
+-- finalize_order_tickets() RPC ON CONFLICT DO NOTHING upsert:
+-- PayHere webhook idempotent retries safe handling.
+-- (order_id, promotion_id) UNIQUE: duplicate usage prevent.
+-- usage_limit_per_user enforcement: checkout app layer
+-- COUNT(*) query මෙම table reference කරයි.
 CREATE TABLE IF NOT EXISTS promotion_usages (
     usage_id            UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     promotion_id        UUID            NOT NULL
@@ -721,10 +732,10 @@ CREATE TABLE IF NOT EXISTS promotion_usages (
 -- ─────────────────────────────────────────────────────────────
 
 -- Payment gateway transaction records audit log.
--- finalize_order_tickets() RPC p_gateway_ref_id NULL නොවේ නම්
+-- finalize_order_tickets() RPC p_gateway_ref_id IS NOT NULL නම්
 -- (PayHere webhook path) INSERT කරයි.
--- gateway_ref_id: PayHere order_id / reference duplicate webhook
--- calls detect කිරීමට index කෙරේ.
+-- gateway_ref_id: PayHere reference — duplicate webhook calls
+-- detect කිරීමට index කෙරේ.
 -- financial reconciliation reports සඳහා central table.
 CREATE TABLE IF NOT EXISTS transactions (
     transaction_id  UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -738,10 +749,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at      TIMESTAMPTZ         DEFAULT CURRENT_TIMESTAMP
 );
 
--- Order transaction history lookup index.
-CREATE INDEX idx_transactions_order ON transactions (order_id);
-
--- Duplicate webhook detection (gateway_ref_id lookup) index.
+CREATE INDEX idx_transactions_order       ON transactions (order_id);
 CREATE INDEX idx_transactions_gateway_ref ON transactions (gateway_ref_id);
 
 
@@ -751,7 +759,6 @@ CREATE INDEX idx_transactions_gateway_ref ON transactions (gateway_ref_id);
 
 -- Gate entry QR scan attempt audit log.
 -- Scan result (ALLOWED / DENIED_*) සෑම attempt එකක්ම record.
--- ticket_id → tickets table reference: scan history ↔ ticket link.
 -- scanned_by_user_id: event_community table හි STAFF role user.
 -- BIGINT IDENTITY PK: UUID ට වඩා high-volume inserts efficient.
 CREATE TABLE IF NOT EXISTS scan_logs (
@@ -764,7 +771,6 @@ CREATE TABLE IF NOT EXISTS scan_logs (
     scanned_at          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Ticket scan history display (admin / organizer audit view) index.
 CREATE INDEX idx_scan_history ON scan_logs (ticket_id);
 
 
@@ -773,36 +779,30 @@ CREATE INDEX idx_scan_history ON scan_logs (ticket_id);
 -- ─────────────────────────────────────────────────────────────
 
 -- Email OTP authentication flow records.
--- signup, signin, forgot-password, reset-password purposes
--- support කෙරේ. otp_hash: plain OTP store කිරීම වෙනුවට
--- bcrypt/SHA hash store කරන නිසා database leak safe.
--- resend_count + verify_attempts: brute-force protection.
+-- signup, signin, forgot-password, reset-password purposes support.
+-- otp_hash: plain OTP store නොකොට bcrypt/SHA hash — DB leak safe.
+-- resend_count + verify_attempts: brute-force rate limiting.
 -- expires_at: OTP validity window (typically 5-10 minutes).
 -- is_used: OTP replay attack prevention.
 CREATE TABLE IF NOT EXISTS otp_records (
-    otp_id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID        REFERENCES users(user_id) ON DELETE CASCADE,
+    otp_id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID         REFERENCES users(user_id) ON DELETE CASCADE,
     email           VARCHAR(150) NOT NULL,
     otp_hash        VARCHAR(255) NOT NULL,
     purpose         VARCHAR(50)  NOT NULL
                                  CHECK (purpose IN (
-                                     'signup',
-                                     'signin',
-                                     'forgot-password',
-                                     'reset-password'
+                                     'signup', 'signin',
+                                     'forgot-password', 'reset-password'
                                  )),
-    resend_count    INTEGER     DEFAULT 0,
-    last_sent_at    TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    expires_at      TIMESTAMPTZ NOT NULL,
-    is_used         BOOLEAN     DEFAULT FALSE,
-    verify_attempts INTEGER     DEFAULT 0,
-    created_at      TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    resend_count    INTEGER      DEFAULT 0,
+    last_sent_at    TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP,
+    expires_at      TIMESTAMPTZ  NOT NULL,
+    is_used         BOOLEAN      DEFAULT FALSE,
+    verify_attempts INTEGER      DEFAULT 0,
+    created_at      TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP
 );
 
--- OTP lookup (email + purpose) auth flow query index.
 CREATE INDEX idx_otp_email   ON otp_records (email, purpose);
-
--- Expired OTP cleanup cron job (future) WHERE clause index.
 CREATE INDEX idx_otp_expires ON otp_records (expires_at);
 
 
@@ -810,21 +810,18 @@ CREATE INDEX idx_otp_expires ON otp_records (expires_at);
 -- TABLE: auth_flow_tokens
 -- ─────────────────────────────────────────────────────────────
 
--- Multi-step auth flow page access control tokens.
--- OTP verify page, password reset page ආදී sensitive pages
--- direct URL access prevent කිරීමට short-lived tokens.
+-- Multi-step auth flow page access control short-lived tokens.
+-- OTP verify page, password reset page direct URL access prevent.
 -- token: cryptographically random, URL-safe string.
 -- is_used: one-time-use enforcement (token reuse prevent).
 -- expires_at: token validity window (typically 15-30 minutes).
 CREATE TABLE IF NOT EXISTS auth_flow_tokens (
-    token_id    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    token_id    UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     email       VARCHAR(150) NOT NULL,
     purpose     VARCHAR(50)  NOT NULL
                              CHECK (purpose IN (
-                                 'signup',
-                                 'signin',
-                                 'forgot-password',
-                                 'reset-password'
+                                 'signup', 'signin',
+                                 'forgot-password', 'reset-password'
                              )),
     token       VARCHAR(255) NOT NULL UNIQUE,
     expires_at  TIMESTAMPTZ  NOT NULL,
@@ -832,35 +829,30 @@ CREATE TABLE IF NOT EXISTS auth_flow_tokens (
     created_at  TIMESTAMPTZ  DEFAULT CURRENT_TIMESTAMP
 );
 
--- Auth flow token validation (token + expires_at) lookup index.
 CREATE INDEX idx_auth_flow_token ON auth_flow_tokens (token, expires_at);
 
 
 -- ─────────────────────────────────────────────────────────────
 -- TABLE: payouts
--- Platform Commission & Organizer Payout Records
 -- ─────────────────────────────────────────────────────────────
 
--- Event COMPLETED වූ පසු BuddyTicket platform commission (platform_fee)
+-- Event COMPLETED වූ පසු BuddyTicket platform commission
 -- deduct කොට organizer ට ගෙවිය යුතු net amount track කිරීම.
 -- gross_revenue: event orders (payment_status='PAID') final_amount SUM.
--- platform_fee_amount: events table fee config අනුව calculated amount.
--- net_payout_amount: organizer ට ගෙවිය යුතු = gross - platform fee.
--- bank_transfer_ref: actual bank transfer reference number (manual entry).
--- processed_by: admin user ID (payout approve කළ staff member).
--- Dispute resolution, financial audit, revenue reporting සඳහා
--- central records table.
+-- platform_fee_amount: events.platform_fee_* config අනුව calculated.
+-- net_payout_amount: gross_revenue - platform_fee_amount.
+-- bank_transfer_ref: actual bank transfer reference (manual entry).
+-- processed_by: payout approve කළ admin user ID.
+-- Event per payout one record (uq_payout_event): double-payout prevent.
 CREATE TABLE IF NOT EXISTS payouts (
     payout_id               UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     event_id                UUID            NOT NULL
                                             REFERENCES events(event_id) ON DELETE RESTRICT,
     organizer_id            UUID            NOT NULL
                                             REFERENCES users(user_id) ON DELETE RESTRICT,
-    -- Payout financials (admin calculated + recorded).
     gross_revenue           NUMERIC(15,2)   NOT NULL,
     platform_fee_amount     NUMERIC(15,2)   NOT NULL,
     net_payout_amount       NUMERIC(15,2)   NOT NULL,
-    -- Payout execution details.
     status                  payout_status   NOT NULL DEFAULT 'PENDING',
     bank_transfer_ref       VARCHAR(255)    DEFAULT NULL,
     processed_by            UUID            DEFAULT NULL
@@ -870,14 +862,10 @@ CREATE TABLE IF NOT EXISTS payouts (
     created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMPTZ     DEFAULT NULL,
 
-    -- Event per payout one record only (event finalized once).
     CONSTRAINT uq_payout_event UNIQUE (event_id)
 );
 
--- Admin payout dashboard: pending payouts list query සඳහා.
-CREATE INDEX idx_payouts_status ON payouts (status, created_at);
-
--- Organizer payout history view සඳහා.
+CREATE INDEX idx_payouts_status    ON payouts (status, created_at);
 CREATE INDEX idx_payouts_organizer ON payouts (organizer_id, status);
 
 CREATE TRIGGER update_payouts_modtime
@@ -888,19 +876,15 @@ EXECUTE FUNCTION update_modified_column();
 
 -- ─────────────────────────────────────────────────────────────
 -- TABLE: refund_requests
--- Refund Request Workflow Management
 -- ─────────────────────────────────────────────────────────────
 
 -- User refund requests සහ admin approval workflow track කිරීම.
--- order_id: refund request කළ order (tickets cancel + refund).
--- ticket_id: specific ticket একটি refund (partial refund support).
---   NULL = full order refund.
+-- ticket_id: specific single ticket refund. NULL = full order refund.
 -- reason: user submitted refund reason (required).
--- admin_note: admin decision note (approval/rejection reason).
--- gateway_refund_ref: PayHere refund API call reference ID.
---   NULL = cash desk orders (manual bank transfer needed).
--- refund_amount: partial refund support (full order amount ට වඩා
---   අඩු ප්‍රමාණයක් refund කළ හැකි — event organizer policy අනුව).
+-- admin_note: admin approval/rejection decision note.
+-- gateway_refund_ref: PayHere refund API reference.
+--   NULL = ONGATE_MANUAL orders (manual bank transfer needed).
+-- refund_amount: partial refund support.
 -- reviewed_by: refund approve/reject කළ admin user ID.
 CREATE TABLE IF NOT EXISTS refund_requests (
     refund_id               UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -922,11 +906,8 @@ CREATE TABLE IF NOT EXISTS refund_requests (
     updated_at              TIMESTAMPTZ     DEFAULT NULL
 );
 
--- Admin refund dashboard: pending requests queue query සඳහා.
 CREATE INDEX idx_refunds_status ON refund_requests (status, created_at);
-
--- User ගේ refund history (profile page) query සඳහා.
-CREATE INDEX idx_refunds_user ON refund_requests (user_id, status);
+CREATE INDEX idx_refunds_user   ON refund_requests (user_id, status);
 
 CREATE TRIGGER update_refund_requests_modtime
 BEFORE UPDATE ON refund_requests
@@ -936,46 +917,66 @@ EXECUTE FUNCTION update_modified_column();
 
 -- ─────────────────────────────────────────────────────────────
 -- TABLE: waitlists
--- Sold-Out Event Waitlist Queue
 -- ─────────────────────────────────────────────────────────────
 
--- Event SOLD_OUT වූ පසු ticket available slot එකක් සඳහා
--- user queue manage කිරීම.
--- ticket_type_id: specific ticket type waitlist (NULL = any type).
--- notify_email: waitlist notification email (user ගේ account email
---   ට වෙනස් email address use කිරීමට allow — e.g. work email).
--- notified_at: available notification email sent time.
--- CONVERTED status: waitlist slot → actual purchase complete.
--- Waitlist slot open trigger: ticket CANCELLED / refund approved
---   → application layer lowest position_order WAITING entry notify.
--- position_order: queue position (1 = first in line).
---   (event_id, ticket_type_id, position_order) unique constraint:
---   duplicate position prevent කිරීම.
+-- Event SOLD_OUT වූ පසු ticket available slot සඳහා user queue.
+-- ticket_type_id: specific type waitlist. NULL = any type (event-level).
+-- notify_email: notification email (account email ට වෙනස් allow).
+-- position_order: queue position (1 = first, FCFS ordering).
+--   Application layer MAX(position_order)+1 calculate + insert.
+-- converted_order_id: CONVERTED status — completed purchase order link.
+--
+-- [BUG FIX] NULL uniqueness: PostgreSQL UNIQUE constraints NULLs
+-- distinct ලෙස treat කරයි. ticket_type_id IS NULL නම්
+-- UNIQUE(event_id, ticket_type_id, user_id) duplicate entries
+-- prevent නොකරයි.
+-- Fix: table-level constraints ඉවත් කොට conditional partial unique
+-- indexes use — typed (IS NOT NULL) සහ untyped (IS NULL) cases
+-- separately handle කෙරේ.
 CREATE TABLE IF NOT EXISTS waitlists (
-    waitlist_id             UUID                PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id                UUID                NOT NULL
-                                                REFERENCES events(event_id) ON DELETE CASCADE,
-    ticket_type_id          UUID                DEFAULT NULL
-                                                REFERENCES ticket_types(ticket_type_id) ON DELETE CASCADE,
-    user_id                 UUID                NOT NULL
-                                                REFERENCES users(user_id) ON DELETE CASCADE,
-    notify_email            VARCHAR(150)        NOT NULL,
-    position_order          INT                 NOT NULL,
-    status                  waitlist_status     NOT NULL DEFAULT 'WAITING',
-    notified_at             TIMESTAMPTZ         DEFAULT NULL,
-    converted_order_id      UUID                DEFAULT NULL
-                                                REFERENCES orders(order_id) ON DELETE SET NULL,
-    created_at              TIMESTAMPTZ         DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMPTZ         DEFAULT NULL,
-
-    -- User per event/ticket_type one active waitlist entry only.
-    CONSTRAINT uq_waitlist_user_event_type UNIQUE (event_id, ticket_type_id, user_id),
-    -- Position uniqueness per event + type queue.
-    CONSTRAINT uq_waitlist_position UNIQUE (event_id, ticket_type_id, position_order)
+    waitlist_id             UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id                UUID            NOT NULL
+                                            REFERENCES events(event_id) ON DELETE CASCADE,
+    ticket_type_id          UUID            DEFAULT NULL
+                                            REFERENCES ticket_types(ticket_type_id) ON DELETE CASCADE,
+    user_id                 UUID            NOT NULL
+                                            REFERENCES users(user_id) ON DELETE CASCADE,
+    notify_email            VARCHAR(150)    NOT NULL,
+    position_order          INT             NOT NULL,
+    status                  waitlist_status NOT NULL DEFAULT 'WAITING',
+    notified_at             TIMESTAMPTZ     DEFAULT NULL,
+    converted_order_id      UUID            DEFAULT NULL
+                                            REFERENCES orders(order_id) ON DELETE SET NULL,
+    created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ     DEFAULT NULL
 );
 
--- Slot available → notify: lowest WAITING position lookup index.
-CREATE INDEX idx_waitlist_queue ON waitlists (event_id, ticket_type_id, position_order) WHERE status = 'WAITING';
+-- [BUG FIX] User uniqueness per event + specific ticket type.
+-- ticket_type_id IS NOT NULL case.
+CREATE UNIQUE INDEX uq_waitlist_user_event_typed
+    ON waitlists (event_id, ticket_type_id, user_id)
+    WHERE ticket_type_id IS NOT NULL;
+
+-- [BUG FIX] User uniqueness per event + any type (event-level).
+-- ticket_type_id IS NULL case — NULL != NULL in standard UNIQUE.
+CREATE UNIQUE INDEX uq_waitlist_user_event_untyped
+    ON waitlists (event_id, user_id)
+    WHERE ticket_type_id IS NULL;
+
+-- [BUG FIX] Position uniqueness: specific ticket type queue.
+CREATE UNIQUE INDEX uq_waitlist_position_typed
+    ON waitlists (event_id, ticket_type_id, position_order)
+    WHERE ticket_type_id IS NOT NULL;
+
+-- [BUG FIX] Position uniqueness: event-level (any type) queue.
+CREATE UNIQUE INDEX uq_waitlist_position_untyped
+    ON waitlists (event_id, position_order)
+    WHERE ticket_type_id IS NULL;
+
+-- Slot available notify: lowest WAITING position lookup.
+CREATE INDEX idx_waitlist_queue
+    ON waitlists (event_id, ticket_type_id, position_order)
+    WHERE status = 'WAITING';
 
 CREATE TRIGGER update_waitlists_modtime
 BEFORE UPDATE ON waitlists
@@ -985,43 +986,35 @@ EXECUTE FUNCTION update_modified_column();
 
 -- ─────────────────────────────────────────────────────────────
 -- TABLE: reviews
--- Post-Event Attendee Reviews & Star Ratings
 -- ─────────────────────────────────────────────────────────────
 
--- Event COMPLETED වූ පසු actual attendees (status='USED' ticket
--- holders) ට star rating සහ written review submit කිරීමට.
--- ticket_id FK: USED ticket verify → fake review prevent.
---   Reviewer ගේ ticket_id = proof of attendance.
--- rating: 1–5 star (CHECK constraint enforce).
--- is_visible: admin moderate කළ reviews hide කිරීමට
---   (spam / abusive content). Default TRUE.
--- Organizer credibility score, event quality analytics,
--- future event discovery ranking සඳහා use කෙරේ.
+-- Event COMPLETED වූ පසු actual attendees (USED ticket holders)
+-- ට star rating සහ written review submit කිරීමට.
+-- ticket_id FK: proof of attendance — fake review prevent.
+--   USED status validate: app layer enforce.
+-- rating: 1–5 star CHECK constraint enforce.
+-- is_visible: admin moderation hide flag (spam/abuse).
+-- Organizer credibility, event quality analytics,
+-- future event ranking සඳහා use කෙරේ.
 CREATE TABLE IF NOT EXISTS reviews (
-    review_id               UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id                UUID            NOT NULL
-                                            REFERENCES events(event_id) ON DELETE CASCADE,
-    user_id                 UUID            NOT NULL
-                                            REFERENCES users(user_id) ON DELETE CASCADE,
-    -- Attendance proof: USED status ticket only.
-    ticket_id               UUID            NOT NULL
-                                            REFERENCES tickets(ticket_id) ON DELETE RESTRICT,
-    rating                  SMALLINT        NOT NULL
-                                            CHECK (rating BETWEEN 1 AND 5),
-    review_text             TEXT            DEFAULT NULL,
-    is_visible              BOOLEAN         DEFAULT TRUE,
-    created_at              TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
-    updated_at              TIMESTAMPTZ     DEFAULT NULL,
+    review_id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id                UUID        NOT NULL
+                                        REFERENCES events(event_id) ON DELETE CASCADE,
+    user_id                 UUID        NOT NULL
+                                        REFERENCES users(user_id) ON DELETE CASCADE,
+    ticket_id               UUID        NOT NULL
+                                        REFERENCES tickets(ticket_id) ON DELETE RESTRICT,
+    rating                  SMALLINT    NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    review_text             TEXT        DEFAULT NULL,
+    is_visible              BOOLEAN     DEFAULT TRUE,
+    created_at              TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMPTZ DEFAULT NULL,
 
-    -- User per event one review only (duplicate prevent).
     CONSTRAINT uq_review_user_event UNIQUE (event_id, user_id)
 );
 
--- Event average rating calculation (public event page) query index.
 CREATE INDEX idx_reviews_event ON reviews (event_id, is_visible, rating);
-
--- User ගේ submitted reviews (profile page) query index.
-CREATE INDEX idx_reviews_user ON reviews (user_id);
+CREATE INDEX idx_reviews_user  ON reviews (user_id);
 
 CREATE TRIGGER update_reviews_modtime
 BEFORE UPDATE ON reviews

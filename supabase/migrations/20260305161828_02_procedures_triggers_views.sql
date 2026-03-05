@@ -9,9 +9,31 @@
 --   2. Inventory-based sold-out trigger    (ticket_types.qty_sold)
 --   3. VIP priority management trigger     (events.is_vip)
 --   4. Database views                      (featured + all active)
---   5. RPC: reserve_tickets_occ            (checkout inventory lock)
+--   5. RPC: reserve_tickets_occ            (checkout FCFS inventory lock)
 --   6. RPC: finalize_order_tickets         (payment → tickets create)
 --   7. Stale reservation expiry            (pg_cron, every minute)
+-- ============================================================
+--
+-- [BUG FIXES IN THIS FILE]
+--
+-- Bug 1 — reserve_tickets_occ: Event-level validation නොතිබ්බා.
+--   CANCELLED, COMPLETED, DRAFT events ටිකට් reserve කරන්නට
+--   හැකිව තිබ්බා. Fix: event is_active + status = 'ON_SALE'
+--   check function ආරම්භයේ add කෙරේ.
+--
+-- Bug 2 — finalize_order_tickets: Reservation expiry check නොතිබ්බා.
+--   pg_cron minute delay edge case: expired reservations PENDING
+--   status හිම ඉතිරිව තිබෙන විට finalize කරන්නට හැකිව තිබ්බා
+--   — oversell risk. Fix: reservation loop WHERE clause හි
+--   r.expires_at > NOW() enforce කෙරේ.
+--
+-- Bug 3 — finalize_order_tickets: Promotion FCFS broken.
+--   Concurrent users simultaneously last promo code finalize
+--   කළොත් usage_limit_global exceed වෙනවා. Fix: promotions row
+--   SELECT FOR UPDATE lock + current_global_usage < limit validate
+--   BEFORE ticket creation. Order: lock → validate → create
+--   tickets → increment usage.
+--
 -- ============================================================
 
 
@@ -31,9 +53,10 @@
 --
 -- DRAFT හා CANCELLED events කිසිවිටෙකත් auto-promote නොවේ.
 -- is_active = FALSE events ද skip කෙරේ — soft-deleted events
--- status changes receive නොකිරීම සහතික කිරීමට.
--- updated_at SECURITY DEFINER context හි NOW() set කිරීම
--- update_modified_column() trigger fire නොවන instances handle කිරීමට.
+-- status changes receive නොකිරීමට.
+-- updated_at SECURITY DEFINER context හි NOW() explicitly set:
+-- update_modified_column() trigger fire නොවිය හැකි instances
+-- cover කිරීමට.
 --
 -- Related tables  : events
 -- Related cron job: update_event_time_status_job (Section 1 end)
@@ -44,7 +67,8 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-    -- 1a. Start time පහු වී ඇති active events ONGOING ලෙස promote කිරීම.
+    -- 1a. Start time පහු වී end time නොපහු වූ active events
+    --     ONGOING ලෙස promote කිරීම.
     UPDATE events
     SET    status     = 'ONGOING',
            updated_at = NOW()
@@ -53,7 +77,7 @@ BEGIN
       AND  start_at   <= NOW()
       AND  end_at     >  NOW();
 
-    -- 1b. End time පහු වී ඇති සියලු active events COMPLETED ලෙස mark කිරීම.
+    -- 1b. End time පහු වී ඇති සියලු active events COMPLETED.
     UPDATE events
     SET    status     = 'COMPLETED',
            updated_at = NOW()
@@ -64,19 +88,16 @@ END;
 $$;
 
 
--- pg_cron extension enable කිරීම (Supabase dashboard SQL editor
--- හෝ superuser connection හරහා එක් වරක් run කරන්න).
+-- pg_cron extension enable (Supabase dashboard හෝ superuser — once only).
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
--- Idempotent migration: stale schedule තිබේ නම් ඉවත් කිරීම.
--- Re-run safe: duplicate job names error prevent කිරීමට.
+-- Idempotent: stale schedule remove + recreate.
 SELECT cron.unschedule('update_event_time_status_job')
 WHERE  EXISTS (
     SELECT 1 FROM cron.job WHERE jobname = 'update_event_time_status_job'
 );
 
--- සෑම විනාඩියකටම (every minute) auto_update_event_time_statuses
--- function execute කිරීමට cron job schedule කිරීම.
+-- සෑම විනාඩියකටම event time-based status update.
 SELECT cron.schedule(
     'update_event_time_status_job',
     '* * * * *',
@@ -97,15 +118,15 @@ SELECT cron.schedule(
 --   SUM(qty_sold) >= SUM(capacity) AND capacity > 0
 --   → event status = 'SOLD_OUT'
 --
--- Guard conditions (oversell / wrong status prevent):
---   - Capacity > 0 check: empty/inactive ticket types false trigger prevent.
+-- Guard conditions:
+--   - capacity > 0: ticket types නොමැති events false-trigger prevent.
 --   - status IN guard: DRAFT, COMPLETED, CANCELLED events touch නොකිරීම.
 --   - is_active = TRUE: soft-deleted events skip කිරීම.
 --
 -- Race condition protection:
---   finalize_order_tickets() RPC ticket_types row SELECT FOR UPDATE
---   lock කරන නිසා concurrent qty_sold updates serialized වේ.
---   මෙම trigger ඒ same transaction context හි fire වේ.
+--   finalize_order_tickets() RPC ticket_types SELECT FOR UPDATE lock
+--   concurrent qty_sold updates serialize කරයි. Trigger ඒ same
+--   transaction context හිම fire වේ.
 --
 -- Related tables   : ticket_types, events
 -- Related trigger  : trigger_check_sold_out (Section 2 end)
@@ -120,7 +141,7 @@ DECLARE
     v_total_capacity  BIGINT;
     v_total_sold      BIGINT;
 BEGIN
-    -- NEW.event_id event ගේ active ticket types aggregate කිරීම.
+    -- NEW.event_id event ගේ active ticket types aggregate.
     SELECT
         COALESCE(SUM(capacity), 0),
         COALESCE(SUM(qty_sold),  0)
@@ -129,8 +150,7 @@ BEGIN
     WHERE event_id  = NEW.event_id
       AND is_active = TRUE;
 
-    -- Capacity > 0 guard: ticket types නොමැති events false sold-out prevent.
-    -- Sold-out condition met නම් eligible status events update කිරීම.
+    -- Capacity > 0 guard + sold-out condition check.
     IF v_total_capacity > 0 AND v_total_sold >= v_total_capacity THEN
         UPDATE events
         SET    status     = 'SOLD_OUT',
@@ -144,11 +164,10 @@ BEGIN
 END;
 $$;
 
--- Idempotent: re-run safe migration සඳහා stale trigger drop.
+-- Idempotent: re-run safe.
 DROP TRIGGER IF EXISTS trigger_check_sold_out ON ticket_types;
 
--- AFTER UPDATE OF qty_sold: qty_sold column පමණක් update වූ
--- විට fire වේ — unnecessary trigger executions minimize කිරීමට.
+-- qty_sold column update විටක් පමණක් fire — unnecessary executions minimize.
 CREATE TRIGGER trigger_check_sold_out
 AFTER UPDATE OF qty_sold ON ticket_types
 FOR EACH ROW
@@ -163,18 +182,16 @@ EXECUTE FUNCTION check_and_update_event_sold_out();
 -- automatically manage කිරීමේ trigger function.
 --
 -- Case A — FALSE → TRUE (VIP promotion):
---   vip_events table හි MAX(priority_order) + 1 ලෙස
---   new row insert කෙරේ. ON CONFLICT upsert safety:
---   race condition හෝ accidental re-trigger safe handling.
+--   MAX(priority_order) + 1 ලෙස new row insert.
+--   ON CONFLICT upsert: race condition / re-trigger safe.
 --
 -- Case B — TRUE → FALSE (VIP demotion):
---   vip_events table හෙන් row delete කෙරේ.
---   ඉවත් කළ priority_order ට වඩා high (numerically larger)
---   priority rows priority_order - 1 ලෙස update (gap-fill reorder).
---   උදාහරණ: [1,2,3,4] හෙන් priority=2 remove → [1,2,3] ලෙස renumber.
+--   vip_events row delete.
+--   Removed priority_order ට numerically below ඇති rows
+--   priority_order - 1 (gap-fill compact reorder).
+--   Example: [1,2,3,4] remove priority=2 → [1,2,3].
 --
--- WHEN clause: is_vip value actually changed විටක් පමණක් fire —
--- unrelated column updates trigger skip කිරීමට.
+-- WHEN clause: is_vip actually changed විටක් පමණක් fire.
 --
 -- Related tables  : events, vip_events
 -- Related trigger : trigger_vip_status_change (Section 3 end)
@@ -189,23 +206,21 @@ DECLARE
     v_next_priority    INT;
     v_current_priority INT;
 BEGIN
-    -- ── Case A: Event VIP ලෙස promote කිරීම ─────────────────
+    -- ── Case A: Event VIP promote ────────────────────────────
     IF NEW.is_vip = TRUE AND OLD.is_vip = FALSE THEN
 
-        -- දැනට ඇති highest priority_order + 1 (list end append).
         SELECT COALESCE(MAX(priority_order), 0) + 1
         INTO   v_next_priority
         FROM   vip_events;
 
         INSERT INTO vip_events (event_id, priority_order, assigned_by)
         VALUES (NEW.event_id, v_next_priority, NEW.organizer_id)
-        -- Re-trigger / race condition safety: duplicate event_id
-        -- attempt නම් priority_order update කිරීම පමණි.
+        -- race condition / re-trigger safety.
         ON CONFLICT (event_id) DO UPDATE
             SET priority_order = EXCLUDED.priority_order,
                 assigned_by    = EXCLUDED.assigned_by;
 
-    -- ── Case B: Event VIP ලෙස demote කිරීම ──────────────────
+    -- ── Case B: Event VIP demote ─────────────────────────────
     ELSIF NEW.is_vip = FALSE AND OLD.is_vip = TRUE THEN
 
         SELECT priority_order
@@ -213,12 +228,10 @@ BEGIN
         FROM   vip_events
         WHERE  event_id = NEW.event_id;
 
-        -- vip_events row නොමැති edge case skip කිරීම.
         IF v_current_priority IS NOT NULL THEN
             DELETE FROM vip_events WHERE event_id = NEW.event_id;
 
-            -- Priority gap close: removed row ට below ඇති rows
-            -- priority_order 1 කින් decrement (compact reorder).
+            -- Gap-fill: removed priority ට below rows decrement.
             UPDATE vip_events
             SET    priority_order = priority_order - 1
             WHERE  priority_order > v_current_priority;
@@ -230,10 +243,10 @@ BEGIN
 END;
 $$;
 
--- Idempotent drop.
+-- Idempotent.
 DROP TRIGGER IF EXISTS trigger_vip_status_change ON events;
 
--- WHEN guard: is_vip value unchanged update calls trigger skip.
+-- WHEN guard: unchanged is_vip updates skip.
 CREATE TRIGGER trigger_vip_status_change
 AFTER UPDATE OF is_vip ON events
 FOR EACH ROW
@@ -245,18 +258,16 @@ EXECUTE FUNCTION handle_vip_status_change();
 -- SECTION 4 · DATABASE VIEWS
 -- ─────────────────────────────────────────────────────────────
 
--- Homepage / featured section සඳහා event listing view.
--- Ordering priority:
---   1. VIP events (is_vip=TRUE) non-VIP events ට ඉහළින්.
---   2. VIP events ඇතුළේ priority_order ASC (vip_events table).
---   3. ඊටපස්සෙ start_at ASC (ළඟම upcoming event first).
--- Filter:
---   - is_active = TRUE (soft-deleted skip)
---   - status IN (ONGOING, ON_SALE, PUBLISHED) — live/upcoming only.
---     SOLD_OUT, COMPLETED, CANCELLED exclude කෙරේ.
+-- Homepage / featured section event listing view.
+-- Filter: is_active=TRUE, status IN (ONGOING, ON_SALE, PUBLISHED).
+-- Order:
+--   1. VIP events (is_vip=TRUE) non-VIP ට ඉහළින්.
+--   2. VIP ඇතුළේ priority_order ASC (vip_events table).
+--   3. start_at ASC (ළඟම upcoming event first).
+-- SOLD_OUT, COMPLETED, CANCELLED exclude කෙරේ.
 --
--- Related tables: events, vip_events
--- Related trigger: trigger_vip_status_change (VIP data maintain)
+-- Related tables  : events, vip_events
+-- Related trigger : trigger_vip_status_change
 CREATE OR REPLACE VIEW view_featured_events AS
 SELECT
     e.*,
@@ -271,14 +282,12 @@ ORDER BY
     e.start_at                               ASC;
 
 
--- /events page සහ admin dashboard සඳහා full event listing view.
--- Filter:
---   - is_active = TRUE
---   - DRAFT හැර සියලු relevant statuses.
--- Ordering:
+-- /events page + admin dashboard full event listing view.
+-- Filter: is_active=TRUE, DRAFT හැර සියලු relevant statuses.
+-- Order:
 --   1. Status priority (ONGOING > ON_SALE > PUBLISHED > SOLD_OUT
 --      > COMPLETED > CANCELLED).
---   2. VIP events same-status group ඇතුළේ ඉහළට.
+--   2. Same-status group ඇතුළේ VIP ඉහළට.
 --   3. VIP priority_order ASC.
 --   4. start_at ASC (tiebreaker).
 --
@@ -313,38 +322,39 @@ ORDER BY
 -- SECTION 5 · RPC: reserve_tickets_occ
 -- ─────────────────────────────────────────────────────────────
 
--- Checkout page "Add to Cart / Proceed to Payment" action සඳහා
--- inventory reservation RPC. SELECT FOR UPDATE (row-level lock)
--- භාවිතා කිරීමෙන් concurrent requests (ලිපිය ලිව්ව ගෙය parallel
--- checkout attempts) oversell prevent කරයි.
+-- Checkout page inventory reservation RPC — FCFS core.
+-- SELECT FOR UPDATE row-level lock: concurrent checkout requests
+-- serialize කිරීමෙන් first user to lock = first served guarantee.
 --
 -- Algorithm (per ticket type item):
---   1. ticket_types row FOR UPDATE lock — concurrent requests serialize.
---   2. User ගේ existing PENDING reservations (this event) cancel.
---   3. Ticket type validity checks:
---        - NOT FOUND → TICKET_TYPE_NOT_FOUND error.
---        - is_active = FALSE → TICKET_TYPE_INACTIVE error.
---        - sale_start_at > NOW() → SALE_NOT_STARTED error.
---        - sale_end_at < NOW() → SALE_ENDED error.
+--   0. [BUG FIX] Event-level validation:
+--        is_active = TRUE AND status = 'ON_SALE'
+--        → CANCELLED/COMPLETED/DRAFT events reserve prevent.
+--   1. User ගේ existing PENDING reservations (this event) cancel.
+--      Cart update (quantity/type change) safe handling.
+--   2. Per item: ticket_types row FOR UPDATE lock.
+--   3. Ticket type validity:
+--        NOT FOUND        → TICKET_TYPE_NOT_FOUND
+--        is_active=FALSE  → TICKET_TYPE_INACTIVE
+--        sale window fail → SALE_NOT_STARTED / SALE_ENDED
 --   4. Quantity validation:
---        - quantity <= 0 → INVALID_QUANTITY error.
---        - quantity > 10 → EXCEEDS_MAX_PER_ORDER error.
---   5. Availability check:
---        qty_sold + other_users_pending + new_qty > capacity
---        → SOLD_OUT error.
+--        <= 0  → INVALID_QUANTITY
+--        > 10  → EXCEEDS_MAX_PER_ORDER
+--   5. Availability check (FCFS):
+--        qty_sold + other_users_non_expired_pending + new_qty > capacity
+--        → SOLD_OUT
 --   6. New PENDING reservation insert.
 --
 -- Returns JSONB: { reservation_ids, primary_id, expires_at }
--- Supabase client reservation_ids store කොට finalize step
--- ට pass කරයි.
+-- Client reservation_ids store → payment initiate → finalize pass.
 --
--- Related tables   : ticket_types, ticket_reservations, events
+-- Related tables   : events, ticket_types, ticket_reservations
 -- Related function : finalize_order_tickets() (Section 6)
 -- Related cron     : expire_stale_reservations_job (Section 7)
 CREATE OR REPLACE FUNCTION reserve_tickets_occ(
     p_user_id       UUID,
     p_event_id      UUID,
-    p_items         JSONB,              -- [{"ticket_type_id":"...","quantity":2}, ...]
+    p_items         JSONB,          -- [{"ticket_type_id":"...","quantity":2}, ...]
     p_expires_mins  INT DEFAULT 10
 )
 RETURNS JSONB
@@ -365,24 +375,49 @@ DECLARE
     v_reservation_id    UUID;
     v_reservation_ids   UUID[]      := '{}';
     v_expires_at        TIMESTAMPTZ;
+    v_event_status      event_status;
+    v_event_active      BOOLEAN;
 BEGIN
-    -- Input validation: empty items array reject.
+    -- Input validation: empty items reject.
     IF p_items IS NULL OR jsonb_array_length(p_items) = 0 THEN
         RAISE EXCEPTION 'INVALID_INPUT:No items provided';
     END IF;
 
+    -- [BUG FIX] Event-level validation.
+    -- CANCELLED, COMPLETED, DRAFT, PUBLISHED (not on sale yet),
+    -- SOLD_OUT, ONGOING events ටිකට් reserve කිරීම prevent කිරීම.
+    -- ON_SALE status events පමණක් reservations accept කිරීම — FCFS gate.
+    -- is_active=FALSE: soft-deleted events skip.
+    SELECT status, is_active
+    INTO   v_event_status, v_event_active
+    FROM   events
+    WHERE  event_id = p_event_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'EVENT_NOT_FOUND:%', p_event_id;
+    END IF;
+
+    IF NOT v_event_active THEN
+        RAISE EXCEPTION 'EVENT_INACTIVE:%', p_event_id;
+    END IF;
+
+    IF v_event_status != 'ON_SALE' THEN
+        RAISE EXCEPTION 'EVENT_NOT_ON_SALE:% current_status=%',
+            p_event_id, v_event_status;
+    END IF;
+
     v_expires_at := NOW() + (p_expires_mins || ' minutes')::INTERVAL;
 
-    -- User ගේ existing PENDING reservations (this event) cancel කිරීම.
+    -- User ගේ this event PENDING reservations cancel කිරීම.
     -- Fresh checkout session = previous incomplete session replace.
-    -- Cart update (quantity change, type change) safe handling.
+    -- Cart update (quantity/type change) safe handling.
     UPDATE ticket_reservations
     SET    status = 'CANCELLED'
     WHERE  user_id   = p_user_id
       AND  event_id  = p_event_id
       AND  status    = 'PENDING';
 
-    -- Requested ticket types loop.
+    -- Requested ticket types process.
     FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
     LOOP
         v_ticket_type_id := (v_item->>'ticket_type_id')::UUID;
@@ -399,8 +434,9 @@ BEGIN
                 v_ticket_type_id;
         END IF;
 
-        -- Ticket type row lock: concurrent checkout requests serialize.
+        -- FOR UPDATE lock: concurrent checkout requests serialize.
         -- event_id filter: cross-event ticket type use prevent.
+        -- First to acquire lock = first served (FCFS).
         SELECT capacity, qty_sold, is_active, sale_start_at, sale_end_at
         INTO   v_capacity, v_qty_sold, v_is_active,
                v_sale_start_at, v_sale_end_at
@@ -417,7 +453,7 @@ BEGIN
             RAISE EXCEPTION 'TICKET_TYPE_INACTIVE:%', v_ticket_type_id;
         END IF;
 
-        -- Sale window validation (NULL = no window restriction).
+        -- Sale window validation. NULL = no window restriction.
         IF v_sale_start_at IS NOT NULL AND NOW() < v_sale_start_at THEN
             RAISE EXCEPTION 'SALE_NOT_STARTED:%', v_ticket_type_id;
         END IF;
@@ -426,9 +462,8 @@ BEGIN
             RAISE EXCEPTION 'SALE_ENDED:%', v_ticket_type_id;
         END IF;
 
-        -- Other users ගේ active (non-expired) PENDING reservations
-        -- count කිරීම — temporarily locked inventory.
-        -- ඔවුන්ගේ sessions expire වෙන දක්වා ඒ seats reserve ලෙස count.
+        -- Other users ගේ non-expired PENDING reservations count.
+        -- ඔවුන්ගේ sessions expire වෙන දක්වා ඒ seats locked inventory.
         SELECT COALESCE(SUM(quantity), 0)
         INTO   v_pending_others
         FROM   ticket_reservations
@@ -437,8 +472,8 @@ BEGIN
           AND  expires_at     > NOW()
           AND  user_id       != p_user_id;
 
-        -- Core availability check:
-        --   Confirmed sold + others holding + this request <= capacity
+        -- Core FCFS availability check:
+        --   Confirmed sold + others holding + this request <= capacity.
         IF v_qty_sold + v_pending_others + v_quantity > v_capacity THEN
             RAISE EXCEPTION 'SOLD_OUT:%', v_ticket_type_id;
         END IF;
@@ -456,7 +491,6 @@ BEGIN
         v_reservation_ids := array_append(v_reservation_ids, v_reservation_id);
     END LOOP;
 
-    -- Client ට reservation IDs, primary ID, expiry time return.
     RETURN jsonb_build_object(
         'reservation_ids', to_json(v_reservation_ids)::JSONB,
         'primary_id',      to_json(v_reservation_ids[1])::JSONB,
@@ -470,32 +504,34 @@ $$;
 -- SECTION 6 · RPC: finalize_order_tickets
 -- ─────────────────────────────────────────────────────────────
 
--- PayHere webhook callback හෝ cash-desk manual confirmation
--- receive කළ විට tickets create කිරීමේ RPC.
--- OCC (Optimistic Concurrency Control) + SELECT FOR UPDATE
--- combination: concurrent finalize calls (webhook retries,
--- parallel requests) safe ලෙස handle කරයි.
+-- PayHere webhook callback හෝ cash-desk confirmation receive
+-- කළ විට tickets create කිරීමේ RPC.
+-- OCC (Optimistic Concurrency Control) + SELECT FOR UPDATE:
+-- concurrent finalize calls (webhook retries, parallel) safe.
 --
 -- Algorithm:
---   1. Order validate: PENDING status + correct user ownership.
---   2. payment_source → ticket_status decide:
---        ONGATE_MANUAL → ONGATE_PENDING
---        otherwise     → ACTIVE
---   3. Per reservation (linked to this order):
---        a. ticket_types row FOR UPDATE lock.
---        b. OCC version check + qty_sold increment:
---              UPDATE ... WHERE version = expected_version
---                          AND qty_sold + qty <= capacity
---           rows_updated = 0 → OCC_CONFLICT_OR_SOLD_OUT error
---           (transaction rollback, client retry).
---        c. Individual ticket rows insert (qty count).
---        d. Reservation status PENDING → CONFIRMED.
---   4. Order payment_status → PAID (or provided status).
---   5. Transaction record insert (gateway ref provided නම්).
---   6. Promotion usage counters update + audit insert.
+--   1. Order validate: PENDING + user ownership (FOR UPDATE).
+--   2. payment_source → ticket_status:
+--        ONGATE_MANUAL → ONGATE_PENDING, else → ACTIVE.
+--   3. [BUG FIX] Promotion FCFS lock + validate BEFORE ticket creation:
+--        promotions row FOR UPDATE lock.
+--        usage_limit_global > 0 AND current_global_usage >= limit
+--        → PROMOTION_LIMIT_EXCEEDED error (rolls back).
+--        Order: lock first → validate → create tickets → increment.
+--   4. Per reservation:
+--        a. ticket_types FOR UPDATE lock.
+--        b. [BUG FIX] expires_at > NOW() validate:
+--           cron delay edge case oversell prevent — DB layer enforce.
+--        c. OCC: version check + qty_sold increment.
+--           rows_updated=0 → OCC_CONFLICT_OR_SOLD_OUT (retry).
+--        d. Individual ticket rows insert (qty count).
+--        e. Reservation PENDING → CONFIRMED.
+--   5. Order payment_status → PAID.
+--   6. Transaction record insert (gateway ref නොමැති නම් skip).
+--   7. Promotion usage increment + audit insert.
 --
 -- Returns JSONB: { order_id, ticket_count }
--- OCC conflict = client must retry from reserve_tickets_occ.
+-- OCC conflict = client retry from reserve_tickets_occ.
 --
 -- Related tables   : orders, ticket_reservations, ticket_types,
 --                    tickets, transactions, promotions,
@@ -517,6 +553,7 @@ SET search_path = public
 AS $$
 DECLARE
     v_order             RECORD;
+    v_promotion         RECORD;
     v_reservation       RECORD;
     v_qr_item           JSONB;
     v_qr_hashes         JSONB;
@@ -549,10 +586,30 @@ BEGIN
         ELSE 'ACTIVE'::ticket_status
     END;
 
+    -- [BUG FIX] Promotion FCFS: ticket creation ට පෙර
+    -- promotions row lock + global limit validate.
+    -- Concurrent users lock serialize → first to lock succeeds.
+    -- usage_limit_global = 0 → unlimited (no check needed).
+    IF v_order.promotion_id IS NOT NULL AND v_order.discount_amount > 0 THEN
+
+        SELECT promotion_id, usage_limit_global, current_global_usage
+        INTO   v_promotion
+        FROM   promotions
+        WHERE  promotion_id = v_order.promotion_id
+        FOR UPDATE;  -- Concurrent finalize calls serialize here.
+
+        -- FCFS limit check: limit > 0 (not unlimited) AND exceeded.
+        IF v_promotion.usage_limit_global > 0
+           AND v_promotion.current_global_usage >= v_promotion.usage_limit_global
+        THEN
+            RAISE EXCEPTION 'PROMOTION_LIMIT_EXCEEDED:%', v_order.promotion_id;
+        END IF;
+    END IF;
+
     -- Order linked reservations process (lock ticket_types rows).
     FOR v_reservation IN
         SELECT r.reservation_id, r.ticket_type_id, r.quantity,
-               r.event_id,
+               r.event_id, r.expires_at,
                tt.price, tt.qty_sold, tt.capacity, tt.version
         FROM   ticket_reservations r
         JOIN   ticket_types tt ON tt.ticket_type_id = r.ticket_type_id
@@ -561,8 +618,16 @@ BEGIN
           AND  r.status    = 'PENDING'
         FOR UPDATE OF tt
     LOOP
+        -- [BUG FIX] Reservation expiry check: DB layer enforce.
+        -- pg_cron cron delay edge case — expires_at <= NOW() නම්
+        -- reservation technically invalid. Oversell prevent.
+        IF v_reservation.expires_at <= NOW() THEN
+            RAISE EXCEPTION 'RESERVATION_EXPIRED:%',
+                v_reservation.reservation_id;
+        END IF;
+
         -- p_ticket_qr_data හෙන් this reservation ගේ
-        -- qr_hashes සහ expected version find කිරීම.
+        -- qr_hashes + expected version find.
         v_expected_version := v_reservation.version;
         v_qr_hashes        := NULL;
 
@@ -578,9 +643,9 @@ BEGIN
             END IF;
         END LOOP;
 
-        -- OCC atomic inventory update:
-        -- version mismatch (concurrent update) හෝ capacity exceed
-        -- නම් rows_updated = 0 → rollback + retry signal.
+        -- OCC atomic inventory update.
+        -- version mismatch හෝ capacity exceed →
+        -- rows_updated=0 → transaction rollback, client retry.
         UPDATE ticket_types
         SET    qty_sold = qty_sold + v_reservation.quantity,
                version  = version  + 1
@@ -590,7 +655,6 @@ BEGIN
 
         GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
 
-        -- OCC conflict: transaction rollback, client retry required.
         IF v_rows_updated = 0 THEN
             RAISE EXCEPTION 'OCC_CONFLICT_OR_SOLD_OUT:%',
                 v_reservation.ticket_type_id;
@@ -633,8 +697,8 @@ BEGIN
     SET    payment_status = p_payment_status
     WHERE  order_id = p_order_id;
 
-    -- Gateway transaction record insert (PayHere webhook path).
-    -- p_gateway_ref_id NULL නම් (manual/cash path) skip කෙරේ.
+    -- Gateway transaction record insert.
+    -- p_gateway_ref_id IS NULL නම් (cash/manual path) skip.
     IF p_gateway_ref_id IS NOT NULL THEN
         INSERT INTO transactions (
             order_id, gateway, gateway_ref_id, amount, status, meta_data
@@ -654,14 +718,16 @@ BEGIN
         WHERE order_id = p_order_id;
     END IF;
 
-    -- Promotion usage counters update (discount use කළේ නම් පමණි).
+    -- [BUG FIX] Promotion usage increment AFTER ticket creation,
+    -- limit validation ABOVE ලෙස already done (promotion lock held).
+    -- ON CONFLICT DO NOTHING: idempotent webhook retry safe.
     IF v_order.promotion_id IS NOT NULL AND v_order.discount_amount > 0 THEN
+
         UPDATE promotions
         SET    current_global_usage = current_global_usage + 1,
                version              = version + 1
         WHERE  promotion_id = v_order.promotion_id;
 
-        -- ON CONFLICT DO NOTHING: idempotent webhook retry safe handling.
         INSERT INTO promotion_usages (
             promotion_id, user_id, order_id, discount_received
         )
@@ -684,18 +750,19 @@ $$;
 -- SECTION 7 · STALE RESERVATION EXPIRY
 -- ─────────────────────────────────────────────────────────────
 
--- Expired checkout session reservations PENDING → EXPIRED ලෙස
--- mark කිරීමේ cleanup function.
--- expires_at <= NOW() + status = PENDING conditions match
--- කරන reservations bulk update කෙරේ.
+-- Expired checkout session reservations PENDING → EXPIRED mark.
+-- expires_at <= NOW() + status = PENDING reservations bulk update.
 -- Inventory release: EXPIRED reservations reserve_tickets_occ()
--- pending_others count හෙන් exclude වේ (expires_at > NOW() filter)
--- — manual inventory rollback function අවශ්‍ය නොවේ.
--- pg_cron හරහා සෑම විනාඩියකටම execute කෙරේ.
+-- pending_others count හෙන් auto-exclude (expires_at > NOW() filter).
+-- Manual inventory rollback function අවශ්‍ය නොවේ.
+-- pg_cron හරහා සෑම විනාඩියකටම execute.
+--
+-- Note: finalize_order_tickets() expires_at > NOW() validate
+-- (DB layer) කරන නිසා cron delay edge case safe.
 --
 -- Related tables: ticket_reservations
 -- Related function: reserve_tickets_occ() (pending_others check)
--- Related cron   : expire_stale_reservations_job (Section 7 end)
+-- Related cron   : expire_stale_reservations_job
 CREATE OR REPLACE FUNCTION expire_stale_reservations()
 RETURNS void
 LANGUAGE plpgsql
@@ -710,13 +777,13 @@ BEGIN
 END;
 $$;
 
--- Idempotent migration.
+-- Idempotent.
 SELECT cron.unschedule('expire_stale_reservations_job')
 WHERE  EXISTS (
     SELECT 1 FROM cron.job WHERE jobname = 'expire_stale_reservations_job'
 );
 
--- සෑම විනාඩියකටම stale reservations expire කිරීම.
+-- සෑම විනාඩියකටම stale reservations expire.
 SELECT cron.schedule(
     'expire_stale_reservations_job',
     '* * * * *',
@@ -725,7 +792,7 @@ SELECT cron.schedule(
 
 
 -- ─────────────────────────────────────────────────────────────
--- VERIFY: Database හි schedule වී ඇති cron jobs confirm කිරීම.
+-- VERIFY: Scheduled cron jobs confirm.
 -- ─────────────────────────────────────────────────────────────
 SELECT jobid, jobname, schedule, command, active
 FROM   cron.job
