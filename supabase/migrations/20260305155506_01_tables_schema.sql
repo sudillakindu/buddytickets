@@ -558,6 +558,48 @@ EXECUTE FUNCTION update_modified_column();
 
 
 -- ─────────────────────────────────────────────────────────────
+-- TABLE: orders
+-- ─────────────────────────────────────────────────────────────
+
+-- Confirmed checkout sessions — one order per checkout attempt.
+-- finalize_order_tickets() RPC payment_status PENDING → PAID update.
+-- promotions global limit: finalize_order_tickets() DB layer
+-- FOR UPDATE lock + FCFS validate — app layer නොව DB layer enforce.
+-- tickets, transactions, promotion_usages tables order_id FK
+-- ලෙස reference කරයි.
+-- payment_source column finalize_order_tickets() RPC ticket_status
+-- (ACTIVE vs ONGATE_PENDING) decide කිරීමට use කෙරේ.
+CREATE TABLE IF NOT EXISTS orders (
+    order_id        UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID            NOT NULL
+                                    REFERENCES users(user_id) ON DELETE RESTRICT,
+    event_id        UUID            NOT NULL
+                                    REFERENCES events(event_id) ON DELETE RESTRICT,
+    promotion_id    UUID            DEFAULT NULL
+                                    REFERENCES promotions(promotion_id) ON DELETE SET NULL,
+    remarks         TEXT            DEFAULT NULL,
+    subtotal        NUMERIC(15,2)   NOT NULL DEFAULT 0.00,
+    discount_amount NUMERIC(15,2)   DEFAULT 0.00,
+    final_amount    NUMERIC(15,2)   NOT NULL,
+    payment_source  payment_source  NOT NULL,
+    payment_status  payment_status  DEFAULT 'PENDING',
+    created_at      TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMPTZ     DEFAULT NULL
+);
+
+-- User order history (wallet/profile page) pagination query.
+CREATE INDEX idx_orders_user ON orders (user_id, created_at);
+
+-- Event sales report (organizer dashboard) query.
+CREATE INDEX idx_orders_event_sales ON orders (event_id, payment_status);
+
+CREATE TRIGGER update_orders_modtime
+BEFORE UPDATE ON orders
+FOR EACH ROW
+EXECUTE FUNCTION update_modified_column();
+
+
+-- ─────────────────────────────────────────────────────────────
 -- TABLE: ticket_reservations
 -- ─────────────────────────────────────────────────────────────
 
@@ -606,48 +648,6 @@ CREATE INDEX idx_reservation_user
 CREATE INDEX idx_reservation_order
     ON ticket_reservations (order_id)
     WHERE order_id IS NOT NULL;
-
-
--- ─────────────────────────────────────────────────────────────
--- TABLE: orders
--- ─────────────────────────────────────────────────────────────
-
--- Confirmed checkout sessions — one order per checkout attempt.
--- finalize_order_tickets() RPC payment_status PENDING → PAID update.
--- promotions global limit: finalize_order_tickets() DB layer
--- FOR UPDATE lock + FCFS validate — app layer නොව DB layer enforce.
--- tickets, transactions, promotion_usages tables order_id FK
--- ලෙස reference කරයි.
--- payment_source column finalize_order_tickets() RPC ticket_status
--- (ACTIVE vs ONGATE_PENDING) decide කිරීමට use කෙරේ.
-CREATE TABLE IF NOT EXISTS orders (
-    order_id        UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id         UUID            NOT NULL
-                                    REFERENCES users(user_id) ON DELETE RESTRICT,
-    event_id        UUID            NOT NULL
-                                    REFERENCES events(event_id) ON DELETE RESTRICT,
-    promotion_id    UUID            DEFAULT NULL
-                                    REFERENCES promotions(promotion_id) ON DELETE SET NULL,
-    remarks         TEXT            DEFAULT NULL,
-    subtotal        NUMERIC(15,2)   NOT NULL DEFAULT 0.00,
-    discount_amount NUMERIC(15,2)   DEFAULT 0.00,
-    final_amount    NUMERIC(15,2)   NOT NULL,
-    payment_source  payment_source  NOT NULL,
-    payment_status  payment_status  DEFAULT 'PENDING',
-    created_at      TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMPTZ     DEFAULT NULL
-);
-
--- User order history (wallet/profile page) pagination query.
-CREATE INDEX idx_orders_user ON orders (user_id, created_at);
-
--- Event sales report (organizer dashboard) query.
-CREATE INDEX idx_orders_event_sales ON orders (event_id, payment_status);
-
-CREATE TRIGGER update_orders_modtime
-BEFORE UPDATE ON orders
-FOR EACH ROW
-EXECUTE FUNCTION update_modified_column();
 
 
 -- ─────────────────────────────────────────────────────────────

@@ -1,0 +1,138 @@
+// lib/types/payment.ts
+// All types mirror DB schema: orders, transactions, ticket_reservations
+
+// ─── Enums (mirror DB) ────────────────────────────────────────────────────────
+
+/** DB enum: payment_source */
+export type PaymentSource = "PAYHERE_ONLINE" | "ONGATE_MANUAL";
+
+/** DB enum: payment_status */
+export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+
+/** UI-level payment method selection (maps to payment_source) */
+export type PaymentMethod = "PAYHERE" | "BANK_TRANSFER" | "ONGATE_MANUAL";
+
+// ─── PayHere ─────────────────────────────────────────────────────────────────
+
+/** Fields submitted as a form POST to PayHere checkout URL */
+export interface PayHereFormData {
+  merchant_id: string;
+  return_url: string;
+  cancel_url: string;
+  notify_url: string;
+  order_id: string;           // Maps to orders.order_id in our DB
+  items: string;
+  currency: "LKR";
+  amount: string;             // e.g. "1500.00"
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  hash: string;               // MD5 signature (server-generated)
+  checkout_url: string;       // PayHere form action URL
+}
+
+/** PayHere webhook POST body fields */
+export interface PayHereWebhookPayload {
+  merchant_id: string;
+  order_id: string;
+  payment_id: string;
+  payhere_amount: string;
+  payhere_currency: string;
+  status_code: string;        // "2" = success, "0" = pending, "-1" = cancelled, "-2" = failed, "-3" = chargedback
+  md5sig: string;             // Webhook signature
+  method?: string;
+  status_message?: string;
+  custom_1?: string;
+  custom_2?: string;
+}
+
+// ─── Order ────────────────────────────────────────────────────────────────────
+
+/** Matches orders table row */
+export interface OrderRow {
+  order_id: string;
+  user_id: string;
+  event_id: string;
+  promotion_id: string | null;
+  remarks: string | null;
+  subtotal: number;
+  discount_amount: number;
+  final_amount: number;
+  payment_source: PaymentSource;
+  payment_status: PaymentStatus;
+  created_at: string;
+  updated_at: string | null;
+}
+
+/** Order creation input */
+export interface CreateOrderInput {
+  reservation_id: string;     // Primary reservation ID (identifies the checkout session)
+  promotion_id: string | null;
+  discount_amount: number;
+  subtotal: number;
+  final_amount: number;
+  payment_method: PaymentMethod;
+  remarks: string | null;
+}
+
+/** Returned after order creation */
+export interface CreatedOrder {
+  order_id: string;
+  final_amount: number;
+  payment_source: PaymentSource;
+}
+
+/** Server action response for creating an order */
+export interface CreateOrderResult {
+  success: boolean;
+  message: string;
+  order?: CreatedOrder;
+  payhere_form?: PayHereFormData;    // Present if payment method = PayHere
+  bank_details?: BankTransferDetails; // Present if payment method = Bank Transfer
+}
+
+// ─── Bank Transfer ────────────────────────────────────────────────────────────
+
+export interface BankTransferDetails {
+  order_id: string;
+  amount: number;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  reference: string;           // Unique ref = order_id prefix
+  instructions: string;
+}
+
+// ─── QR Data for finalize_order_tickets RPC ───────────────────────────────────
+
+/** Structure passed as p_ticket_qr_data to finalize_order_tickets */
+export interface TicketQRItem {
+  reservation_id: string;
+  ticket_type_version: number;
+  qr_hashes: string[];
+}
+
+// ─── Finalize Result ──────────────────────────────────────────────────────────
+
+export interface FinalizeOrderResult {
+  success: boolean;
+  message: string;
+  order_id?: string;
+  ticket_count?: number;
+}
+
+// ─── Success Page Data ────────────────────────────────────────────────────────
+
+export interface OrderSuccessData {
+  order_id: string;
+  event_name: string;
+  event_start_at: string;
+  event_location: string;
+  ticket_count: number;
+  final_amount: number;
+  payment_status: PaymentStatus;
+}
