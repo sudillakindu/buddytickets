@@ -22,7 +22,6 @@ import type {
   PromoValidationResult,
   ValidatedPromotion,
   PromotionRow,
-  ReservationRow,
 } from "@/lib/types/checkout";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -157,7 +156,7 @@ export async function getCheckoutData(
       return { success: false, message: "RESERVATION_EXPIRED" };
     }
 
-    const ticketTypeIds = reservations.map((r: ReservationRow) => r.ticket_type_id);
+    const ticketTypeIds = reservations.map((r) => r.ticket_type_id);
 
     // 3. Fetch ticket type details for all reserved types
     const { data: ticketTypes, error: ttErr } = await supabaseAdmin
@@ -185,7 +184,7 @@ export async function getCheckoutData(
 
     // 5. Build line items and compute subtotal
     const lineItems: ReservationLineItem[] = reservations.map(
-      (r: ReservationRow) => {
+      (r) => {
         const tt = ttMap.get(r.ticket_type_id) as Record<string, unknown> | undefined;
         const priceEach = Number(tt?.price ?? 0);
         const quantity = r.quantity;

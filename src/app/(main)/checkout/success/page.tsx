@@ -9,7 +9,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -60,7 +60,6 @@ type PageState = "loading" | "confirming" | "confirmed" | "bank_pending" | "erro
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const orderId = searchParams.get("order_id");
 
   const [state, setState] = useState<PageState>("loading");
@@ -70,12 +69,11 @@ export default function CheckoutSuccessPage() {
 
   // ── Fetch initial order data ────────────────────────────────────────────────
   useEffect(() => {
-    if (!orderId) {
-      setState("error");
-      return;
-    }
-
     const fetchData = async () => {
+      if (!orderId) {
+        setState("error");
+        return;
+      }
       const result = await getOrderSuccessData(orderId);
       if (!result.success || !result.data) {
         setState("error");

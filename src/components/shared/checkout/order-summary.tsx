@@ -49,16 +49,17 @@ const formatDate = (iso: string) =>
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
 
 function useCountdown(expiresAt: string) {
-  const [secondsLeft, setSecondsLeft] = useState(0);
+  const calc = useCallback(
+    () => Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
+    [expiresAt]
+  );
+
+  const [secondsLeft, setSecondsLeft] = useState(calc);
 
   useEffect(() => {
-    const calc = () =>
-      Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
-
-    setSecondsLeft(calc());
     const id = setInterval(() => setSecondsLeft(calc()), 1000);
     return () => clearInterval(id);
-  }, [expiresAt]);
+  }, [calc]);
 
   const mins = Math.floor(secondsLeft / 60);
   const secs = secondsLeft % 60;
@@ -662,7 +663,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
           onClick={() => router.push(`/checkout/success?order_id=${orderCreated}`)}
           className="w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white bg-[hsl(222.2,47.4%,11.2%)] hover:bg-[hsl(222.2,47.4%,20%)] shadow-md"
         >
-          I've Made the Transfer
+          I&apos;ve Made the Transfer
           <ArrowRight className="w-4 h-4" />
         </Button>
       )}
