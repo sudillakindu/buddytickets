@@ -139,6 +139,9 @@ export async function getCheckoutData(
     }
 
     const eventId = primaryRaw.event_id;
+    if (!eventId) {
+      return { success: false, message: "Reservation is missing event details." };
+    }
 
     // 2. Fetch all PENDING reservations for this user+event (current session)
     const { data: reservations, error: resErr } = await getSupabaseAdmin()

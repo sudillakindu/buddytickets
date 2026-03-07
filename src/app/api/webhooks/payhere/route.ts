@@ -46,6 +46,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     orderId = payload.order_id;
+    if (!orderId) {
+      logger.error({
+        fn: "payhere.webhook",
+        message: "Webhook payload missing order_id.",
+        meta: payload,
+      });
+      return OK();
+    }
 
     logger.info({
       fn: "payhere.webhook",

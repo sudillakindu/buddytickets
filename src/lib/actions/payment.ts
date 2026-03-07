@@ -69,6 +69,9 @@ async function runPrePaymentValidation(
   }
 
   const eventId = primary.event_id;
+  if (!eventId) {
+    return { valid: false, error: "Reservation missing event reference." };
+  }
 
   // 2. Fetch all PENDING reservations for this user+event
   const { data: reservations, error: resErr } = await getSupabaseAdmin()
@@ -133,7 +136,12 @@ async function runPrePaymentValidation(
       return { valid: false, error: "INVENTORY_CONFLICT" };
     }
 
-    computedSubtotal += Number(tt.price) * res.quantity;
+    const price = Number(tt.price);
+    if (!Number.isFinite(price) || price < 0) {
+      return { valid: false, error: "Invalid ticket price configuration." };
+    }
+
+    computedSubtotal += price * res.quantity;
   }
 
   // 6. Revalidate promotion server-side
