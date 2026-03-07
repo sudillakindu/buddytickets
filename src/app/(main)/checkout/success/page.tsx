@@ -105,7 +105,8 @@ export default function CheckoutSuccessPage() {
     const result = await getOrderPaymentStatus(orderId);
     if (!result.success) return;
 
-    setPollCount((c) => c + 1);
+    const newCount = pollCount + 1;
+    setPollCount(newCount);
 
     if (result.status === "PAID") {
       // Refresh order data with ticket count
@@ -114,7 +115,7 @@ export default function CheckoutSuccessPage() {
         setOrderData(fullResult.data);
       }
       setState("confirmed");
-    } else if (pollCount >= MAX_POLLS) {
+    } else if (newCount >= MAX_POLLS) {
       // Timed out — probably bank transfer or webhook delay
       setState("bank_pending");
     }

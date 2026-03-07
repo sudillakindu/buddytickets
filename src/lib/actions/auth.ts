@@ -311,18 +311,17 @@ export async function signUp(data: {
         message: "Password must be at least 6 characters.",
       };
 
-    const { data: existing } = await getSupabaseAdmin()
+    const { data: conflicts } = await getSupabaseAdmin()
       .from("users")
       .select("email, username, mobile")
-      .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`)
-      .maybeSingle();
+      .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`);
 
-    if (existing) {
-      if (existing.email === email)
+    if (conflicts && conflicts.length > 0) {
+      if (conflicts.some((r: Record<string, unknown>) => r.email === email))
         return { success: false, message: "Email is already registered." };
-      if (existing.username === username)
+      if (conflicts.some((r: Record<string, unknown>) => r.username === username))
         return { success: false, message: "Username is already taken." };
-      if (existing.mobile === mobile)
+      if (conflicts.some((r: Record<string, unknown>) => r.mobile === mobile))
         return {
           success: false,
           message: "Mobile number is already registered.",
