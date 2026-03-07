@@ -1,7 +1,9 @@
-// components/shared/buy-ticket/ticket-cart.tsx
+// components/shared/buy-ticket/ticket-details.tsx
 "use client";
 
 import React, { useState, useCallback, useMemo, memo } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,19 +17,63 @@ import {
   ArrowRight,
   Loader2,
   Lock,
+  Crown,
+  ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { createReservation } from "@/lib/actions/checkout";
-import type { TicketType, EventDetails } from "@/lib/types/event";
+import type { TicketType, EventDetails, EventStatus } from "@/lib/types/event";
 import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
+import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MAX_QTY_PER_TYPE = 10;
 const ACCENT = "hsl(270,70%,50%)";
+
+interface StatusConfig {
+  label: string;
+  pillClass: string;
+}
+
+const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
+  ON_SALE: {
+    label: "On Sale",
+    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+  },
+  ONGOING: {
+    label: "Live Now",
+    pillClass: "bg-emerald-50 border-emerald-300 text-emerald-700",
+  },
+  PUBLISHED: {
+    label: "Upcoming",
+    pillClass: "bg-orange-50 border-orange-200 text-orange-700",
+  },
+  SOLD_OUT: {
+    label: "Sold Out",
+    pillClass: "bg-red-50 border-red-200 text-red-700",
+  },
+  COMPLETED: {
+    label: "Completed",
+    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+  },
+  DRAFT: {
+    label: "Draft",
+    pillClass: "bg-gray-50 border-gray-200 text-gray-400",
+  },
+};
+
+const FALLBACK_STATUS: StatusConfig = {
+  label: "Unknown",
+  pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -50,7 +96,14 @@ function enrichTicketType(
     !sale_ended &&
     (eventStatus === "ON_SALE" || eventStatus === "ONGOING");
 
-  return { ...ticket, available, is_sold_out, sale_not_started, sale_ended, can_purchase };
+  return {
+    ...ticket,
+    available,
+    is_sold_out,
+    sale_not_started,
+    sale_ended,
+    can_purchase,
+  };
 }
 
 const formatLKR = (amount: number) =>
@@ -148,9 +201,15 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
         : 0;
     const accentColor = ticket.can_purchase ? ACCENT : "hsl(220 9% 70%)";
     const barColor =
-      soldPct >= 90 ? "bg-red-500" : soldPct >= 60 ? "bg-amber-400" : "bg-emerald-500";
+      soldPct >= 90
+        ? "bg-red-500"
+        : soldPct >= 60
+          ? "bg-amber-400"
+          : "bg-emerald-500";
 
-    const inclusions = Array.isArray(ticket.inclusions) ? ticket.inclusions : [];
+    const inclusions = Array.isArray(ticket.inclusions)
+      ? ticket.inclusions
+      : [];
     const maxQty = Math.min(MAX_QTY_PER_TYPE, ticket.available);
 
     const statusBadge = ticket.is_sold_out
@@ -179,7 +238,12 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
           style={{ background: accentColor }}
         />
 
-        <div className={cn("flex-1 flex flex-col sm:flex-row", ticket.can_purchase ? "bg-white" : "bg-gray-50")}>
+        <div
+          className={cn(
+            "flex-1 flex flex-col sm:flex-row",
+            ticket.can_purchase ? "bg-white" : "bg-gray-50",
+          )}
+        >
           {/* Left: Details */}
           <div className="flex-1 min-w-0 px-5 pt-5 pb-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
@@ -192,7 +256,9 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
                 <h4
                   className={cn(
                     "font-primary font-black text-sm uppercase tracking-wide leading-tight",
-                    ticket.can_purchase ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
+                    ticket.can_purchase
+                      ? "text-[hsl(222.2,47.4%,11.2%)]"
+                      : "text-gray-400",
                   )}
                 >
                   {ticket.name}
@@ -228,7 +294,10 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
                       borderColor: `${accentColor}45`,
                     }}
                   >
-                    <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden />
+                    <CheckCircle2
+                      className="w-3 h-3 shrink-0"
+                      aria-hidden
+                    />
                     {item}
                   </span>
                 ))}
@@ -245,12 +314,17 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
               <div className="flex justify-between text-[10px] font-secondary text-gray-400">
                 <span>{ticket.qty_sold.toLocaleString()} sold</span>
                 <span>
-                  {ticket.available > 0 ? `${ticket.available.toLocaleString()} left` : "0 left"}
+                  {ticket.available > 0
+                    ? `${ticket.available.toLocaleString()} left`
+                    : "0 left"}
                 </span>
               </div>
               <div className="h-1 w-full rounded-full bg-gray-100 overflow-hidden">
                 <div
-                  className={cn("h-full rounded-full transition-all duration-700", barColor)}
+                  className={cn(
+                    "h-full rounded-full transition-all duration-700",
+                    barColor,
+                  )}
                   style={{ width: `${soldPct}%` }}
                 />
               </div>
@@ -261,11 +335,19 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
           <div className="relative flex sm:flex-col items-center justify-center">
             <span
               className="absolute rounded-full w-4 h-4 border border-gray-200 z-10 left-0 sm:left-auto sm:top-0 -translate-x-1/2 sm:translate-x-0 sm:-translate-y-1/2"
-              style={{ background: ticket.can_purchase ? "hsl(210 40% 96.1%)" : "hsl(220 9% 95%)" }}
+              style={{
+                background: ticket.can_purchase
+                  ? "hsl(210 40% 96.1%)"
+                  : "hsl(220 9% 95%)",
+              }}
             />
             <span
               className="absolute rounded-full w-4 h-4 border border-gray-200 z-10 right-0 sm:right-auto sm:bottom-0 translate-x-1/2 sm:translate-x-0 sm:translate-y-1/2"
-              style={{ background: ticket.can_purchase ? "hsl(210 40% 96.1%)" : "hsl(220 9% 95%)" }}
+              style={{
+                background: ticket.can_purchase
+                  ? "hsl(210 40% 96.1%)"
+                  : "hsl(220 9% 95%)",
+              }}
             />
             <div className="w-full sm:w-px h-px sm:h-full border-t-2 sm:border-t-0 sm:border-l-2 border-dashed border-gray-200 mx-2 sm:mx-0 my-0 sm:my-2" />
           </div>
@@ -284,7 +366,9 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
               <p
                 className={cn(
                   "font-primary font-black text-2xl leading-none",
-                  ticket.can_purchase ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
+                  ticket.can_purchase
+                    ? "text-[hsl(222.2,47.4%,11.2%)]"
+                    : "text-gray-400",
                 )}
               >
                 {formatLKR(ticket.price)}
@@ -316,14 +400,15 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
 
 TicketTypeCard.displayName = "TicketTypeCard";
 
-// ─── Main TicketCart Component ───────────────────────────────────────────────
+// ─── Main TicketDetails Component ────────────────────────────────────────────
 
-interface TicketCartProps {
+interface TicketDetailsProps {
   event: EventDetails;
 }
 
-export function TicketCart({ event }: TicketCartProps) {
+export function TicketDetails({ event }: TicketDetailsProps) {
   const router = useRouter();
+  const statusCfg = STATUS_CONFIG[event.status] ?? FALLBACK_STATUS;
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -388,7 +473,9 @@ export function TicketCart({ event }: TicketCartProps) {
         toast.info("Please sign in to continue", {
           description: "You'll be redirected back here after signing in.",
         });
-        router.push(`/sign-in?redirect=/events/${event.event_id}/buy-tickets`);
+        router.push(
+          `/sign-in?redirect=/events/${event.event_id}/buy-tickets`,
+        );
         return;
       }
       setError(result.message ?? "Failed to reserve tickets.");
@@ -400,13 +487,105 @@ export function TicketCart({ event }: TicketCartProps) {
     router.push(`/checkout/${result.primary_id}`);
   }, [cartItems, event.event_id, router]);
 
-  const eventIsBookable = event.status === "ON_SALE" || event.status === "ONGOING";
+  const eventIsBookable =
+    event.status === "ON_SALE" || event.status === "ONGOING";
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
+    <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
+      {/* ── Banner ── */}
+      <div className="relative w-full h-48 sm:h-56 lg:h-64 overflow-hidden bg-[hsl(222.2,47.4%,11.2%)]">
+        {event.banner_image || event.thumbnail_image ? (
+          <>
+            <Image
+              src={(event.banner_image ?? event.thumbnail_image)!}
+              alt={`${event.name} banner`}
+              fill
+              sizes="100vw"
+              unoptimized
+              className="object-cover object-center"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.4))]" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Image
+              src={LogoSrc}
+              alt="BuddyTickets Logo"
+              width={180}
+              height={180}
+              className="w-28 h-28 sm:w-36 lg:w-44 object-contain opacity-60"
+              priority
+            />
+          </div>
+        )}
+
+        {/* Banner overlay content — bottom left */}
+        <div className="absolute inset-0 flex flex-col justify-end pb-5">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <Button
+              asChild
+              variant="ghost"
+              className="mb-3 h-7 px-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full text-xs font-secondary -ml-1"
+            >
+              <Link href={`/events/${event.event_id}`}>
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Back to Event
+              </Link>
+            </Button>
+
+            {/* Badges */}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              {event.is_vip && (
+                <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-2.5 py-0.5 rounded-full border border-yellow-300 text-[11px] font-bold uppercase tracking-wide">
+                  <Crown className="w-3 h-3" aria-hidden="true" />
+                  VIP
+                </span>
+              )}
+              <span className="px-2.5 py-0.5 text-[11px] font-primary font-bold bg-white/20 backdrop-blur-sm rounded-full text-white border border-white/20 uppercase tracking-wide">
+                {event.category}
+              </span>
+              <span
+                className={cn(
+                  "px-2.5 py-0.5 text-[11px] font-secondary font-semibold rounded-full border backdrop-blur-sm",
+                  statusCfg.pillClass,
+                )}
+              >
+                {event.status === "ONGOING" ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                    </span>
+                    {statusCfg.label}
+                  </span>
+                ) : (
+                  statusCfg.label
+                )}
+              </span>
+            </div>
+
+            <h1 className="font-primary font-black text-white text-xl sm:text-2xl lg:text-3xl uppercase leading-tight drop-shadow-lg">
+              {event.name}
+            </h1>
+            {event.subtitle && (
+              <p className="font-secondary text-sm text-white/70 mt-1 drop-shadow-sm">
+                {event.subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
       {/* ── Section Header ── */}
       <div className="flex items-center gap-3 mb-6">
-        <ShoppingCart className="w-7 h-7 text-[hsl(270,70%,50%)]" aria-hidden />
+        <ShoppingCart
+          className="w-7 h-7 text-[hsl(270,70%,50%)]"
+          aria-hidden
+        />
         <h2 className="font-primary text-xl sm:text-2xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
             Select Tickets
@@ -428,7 +607,9 @@ export function TicketCart({ event }: TicketCartProps) {
       {enrichedTickets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Ticket className="w-12 h-12 text-gray-300 mb-3" />
-          <p className="font-secondary text-gray-400">No tickets available.</p>
+          <p className="font-secondary text-gray-400">
+            No tickets available.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
@@ -468,7 +649,9 @@ export function TicketCart({ event }: TicketCartProps) {
         {/* Subtotal */}
         <div>
           <p className="font-secondary text-xs uppercase tracking-widest text-gray-400 mb-0.5">
-            {totalQty > 0 ? `${totalQty} ticket${totalQty > 1 ? "s" : ""} selected` : "No tickets selected"}
+            {totalQty > 0
+              ? `${totalQty} ticket${totalQty > 1 ? "s" : ""} selected`
+              : "No tickets selected"}
           </p>
           <AnimatePresence mode="wait">
             <motion.p
@@ -522,6 +705,7 @@ export function TicketCart({ event }: TicketCartProps) {
           Tickets are held for 10 minutes once you proceed to checkout.
         </p>
       )}
-    </div>
+      </div>
+    </main>
   );
 }
