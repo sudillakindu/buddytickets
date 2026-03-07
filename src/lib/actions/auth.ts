@@ -314,14 +314,16 @@ export async function signUp(data: {
     const { data: conflicts } = await getSupabaseAdmin()
       .from("users")
       .select("email, username, mobile")
-      .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`);
+      .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`) as {
+      data: { email: string; username: string; mobile: string }[] | null;
+    };
 
     if (conflicts && conflicts.length > 0) {
-      if (conflicts.some((r: Record<string, unknown>) => r.email === email))
+      if (conflicts.some((r) => r.email === email))
         return { success: false, message: "Email is already registered." };
-      if (conflicts.some((r: Record<string, unknown>) => r.username === username))
+      if (conflicts.some((r) => r.username === username))
         return { success: false, message: "Username is already taken." };
-      if (conflicts.some((r: Record<string, unknown>) => r.mobile === mobile))
+      if (conflicts.some((r) => r.mobile === mobile))
         return {
           success: false,
           message: "Mobile number is already registered.",
