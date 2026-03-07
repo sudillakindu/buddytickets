@@ -1,7 +1,7 @@
 // lib/actions/organizer.ts
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
 import type {
@@ -136,7 +136,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
       };
     }
 
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await getSupabaseAdmin()
       .from("users")
       .select("user_id, name, email, mobile, role, is_active")
       .eq("user_id", session.sub)
@@ -159,7 +159,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
     }
 
     const { data: organizerDetails, error: organizerError } =
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from("organizer_details")
         .select(
           "user_id, nic_number, address, bank_name, bank_branch, account_holder_name, account_number, nic_front_image_url, nic_back_image_url, remarks, status, is_submitted, verified_at, created_at, updated_at",
@@ -217,7 +217,7 @@ export async function submitOrganizerDetails(
       return { success: false, message: "Unauthorized. Please sign in first." };
     }
 
-    const { data: user, error: userError } = await supabaseAdmin
+    const { data: user, error: userError } = await getSupabaseAdmin()
       .from("users")
       .select("user_id, role")
       .eq("user_id", session.sub)
@@ -270,13 +270,13 @@ export async function submitOrganizerDetails(
     // Concurrency check before uploading files
     const [{ data: nicConflict }, { data: accountConflict }] =
       await Promise.all([
-        supabaseAdmin
+        getSupabaseAdmin()
           .from("organizer_details")
           .select("user_id")
           .eq("nic_number", payload.nic_number)
           .neq("user_id", user.user_id)
           .maybeSingle(),
-        supabaseAdmin
+        getSupabaseAdmin()
           .from("organizer_details")
           .select("user_id")
           .eq("account_number", payload.account_number)
@@ -315,7 +315,7 @@ export async function submitOrganizerDetails(
       return { success: false, message: uploadResult.message };
     }
 
-    const { error: upsertError } = await supabaseAdmin
+    const { error: upsertError } = await getSupabaseAdmin()
       .from("organizer_details")
       .upsert(
         {
@@ -350,7 +350,7 @@ export async function submitOrganizerDetails(
       ) as string[];
 
       if (toRemove.length > 0) {
-        await supabaseAdmin.storage.from(bucket).remove(toRemove);
+        await getSupabaseAdmin().storage.from(bucket).remove(toRemove);
       }
 
       if (upsertError.code === "23505") {

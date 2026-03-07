@@ -1,5 +1,5 @@
 // lib/utils/organizer-doc-upload.ts
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
@@ -52,7 +52,7 @@ async function uploadSingleImage(
 
     const body = new Uint8Array(await file.arrayBuffer());
 
-    const { error: uploadError } = await supabaseAdmin.storage
+    const { error: uploadError } = await getSupabaseAdmin().storage
       .from(bucket)
       .upload(objectPath, body, {
         contentType: file.type,
@@ -72,7 +72,7 @@ async function uploadSingleImage(
       return { success: false, message: `Failed to upload NIC ${side} image.` };
     }
 
-    const { data } = supabaseAdmin.storage
+    const { data } = getSupabaseAdmin().storage
       .from(bucket)
       .getPublicUrl(objectPath);
 
@@ -113,7 +113,7 @@ export async function uploadOrganizerNicImages(
     ) as string[];
 
     if (toRemove.length > 0) {
-      await supabaseAdmin.storage.from(bucket).remove(toRemove);
+      await getSupabaseAdmin().storage.from(bucket).remove(toRemove);
     }
 
     logger.error({

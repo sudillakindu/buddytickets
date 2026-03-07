@@ -9,7 +9,7 @@
 
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import type {
@@ -63,7 +63,7 @@ export async function createReservation(
 
   try {
     // Call reserve_tickets_occ RPC — SECURITY DEFINER, handles all locking/validation
-    const { data, error } = await supabaseAdmin.rpc("reserve_tickets_occ", {
+    const { data, error } = await getSupabaseAdmin().rpc("reserve_tickets_occ", {
       p_user_id: session.sub,
       p_event_id: eventId,
       p_items: validItems,
@@ -111,7 +111,7 @@ export async function getCheckoutData(
 
   try {
     // 1. Fetch the primary reservation to get event_id
-    const { data: primaryRaw, error: primaryErr } = await supabaseAdmin
+    const { data: primaryRaw, error: primaryErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .select("reservation_id, user_id, event_id, expires_at, status")
       .eq("reservation_id", primaryReservationId)
@@ -141,7 +141,7 @@ export async function getCheckoutData(
     const eventId = primaryRaw.event_id;
 
     // 2. Fetch all PENDING reservations for this user+event (current session)
-    const { data: reservations, error: resErr } = await supabaseAdmin
+    const { data: reservations, error: resErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .select(
         "reservation_id, ticket_type_id, quantity, expires_at, status, order_id",
@@ -159,7 +159,7 @@ export async function getCheckoutData(
     const ticketTypeIds = reservations.map((r) => r.ticket_type_id);
 
     // 3. Fetch ticket type details for all reserved types
-    const { data: ticketTypes, error: ttErr } = await supabaseAdmin
+    const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
       .from("ticket_types")
       .select(
         "ticket_type_id, name, description, price, capacity, qty_sold, is_active, version, sale_end_at",
@@ -173,7 +173,7 @@ export async function getCheckoutData(
     );
 
     // 4. Fetch event details
-    const { data: event, error: evErr } = await supabaseAdmin
+    const { data: event, error: evErr } = await getSupabaseAdmin()
       .from("events")
       .select("event_id, name, start_at, location, status")
       .eq("event_id", eventId)
@@ -267,7 +267,7 @@ export async function validatePromoCode(
     const now = new Date().toISOString();
 
     // 1. Fetch and validate the promotion
-    const { data: promoRaw, error: promoErr } = await supabaseAdmin
+    const { data: promoRaw, error: promoErr } = await getSupabaseAdmin()
       .from("promotions")
       .select(
         `promotion_id, code, description, discount_type, discount_value,
@@ -308,7 +308,7 @@ export async function validatePromoCode(
 
     // 5. Per-user usage limit
     if (promo.usage_limit_per_user > 0) {
-      const { count, error: usageErr } = await supabaseAdmin
+      const { count, error: usageErr } = await getSupabaseAdmin()
         .from("promotion_usages")
         .select("usage_id", { count: "exact", head: true })
         .eq("promotion_id", promo.promotion_id)

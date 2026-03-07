@@ -14,7 +14,7 @@
 //           to prevent infinite retry loops. Log all failures.
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import {
   verifyPayHereWebhookSignature,
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       });
       // Update order status to FAILED if status = -2
       if (payload.status_code === "-2" || payload.status_code === "-1") {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from("orders")
           .update({ payment_status: "FAILED" })
           .eq("order_id", orderId)
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── 4. Idempotency check — prevent duplicate processing ────────────────
     // finalize_order_tickets also guards against this (order status PENDING check),
     // but an early check avoids unnecessary work.
-    const { data: existingOrder, error: orderFetchErr } = await supabaseAdmin
+    const { data: existingOrder, error: orderFetchErr } = await getSupabaseAdmin()
       .from("orders")
       .select("order_id, user_id, payment_status, event_id")
       .eq("order_id", orderId)
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const userId = existingOrder.user_id;
 
     // ── 5. Fetch PENDING reservations linked to this order ─────────────────
-    const { data: reservations, error: resErr } = await supabaseAdmin
+    const { data: reservations, error: resErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .select("reservation_id, ticket_type_id, quantity, expires_at, status")
       .eq("order_id", orderId)
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         message: `No PENDING reservations found for order ${orderId}.`,
       });
       // Mark order as failed — reservations expired
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from("orders")
         .update({ payment_status: "FAILED", remarks: "RESERVATIONS_EXPIRED" })
         .eq("order_id", orderId);
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // ── 6. Fetch ticket type versions for OCC ─────────────────────────────
     const ticketTypeIds = [...new Set(reservations.map((r: Record<string, unknown>) => r.ticket_type_id as string))];
 
-    const { data: ticketTypes, error: ttErr } = await supabaseAdmin
+    const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
       .from("ticket_types")
       .select("ticket_type_id, version")
       .in("ticket_type_id", ticketTypeIds);
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     //  - Updates order payment_status → PAID
     //  - Inserts transaction record
     //  - Increments promotion usage
-    const { data: finalizeResult, error: finalizeErr } = await supabaseAdmin.rpc(
+    const { data: finalizeResult, error: finalizeErr } = await getSupabaseAdmin().rpc(
       "finalize_order_tickets",
       {
         p_order_id: orderId,
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
       // If OCC conflict — the inventory has changed. Mark order failed.
       if (finalizeErr.message.includes("OCC_CONFLICT_OR_SOLD_OUT")) {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from("orders")
           .update({ payment_status: "FAILED", remarks: "OCC_CONFLICT_SOLD_OUT" })
           .eq("order_id", orderId);
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
 
       if (finalizeErr.message.includes("RESERVATION_EXPIRED")) {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from("orders")
           .update({ payment_status: "FAILED", remarks: "RESERVATION_EXPIRED_AT_FINALIZE" })
           .eq("order_id", orderId);

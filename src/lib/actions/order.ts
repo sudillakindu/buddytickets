@@ -5,7 +5,7 @@
 
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import type { OrderSuccessData } from "@/lib/types/payment";
@@ -31,7 +31,7 @@ export async function getOrderSuccessData(orderId: string): Promise<{
 
   try {
     // Fetch order with event details
-    const { data: order, error: orderErr } = await supabaseAdmin
+    const { data: order, error: orderErr } = await getSupabaseAdmin()
       .from("orders")
       .select(
         `order_id, user_id, final_amount, payment_status,
@@ -45,7 +45,7 @@ export async function getOrderSuccessData(orderId: string): Promise<{
     if (!order) return { success: false, message: "Order not found." };
 
     // Count tickets for this order
-    const { count: ticketCount, error: countErr } = await supabaseAdmin
+    const { count: ticketCount, error: countErr } = await getSupabaseAdmin()
       .from("tickets")
       .select("ticket_id", { count: "exact", head: true })
       .eq("order_id", orderId);
@@ -90,7 +90,7 @@ export async function getOrderPaymentStatus(orderId: string): Promise<{
   if (!session) return { success: false };
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("orders")
       .select("payment_status")
       .eq("order_id", orderId)
