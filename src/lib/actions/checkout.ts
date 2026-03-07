@@ -306,13 +306,14 @@ export async function validatePromoCode(
       return { success: false, message: "This promo code has reached its usage limit." };
     }
 
-    // 5. Per-user usage limit
+    // 5. Per-user usage limit with limit clause to prevent performance issues
     if (promo.usage_limit_per_user > 0) {
       const { count, error: usageErr } = await supabaseAdmin
         .from("promotion_usages")
         .select("usage_id", { count: "exact", head: true })
         .eq("promotion_id", promo.promotion_id)
-        .eq("user_id", session.sub);
+        .eq("user_id", session.sub)
+        .limit(promo.usage_limit_per_user); // Stop counting after limit reached
 
       if (usageErr) throw usageErr;
       if ((count ?? 0) >= promo.usage_limit_per_user) {
@@ -350,12 +351,12 @@ export async function validatePromoCode(
     let discountAmount = 0;
     if (promo.discount_type === "PERCENTAGE") {
       discountAmount = subtotal * (promo.discount_value / 100);
-      if (promo.max_discount_cap !== null) {
-        discountAmount = Math.min(discountAmount, promo.max_discount_cap);
-      }
+      // Apply cap if specified, otherwise unlimited
+      const cap = promo.max_discount_cap ?? Number.MAX_SAFE_INTEGER;
+      discountAmount = Math.min(discountAmount, cap);
     } else {
-      // FIXED_AMOUNT
-      discountAmount = Math.min(promo.discount_value, subtotal); // can't discount more than subtotal
+      // FIXED_AMOUNT — can't discount more than subtotal
+      discountAmount = Math.min(promo.discount_value, subtotal);
     }
     discountAmount = Math.round(discountAmount * 100) / 100; // round to 2 dp
 

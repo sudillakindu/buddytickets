@@ -229,6 +229,12 @@ export async function createPendingOrder(
     const { computedSubtotal, computedDiscount, computedFinal, reservations } = validation;
 
     // ── 2. Map payment method to DB enum ───────────────────────────────────
+    // Validate payment method is one of the allowed values
+    const validMethods = ["PAYHERE", "BANK_TRANSFER", "ONGATE_MANUAL"];
+    if (!validMethods.includes(input.payment_method)) {
+      return { success: false, message: "Invalid payment method selected." };
+    }
+
     const paymentSource: PaymentSource =
       input.payment_method === "ONGATE_MANUAL" ? "ONGATE_MANUAL" : "PAYHERE_ONLINE";
 

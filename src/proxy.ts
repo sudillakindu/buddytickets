@@ -6,7 +6,8 @@ import { logger } from "@/lib/logger";
 
 const COOKIE_NAME = "bt_session";
 
-const PROTECTED_PAGES = new Set(["/profile", "/tickets"]);
+const PROTECTED_PAGES = new Set(["/profile", "/tickets", "/checkout"]);
+const PROTECTED_PREFIXES = ["/checkout", "/events"];
 const AUTH_ONLY_PAGES = new Set(["/sign-in", "/sign-up", "/forget-password"]);
 const FLOW_PAGES = new Set(["/verify-email", "/reset-password"]);
 
@@ -70,11 +71,18 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(url);
   }
 
-  // Validate flow pages require a valid token parameter
+  // Validate flow pages require a valid, unused token parameter
   if (FLOW_PAGES.has(pathname)) {
     const flowToken = searchParams.get("token");
 
     if (!flowToken) {
+      url.pathname = "/sign-in";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    // Token format validation: should be UUID-like string
+    if (!/^[a-f0-9\-]{36}$/i.test(flowToken)) {
       url.pathname = "/sign-in";
       url.search = "";
       return NextResponse.redirect(url);
@@ -106,8 +114,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   // ─── Standard Protected Pages ─────────────────────────────────────────────
 
+  // Check if pathname matches protected prefixes or exact protected pages
+  const isProtectedPage =
+    PROTECTED_PAGES.has(pathname) ||
+    PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
   // Redirect unauthenticated users from protected routes to sign-in
-  if (PROTECTED_PAGES.has(pathname) && !authenticated) {
+  if (isProtectedPage && !authenticated) {
     url.pathname = "/sign-in";
     url.search = `?redirect=${encodeURIComponent(pathname)}`;
     return NextResponse.redirect(url);
