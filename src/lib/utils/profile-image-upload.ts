@@ -1,5 +1,5 @@
 // lib/utils/profile-image-upload.ts
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
@@ -44,7 +44,7 @@ export async function uploadProfileImageToStorage(
 
     const body = new Uint8Array(await file.arrayBuffer());
 
-    const { error: uploadError } = await supabaseAdmin.storage
+    const { error: uploadError } = await getSupabaseAdmin().storage
       .from(bucket)
       .upload(objectPath, body, {
         contentType: file.type,
@@ -64,7 +64,7 @@ export async function uploadProfileImageToStorage(
       };
     }
 
-    const { data } = supabaseAdmin.storage
+    const { data } = getSupabaseAdmin().storage
       .from(bucket)
       .getPublicUrl(objectPath);
 

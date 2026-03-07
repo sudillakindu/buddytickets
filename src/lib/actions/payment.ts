@@ -15,7 +15,7 @@
 
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import { buildPayHereFormData } from "@/lib/utils/payhere";
@@ -52,7 +52,7 @@ async function runPrePaymentValidation(
   const now = new Date().toISOString();
 
   // 1. Fetch primary reservation to get event_id
-  const { data: primary, error: primErr } = await supabaseAdmin
+  const { data: primary, error: primErr } = await getSupabaseAdmin()
     .from("ticket_reservations")
     .select("reservation_id, user_id, event_id, expires_at, status")
     .eq("reservation_id", primaryReservationId)
@@ -71,7 +71,7 @@ async function runPrePaymentValidation(
   const eventId = primary.event_id;
 
   // 2. Fetch all PENDING reservations for this user+event
-  const { data: reservations, error: resErr } = await supabaseAdmin
+  const { data: reservations, error: resErr } = await getSupabaseAdmin()
     .from("ticket_reservations")
     .select("reservation_id, ticket_type_id, quantity, expires_at, status, order_id, user_id, event_id, reserved_at")
     .eq("user_id", userId)
@@ -87,7 +87,7 @@ async function runPrePaymentValidation(
   const ticketTypeIds = reservations.map((r: ReservationRow) => r.ticket_type_id);
 
   // 3. Validate ticket types (still active, in-window)
-  const { data: ticketTypes, error: ttErr } = await supabaseAdmin
+  const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
     .from("ticket_types")
     .select("ticket_type_id, price, capacity, qty_sold, is_active, sale_start_at, sale_end_at, version")
     .in("ticket_type_id", ticketTypeIds);
@@ -99,7 +99,7 @@ async function runPrePaymentValidation(
   );
 
   // 4. Validate event status
-  const { data: event, error: evErr } = await supabaseAdmin
+  const { data: event, error: evErr } = await getSupabaseAdmin()
     .from("events")
     .select("event_id, status, is_active")
     .eq("event_id", eventId)
@@ -139,7 +139,7 @@ async function runPrePaymentValidation(
   // 6. Revalidate promotion server-side
   let computedDiscount = 0;
   if (appliedPromo) {
-    const promoRes = await supabaseAdmin
+    const promoRes = await getSupabaseAdmin()
       .from("promotions")
       .select("promotion_id, is_active, start_at, end_at, usage_limit_global, current_global_usage, discount_type, discount_value, max_discount_cap, min_order_amount, scope_event_id, scope_ticket_type_id")
       .eq("promotion_id", appliedPromo.promotion_id)
@@ -241,7 +241,7 @@ export async function createPendingOrder(
     const eventId = reservations![0].event_id;
 
     // ── 4. Create pending order ────────────────────────────────────────────
-    const { data: newOrder, error: orderErr } = await supabaseAdmin
+    const { data: newOrder, error: orderErr } = await getSupabaseAdmin()
       .from("orders")
       .insert({
         user_id: session.sub,
@@ -262,7 +262,7 @@ export async function createPendingOrder(
     // ── 5. Link reservations to this order ─────────────────────────────────
     const reservationIds = reservations!.map((r: ReservationRow) => r.reservation_id);
 
-    const { error: linkErr } = await supabaseAdmin
+    const { error: linkErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .update({ order_id: newOrder.order_id })
       .in("reservation_id", reservationIds)
@@ -277,7 +277,7 @@ export async function createPendingOrder(
     // ── 6. Build payment response ──────────────────────────────────────────
     if (input.payment_method === "PAYHERE") {
       // Fetch user profile for PayHere form fields
-      const { data: userProfile } = await supabaseAdmin
+      const { data: userProfile } = await getSupabaseAdmin()
         .from("users")
         .select("name, email, mobile")
         .eq("user_id", session.sub)
@@ -288,7 +288,7 @@ export async function createPendingOrder(
       const lastName = nameParts.slice(1).join(" ") || "-";
 
       // Build event item description for PayHere "items" field
-      const { data: event } = await supabaseAdmin
+      const { data: event } = await getSupabaseAdmin()
         .from("events")
         .select("name")
         .eq("event_id", eventId)

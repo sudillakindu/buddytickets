@@ -1,7 +1,7 @@
 // lib/actions/profile.ts
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
@@ -46,7 +46,7 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
     const userId = await getAuthenticatedUserId();
     if (!userId) return { success: false, message: "Unauthorized." };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("users")
       .select(
         "user_id, name, email, is_email_verified, mobile, is_mobile_verified, username, role, is_active, image_url, created_at, last_login_at",
@@ -100,7 +100,7 @@ export async function uploadProfileImage(
       return { success: false, message: upload.message };
     }
 
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("users")
       .update({ image_url: upload.imageUrl })
       .eq("user_id", userId);
@@ -114,7 +114,7 @@ export async function uploadProfileImage(
 
       const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
       if (upload.objectPath) {
-        await supabaseAdmin.storage.from(bucket).remove([upload.objectPath]);
+        await getSupabaseAdmin().storage.from(bucket).remove([upload.objectPath]);
       }
 
       return {
@@ -166,7 +166,7 @@ export async function updateProfile(data: {
       return { success: false, message: "Mobile must be 10 digits." };
     }
 
-    const { data: current, error: fetchErr } = await supabaseAdmin
+    const { data: current, error: fetchErr } = await getSupabaseAdmin()
       .from("users")
       .select("mobile")
       .eq("user_id", userId)
@@ -183,13 +183,13 @@ export async function updateProfile(data: {
     }
 
     const [{ data: takenUsername }, { data: takenMobile }] = await Promise.all([
-      supabaseAdmin
+      getSupabaseAdmin()
         .from("users")
         .select("user_id")
         .eq("username", username)
         .neq("user_id", userId)
         .maybeSingle(),
-      supabaseAdmin
+      getSupabaseAdmin()
         .from("users")
         .select("user_id")
         .eq("mobile", mobile)
@@ -216,7 +216,7 @@ export async function updateProfile(data: {
       payload.is_mobile_verified = false;
     }
 
-    const { error: updateErr } = await supabaseAdmin
+    const { error: updateErr } = await getSupabaseAdmin()
       .from("users")
       .update(payload)
       .eq("user_id", userId);
@@ -267,7 +267,7 @@ export async function changePassword(data: {
       };
     }
 
-    const { data: user, error } = await supabaseAdmin
+    const { data: user, error } = await getSupabaseAdmin()
       .from("users")
       .select("password_hash")
       .eq("user_id", userId)
@@ -292,7 +292,7 @@ export async function changePassword(data: {
 
     const newHash = await hashPassword(newPassword);
 
-    const { error: updateErr } = await supabaseAdmin
+    const { error: updateErr } = await getSupabaseAdmin()
       .from("users")
       .update({ password_hash: newHash })
       .eq("user_id", userId);

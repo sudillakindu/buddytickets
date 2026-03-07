@@ -1,7 +1,7 @@
 // lib/actions/auth.ts
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import {
   generateOtp,
@@ -52,13 +52,13 @@ async function invalidateActiveRecords(
   purpose: string,
 ): Promise<void> {
   await Promise.all([
-    supabaseAdmin
+    getSupabaseAdmin()
       .from("otp_records")
       .update({ is_used: true })
       .eq("email", email)
       .eq("purpose", purpose)
       .eq("is_used", false),
-    supabaseAdmin
+    getSupabaseAdmin()
       .from("auth_flow_tokens")
       .update({ is_used: true })
       .eq("email", email)
@@ -79,14 +79,14 @@ async function createOtpSession(
   const token = newToken();
 
   const [{ error: otpErr }, { error: tokenErr }] = await Promise.all([
-    supabaseAdmin.from("otp_records").insert({
+    getSupabaseAdmin().from("otp_records").insert({
       user_id: userId,
       email,
       otp_hash: otpHash,
       purpose,
       expires_at: expiresAt(),
     }),
-    supabaseAdmin.from("auth_flow_tokens").insert({
+    getSupabaseAdmin().from("auth_flow_tokens").insert({
       email,
       purpose,
       token,
@@ -130,7 +130,7 @@ async function sendOtpEmail(
 }
 
 async function autoLogin(userId: string): Promise<boolean> {
-  const { data: user, error } = await supabaseAdmin
+  const { data: user, error } = await getSupabaseAdmin()
     .from("users")
     .select("user_id, name, email, role, image_url")
     .eq("user_id", userId)
@@ -148,7 +148,7 @@ async function autoLogin(userId: string): Promise<boolean> {
   }
 
   await createSession(user);
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("users")
     .update({ last_login_at: new Date().toISOString() })
     .eq("user_id", userId);
@@ -162,7 +162,7 @@ export async function getVerifyEmailData(
   token: string,
 ): Promise<DataFetchResult<OtpStatus>> {
   try {
-    const { data: ft, error: ftErr } = await supabaseAdmin
+    const { data: ft, error: ftErr } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("email, purpose")
       .eq("token", token)
@@ -185,7 +185,7 @@ export async function getVerifyEmailData(
     if (!ft)
       return { success: false, message: "Session expired. Please start over." };
 
-    const { data: rec, error: recErr } = await supabaseAdmin
+    const { data: rec, error: recErr } = await getSupabaseAdmin()
       .from("otp_records")
       .select("resend_count, last_sent_at")
       .eq("email", ft.email)
@@ -239,7 +239,7 @@ export async function validateResetToken(
   token: string,
 ): Promise<DataFetchResult<{ email: string }>> {
   try {
-    const { data } = await supabaseAdmin
+    const { data } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("email")
       .eq("token", token)
@@ -311,7 +311,7 @@ export async function signUp(data: {
         message: "Password must be at least 6 characters.",
       };
 
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getSupabaseAdmin()
       .from("users")
       .select("email, username, mobile")
       .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`)
@@ -331,7 +331,7 @@ export async function signUp(data: {
 
     const passwordHash = await hashPassword(password);
 
-    const { data: user, error: insertErr } = await supabaseAdmin
+    const { data: user, error: insertErr } = await getSupabaseAdmin()
       .from("users")
       .insert({
         name: name.trim(),
@@ -388,7 +388,7 @@ export async function signIn(data: {
     if (!email || !data.password)
       return { success: false, message: "Email and password are required." };
 
-    const { data: user, error } = await supabaseAdmin
+    const { data: user, error } = await getSupabaseAdmin()
       .from("users")
       .select(
         "user_id, name, email, role, image_url, password_hash, is_active, is_email_verified",
@@ -425,7 +425,7 @@ export async function signIn(data: {
     }
 
     await createSession(user);
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("users")
       .update({ last_login_at: new Date().toISOString() })
       .eq("user_id", user.user_id);
@@ -450,7 +450,7 @@ export async function forgotPassword(data: {
     if (!email)
       return { success: false, message: "Email address is required." };
 
-    const { data: user, error } = await supabaseAdmin
+    const { data: user, error } = await getSupabaseAdmin()
       .from("users")
       .select("user_id")
       .eq("email", email)
@@ -503,7 +503,7 @@ export async function verifyOtp(
     if (!otp || otp.length !== 6)
       return { success: false, message: "Please enter a valid 6-digit code." };
 
-    const { data: ft } = await supabaseAdmin
+    const { data: ft } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("token_id, email, purpose")
       .eq("token", token)
@@ -517,7 +517,7 @@ export async function verifyOtp(
         message: "Session expired. Please start the process again.",
       };
 
-    const { data: rec } = await supabaseAdmin
+    const { data: rec } = await getSupabaseAdmin()
       .from("otp_records")
       .select("otp_id, otp_hash, verify_attempts, user_id")
       .eq("email", ft.email)
@@ -535,7 +535,7 @@ export async function verifyOtp(
       };
 
     if (rec.verify_attempts >= MAX_ATTEMPTS) {
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from("otp_records")
         .update({ is_used: true })
         .eq("otp_id", rec.otp_id);
@@ -549,7 +549,7 @@ export async function verifyOtp(
 
     if (!isValid) {
       const newAttempts = rec.verify_attempts + 1;
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from("otp_records")
         .update({ verify_attempts: newAttempts })
         .eq("otp_id", rec.otp_id);
@@ -561,11 +561,11 @@ export async function verifyOtp(
     }
 
     await Promise.all([
-      supabaseAdmin
+      getSupabaseAdmin()
         .from("otp_records")
         .update({ is_used: true })
         .eq("otp_id", rec.otp_id),
-      supabaseAdmin
+      getSupabaseAdmin()
         .from("auth_flow_tokens")
         .update({ is_used: true })
         .eq("token_id", ft.token_id),
@@ -573,7 +573,7 @@ export async function verifyOtp(
 
     if (ft.purpose === "signup" || ft.purpose === "signin") {
       if (rec.user_id) {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from("users")
           .update({ is_email_verified: true })
           .eq("user_id", rec.user_id);
@@ -589,7 +589,7 @@ export async function verifyOtp(
 
     if (ft.purpose === "forgot-password") {
       const resetToken = newToken();
-      await supabaseAdmin.from("auth_flow_tokens").insert({
+      await getSupabaseAdmin().from("auth_flow_tokens").insert({
         email: ft.email,
         purpose: "reset-password",
         token: resetToken,
@@ -616,7 +616,7 @@ export async function verifyOtp(
 
 export async function resendOtp(token: string): Promise<ResendResult> {
   try {
-    const { data: ft } = await supabaseAdmin
+    const { data: ft } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("email, purpose")
       .eq("token", token)
@@ -630,7 +630,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
         message: "Session expired. Please start the process again.",
       };
 
-    const { data: rec } = await supabaseAdmin
+    const { data: rec } = await getSupabaseAdmin()
       .from("otp_records")
       .select("otp_id, resend_count, last_sent_at")
       .eq("email", ft.email)
@@ -662,7 +662,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
     const newOtpHash = await hashOtp(newOtp);
     const newCount = rec.resend_count + 1;
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("otp_records")
       .update({
         otp_hash: newOtpHash,
@@ -705,7 +705,7 @@ export async function resetPassword(
     if (data.password !== data.confirmPassword)
       return { success: false, message: "Passwords do not match." };
 
-    const { data: ft } = await supabaseAdmin
+    const { data: ft } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("token_id, email")
       .eq("token", resetToken)
@@ -721,7 +721,7 @@ export async function resetPassword(
       };
 
     const passwordHash = await hashPassword(data.password);
-    const { error } = await supabaseAdmin
+    const { error } = await getSupabaseAdmin()
       .from("users")
       .update({ password_hash: passwordHash })
       .eq("email", ft.email);
@@ -738,14 +738,14 @@ export async function resetPassword(
       };
     }
 
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .update({ is_used: true })
       .eq("email", ft.email)
       .eq("purpose", "reset-password")
       .eq("is_used", false);
 
-    const { data: u } = await supabaseAdmin
+    const { data: u } = await getSupabaseAdmin()
       .from("users")
       .select("name")
       .eq("email", ft.email)

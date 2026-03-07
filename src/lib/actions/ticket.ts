@@ -1,7 +1,7 @@
 // lib/actions/ticket.ts
 "use server";
 
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { getSession } from "@/lib/utils/session";
 import type { Ticket } from "@/lib/types/ticket";
@@ -84,7 +84,7 @@ export async function getUserTickets(): Promise<TicketsResult> {
     const session = await getSession();
     if (!session) return { success: false, message: "Unauthorized." };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("tickets")
       .select(
         `
@@ -129,7 +129,7 @@ export async function getTicketById(ticketId: string): Promise<{
     const session = await getSession();
     if (!session) return { success: false, message: "Unauthorized." };
 
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await getSupabaseAdmin()
       .from("tickets")
       .select(
         `
