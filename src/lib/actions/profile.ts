@@ -100,6 +100,13 @@ export async function uploadProfileImage(
       return { success: false, message: upload.message };
     }
 
+    // Fetch the current image_url so we can clean up the old file
+    const { data: currentUser } = await getSupabaseAdmin()
+      .from("users")
+      .select("image_url")
+      .eq("user_id", userId)
+      .maybeSingle();
+
     const { error } = await getSupabaseAdmin()
       .from("users")
       .update({ image_url: upload.imageUrl })
@@ -121,6 +128,27 @@ export async function uploadProfileImage(
         success: false,
         message: "Image uploaded but failed to update profile.",
       };
+    }
+
+    // Delete the old profile image from Storage (best-effort, don't fail the request)
+    if (currentUser?.image_url) {
+      try {
+        const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
+        const url = new URL(currentUser.image_url);
+        const publicPrefix = `/storage/v1/object/public/${bucket}/`;
+        if (url.pathname.startsWith(publicPrefix)) {
+          const oldPath = url.pathname.slice(publicPrefix.length);
+          if (oldPath) {
+            await getSupabaseAdmin().storage.from(bucket).remove([oldPath]);
+          }
+        }
+      } catch (cleanupErr) {
+        logger.warn({
+          fn: "uploadProfileImage",
+          message: "Failed to delete old profile image (non-fatal)",
+          meta: cleanupErr,
+        });
+      }
     }
 
     return {

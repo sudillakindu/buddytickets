@@ -129,7 +129,7 @@ async function sendOtpEmail(
     return sendForgotPasswordOtpEmail(email, otp);
 }
 
-async function autoLogin(userId: string): Promise<boolean> {
+async function autoLogin(userId: string): Promise<string | null> {
   const { data: user, error } = await getSupabaseAdmin()
     .from("users")
     .select("user_id, name, email, role, image_url")
@@ -144,7 +144,7 @@ async function autoLogin(userId: string): Promise<boolean> {
         meta: error.message,
       });
     }
-    return false;
+    return null;
   }
 
   await createSession(user);
@@ -153,7 +153,7 @@ async function autoLogin(userId: string): Promise<boolean> {
     .update({ last_login_at: new Date().toISOString() })
     .eq("user_id", userId);
 
-  return true;
+  return user.role as string;
 }
 
 // ─── Queries (GET) ───────────────────────────────────────────────────────────
@@ -431,10 +431,13 @@ export async function signIn(data: {
       .update({ last_login_at: new Date().toISOString() })
       .eq("user_id", user.user_id);
 
+    const dashboardRoles = new Set(["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF"]);
+    const redirectTo = dashboardRoles.has(user.role) ? "/dashboard" : "/";
+
     return {
       success: true,
       message: "Signed in successfully.",
-      redirectTo: "/",
+      redirectTo,
     };
   } catch (err) {
     logger.error({ fn: "signIn", message: "Unexpected error", meta: err });
@@ -573,18 +576,25 @@ export async function verifyOtp(
     ]);
 
     if (ft.purpose === "signup" || ft.purpose === "signin") {
+      let redirectTo = "/";
       if (rec.user_id) {
         await getSupabaseAdmin()
           .from("users")
           .update({ is_email_verified: true })
           .eq("user_id", rec.user_id);
-        await autoLogin(rec.user_id);
+        const role = await autoLogin(rec.user_id);
+        if (role) {
+          const dashboardRoles = new Set(["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF"]);
+          if (dashboardRoles.has(role)) {
+            redirectTo = "/dashboard";
+          }
+        }
       }
       return {
         success: true,
         message: "Email verified successfully.",
         purpose: ft.purpose,
-        redirectTo: "/",
+        redirectTo,
       };
     }
 
