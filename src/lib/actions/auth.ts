@@ -316,9 +316,9 @@ export async function signUp(data: {
         message: "Password must be at least 6 characters.",
       };
 
-    const safeEmail = email.replace(/"/g, '\\"');
-    const safeUsername = username.replace(/"/g, '\\"');
-    const safeMobile = mobile.replace(/"/g, '\\"');
+    const safeEmail = email.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const safeUsername = username.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const safeMobile = mobile.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
     const { data: conflicts } = await getSupabaseAdmin()
       .from("users")
