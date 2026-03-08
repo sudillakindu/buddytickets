@@ -6,11 +6,12 @@ import { logger } from "@/lib/logger";
 
 const COOKIE_NAME = "bt_session";
 
-const PROTECTED_PAGES = new Set(["/profile", "/tickets"]);
+const PROTECTED_PAGES = new Set(["/profile", "/tickets", "/become-an-organizer"]);
+const PROTECTED_PREFIXES = ["/checkout"];
 const AUTH_ONLY_PAGES = new Set(["/sign-in", "/sign-up", "/forget-password"]);
 const FLOW_PAGES = new Set(["/verify-email", "/reset-password"]);
 
-const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF"]);
 
 let cachedSecret: Uint8Array | null = null;
 
@@ -107,7 +108,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // ─── Standard Protected Pages ─────────────────────────────────────────────
 
   // Redirect unauthenticated users from protected routes to sign-in
-  if (PROTECTED_PAGES.has(pathname) && !authenticated) {
+  const isProtected =
+    PROTECTED_PAGES.has(pathname) ||
+    PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+  if (isProtected && !authenticated) {
     url.pathname = "/sign-in";
     url.search = `?redirect=${encodeURIComponent(pathname)}`;
     return NextResponse.redirect(url);
