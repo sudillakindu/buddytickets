@@ -183,7 +183,7 @@ const PAYMENT_METHODS: {
   {
     id: "PAYMENT_GATEWAY",
     label: "Pay Online",
-    description: "Credit/Debit card or mobile payment via PayHere",
+    description: "Pay securely with Card, Mobile Banking, or eZ Cash",
     icon: <CreditCard className="w-5 h-5" />,
   },
   {

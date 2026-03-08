@@ -29,7 +29,7 @@ export const PAYMENT_METHODS: PaymentMethodOption[] = [
   {
     value: "PAYMENT_GATEWAY",
     label: "Pay Online",
-    description: "Credit/Debit card or mobile payment via PayHere",
+    description: "Credit/Debit card or mobile payment",
     icon: "CreditCard",
     available: true,
   },
