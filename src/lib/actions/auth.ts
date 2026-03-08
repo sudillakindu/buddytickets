@@ -96,18 +96,21 @@ async function createOtpSession(
     }),
   ]);
 
-  if (otpErr)
-    logger.error({
-      fn: "createOtpSession",
-      message: "OTP insert error",
-      meta: otpErr.message,
-    });
-  if (tokenErr)
-    logger.error({
-      fn: "createOtpSession",
-      message: "Token insert error",
-      meta: tokenErr.message,
-    });
+  if (otpErr || tokenErr) {
+    if (otpErr)
+      logger.error({
+        fn: "createOtpSession",
+        message: "OTP insert error",
+        meta: otpErr.message,
+      });
+    if (tokenErr)
+      logger.error({
+        fn: "createOtpSession",
+        message: "Token insert error",
+        meta: tokenErr.message,
+      });
+    throw new Error("Failed to create verification session.");
+  }
 
   sendOtpEmail(email, otp, purpose).catch((err) =>
     logger.error({
@@ -316,7 +319,7 @@ export async function signUp(data: {
     const { data: conflicts } = await getSupabaseAdmin()
       .from("users")
       .select("email, username, mobile")
-      .or(`email.eq.${email},username.eq.${username},mobile.eq.${mobile}`) as {
+      .or(`email.eq."${email}",username.eq."${username}",mobile.eq."${mobile}"`) as {
       data: { email: string; username: string; mobile: string }[] | null;
     };
 
@@ -474,10 +477,11 @@ export async function forgotPassword(data: {
       };
     }
 
+    // Return same message whether user exists or not to prevent user enumeration
     if (!user)
       return {
-        success: false,
-        message: "No account found with this email address.",
+        success: true,
+        message: "If an account exists with this email, a verification code has been sent.",
       };
 
     const token = await createOtpSession(
@@ -488,7 +492,7 @@ export async function forgotPassword(data: {
 
     return {
       success: true,
-      message: "A verification code has been sent to your email.",
+      message: "If an account exists with this email, a verification code has been sent.",
       token,
     };
   } catch (err) {
@@ -733,6 +737,27 @@ export async function resetPassword(
         message: "Reset link has expired. Please request a new one.",
       };
 
+    // Mark token as used FIRST to prevent race condition (concurrent reuse)
+    const { data: markedToken, error: markErr } = await getSupabaseAdmin()
+      .from("auth_flow_tokens")
+      .update({ is_used: true })
+      .eq("token_id", ft.token_id)
+      .eq("is_used", false)
+      .select("token_id")
+      .maybeSingle();
+
+    if (markErr || !markedToken) {
+      logger.error({
+        fn: "resetPassword",
+        message: "Token already used or mark failed",
+        meta: markErr?.message,
+      });
+      return {
+        success: false,
+        message: "Reset link has already been used. Please request a new one.",
+      };
+    }
+
     const passwordHash = await hashPassword(data.password);
     const { error } = await getSupabaseAdmin()
       .from("users")
@@ -750,13 +775,6 @@ export async function resetPassword(
         message: "Failed to update password. Please try again.",
       };
     }
-
-    await getSupabaseAdmin()
-      .from("auth_flow_tokens")
-      .update({ is_used: true })
-      .eq("email", ft.email)
-      .eq("purpose", "reset-password")
-      .eq("is_used", false);
 
     const { data: u } = await getSupabaseAdmin()
       .from("users")
