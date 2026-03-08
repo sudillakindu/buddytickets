@@ -316,10 +316,14 @@ export async function signUp(data: {
         message: "Password must be at least 6 characters.",
       };
 
+    const safeEmail = email.replace(/"/g, '\\"');
+    const safeUsername = username.replace(/"/g, '\\"');
+    const safeMobile = mobile.replace(/"/g, '\\"');
+
     const { data: conflicts } = await getSupabaseAdmin()
       .from("users")
       .select("email, username, mobile")
-      .or(`email.eq."${email}",username.eq."${username}",mobile.eq."${mobile}"`) as {
+      .or(`email.eq."${safeEmail}",username.eq."${safeUsername}",mobile.eq."${safeMobile}"`) as {
       data: { email: string; username: string; mobile: string }[] | null;
     };
 

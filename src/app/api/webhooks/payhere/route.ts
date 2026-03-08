@@ -28,6 +28,7 @@ import type { TicketQRItem } from "@/lib/types/payment";
 
 // PayHere retries on non-200 — always return 200 for processed/known states
 const OK = () => NextResponse.json({ received: true }, { status: 200 });
+const AMOUNT_TOLERANCE = 0.01; // Tolerance for floating-point rounding in amount comparison
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let orderId: string | undefined;
@@ -140,7 +141,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (
       !Number.isFinite(paidAmount) ||
       !Number.isFinite(expectedAmount) ||
-      Math.abs(paidAmount - expectedAmount) > 0.01
+      Math.abs(paidAmount - expectedAmount) > AMOUNT_TOLERANCE
     ) {
       logger.error({
         fn: "payhere.webhook",
