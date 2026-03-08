@@ -1,4 +1,14 @@
 // lib/utils/payhere.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT_GATEWAY implementation — PayHere (Sri Lanka)
+//
+// This file is the current concrete implementation of the PAYMENT_GATEWAY
+// payment method. The gateway can be swapped to Stripe, Dialog Pay, HNB Pay,
+// FriMi, or any other payment gateway in the future by replacing this file
+// and updating only the import in the payment action (src/lib/actions/payment.ts).
+// No other files need to change to swap gateways.
+// ─────────────────────────────────────────────────────────────────────────────
+//
 // PayHere Sri Lankan payment gateway integration utilities.
 //
 // PayHere Checkout Hash Formula:
