@@ -279,7 +279,12 @@ export async function createPendingOrder(
 
     if (linkErr) {
       logger.error({ fn: "createPendingOrder.linkReservations", message: linkErr.message });
-      // Non-fatal: finalize_order_tickets uses order_id join — log and continue
+      // Mark the order as FAILED since reservations couldn't be linked
+      await getSupabaseAdmin()
+        .from("orders")
+        .update({ payment_status: "FAILED", remarks: "RESERVATION_LINK_FAILED" })
+        .eq("order_id", newOrder.order_id);
+      return { success: false, message: "Failed to link reservations. Please try again." };
     }
 
     // ── 6. Build payment response ──────────────────────────────────────────

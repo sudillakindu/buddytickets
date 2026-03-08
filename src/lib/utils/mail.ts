@@ -1,6 +1,16 @@
 // lib/utils/mail.ts
 import nodemailer from "nodemailer";
 
+/** Escape HTML special characters to prevent injection in email templates. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const BASE_URL = (
   process.env.PUBLIC_SITE_URL ?? "http://localhost:3000"
 ).replace(/\/$/, "");
@@ -180,7 +190,7 @@ export async function sendWelcomeEmail(
 ): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
-  const firstName = name.split(" ")[0];
+  const firstName = escapeHtml(name.split(" ")[0]);
   const content = `
     <p style="color:#475569;font-size:16px;line-height:1.7;margin:0 0 16px;">Hey <strong style="color:#1e293b;">${firstName}</strong>! 👋</p>
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 32px;">Welcome to <strong style="color:#1e293b;">BuddyTickets</strong>. Sri Lanka&rsquo;s premier platform for discovering and enjoying events with the people you love. Your account is ready to go!</p>
@@ -243,7 +253,7 @@ export async function sendPasswordChangedEmail(
 ): Promise<void> {
   const credentials = getMailerCredentials();
   const transporter = getTransporter();
-  const firstName = name.split(" ")[0];
+  const firstName = escapeHtml(name.split(" ")[0]);
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-US", {
     year: "numeric",

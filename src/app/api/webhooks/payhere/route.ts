@@ -28,6 +28,7 @@ import type { TicketQRItem } from "@/lib/types/payment";
 
 // PayHere retries on non-200 — always return 200 for processed/known states
 const OK = () => NextResponse.json({ received: true }, { status: 200 });
+const AMOUNT_TOLERANCE = 0.01; // Tolerance for floating-point rounding in amount comparison
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let orderId: string | undefined;
@@ -60,7 +61,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       message: `Received webhook for order ${orderId} — status_code: ${payload.status_code}`,
     });
 
-    // ── 2. Signature verification — CRITICAL security check ───────────────
+    // ── 2. Merchant ID validation — reject webhooks from unknown merchants ──
+    const expectedMerchantId = process.env.PAYHERE_MERCHANT_ID;
+    if (expectedMerchantId && payload.merchant_id !== expectedMerchantId) {
+      logger.error({
+        fn: "payhere.webhook",
+        message: `MERCHANT_ID_MISMATCH for order ${orderId}. Expected ${expectedMerchantId}, got ${payload.merchant_id}.`,
+      });
+      return OK();
+    }
+
+    // ── 3. Signature verification — CRITICAL security check ───────────────
     if (!verifyPayHereWebhookSignature(payload)) {
       logger.error({
         fn: "payhere.webhook",
@@ -93,7 +104,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // but an early check avoids unnecessary work.
     const { data: existingOrder, error: orderFetchErr } = await getSupabaseAdmin()
       .from("orders")
-      .select("order_id, user_id, payment_status, event_id")
+      .select("order_id, user_id, payment_status, event_id, final_amount")
       .eq("order_id", orderId)
       .maybeSingle();
 
@@ -124,7 +135,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const userId = existingOrder.user_id;
 
-    // ── 5. Fetch PENDING reservations linked to this order ─────────────────
+    // ── Amount validation — verify paid amount matches order total ──────────
+    const paidAmount = Number(payload.payhere_amount);
+    const expectedAmount = Number(existingOrder.final_amount);
+    if (
+      !Number.isFinite(paidAmount) ||
+      !Number.isFinite(expectedAmount) ||
+      Math.abs(paidAmount - expectedAmount) > AMOUNT_TOLERANCE
+    ) {
+      logger.error({
+        fn: "payhere.webhook",
+        message: `AMOUNT_MISMATCH for order ${orderId}. Expected ${expectedAmount}, received ${paidAmount}.`,
+        meta: { orderId, expected: expectedAmount, received: paidAmount },
+      });
+      await getSupabaseAdmin()
+        .from("orders")
+        .update({ payment_status: "FAILED", remarks: "AMOUNT_MISMATCH" })
+        .eq("order_id", orderId)
+        .eq("payment_status", "PENDING");
+      return OK();
+    }
+
+    // ── 6. Fetch PENDING reservations linked to this order ─────────────────
     const { data: reservations, error: resErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .select("reservation_id, ticket_type_id, quantity, expires_at, status")

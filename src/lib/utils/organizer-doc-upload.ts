@@ -4,6 +4,12 @@ import { logger } from "@/lib/logger";
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
 const DOCUMENTS_PATH = "organizer-documents";
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_MIME_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 export interface OrganizerDocUploadResult {
   success: boolean;
@@ -22,17 +28,8 @@ function getBucketName(): string {
   return BUCKET_NAME;
 }
 
-function extensionFromFile(file: File): string {
-  const byMime: Record<string, string> = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-  };
-
-  if (byMime[file.type]) return byMime[file.type];
-
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  return fromName && /^[a-z0-9]+$/.test(fromName) ? fromName : "jpg";
+function extensionFromMime(file: File): string | null {
+  return ALLOWED_MIME_TYPES[file.type] ?? null;
 }
 
 async function uploadSingleImage(
@@ -46,8 +43,16 @@ async function uploadSingleImage(
   objectPath?: string;
 }> {
   try {
+    const ext = extensionFromMime(file);
+    if (!ext) {
+      return { success: false, message: `Invalid file type for NIC ${side} image. Only JPEG, PNG, and WebP are allowed.` };
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return { success: false, message: `NIC ${side} image exceeds 5 MB limit.` };
+    }
+
     const bucket = getBucketName();
-    const ext = extensionFromFile(file);
     const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${side}-${crypto.randomUUID()}.${ext}`;
 
     const body = new Uint8Array(await file.arrayBuffer());
