@@ -133,13 +133,15 @@ export async function uploadProfileImage(
     // Delete the old profile image from Storage (best-effort, don't fail the request)
     if (currentUser?.image_url) {
       try {
-        const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
-        const url = new URL(currentUser.image_url);
-        const publicPrefix = `/storage/v1/object/public/${bucket}/`;
-        if (url.pathname.startsWith(publicPrefix)) {
-          const oldPath = url.pathname.slice(publicPrefix.length);
-          if (oldPath) {
-            await getSupabaseAdmin().storage.from(bucket).remove([oldPath]);
+        const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
+        if (bucket) {
+          const url = new URL(currentUser.image_url);
+          const publicPrefix = `/storage/v1/object/public/${bucket}/`;
+          if (url.pathname.startsWith(publicPrefix)) {
+            const oldPath = url.pathname.slice(publicPrefix.length);
+            if (oldPath) {
+              await getSupabaseAdmin().storage.from(bucket).remove([oldPath]);
+            }
           }
         }
       } catch (cleanupErr) {
