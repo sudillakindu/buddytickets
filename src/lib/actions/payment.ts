@@ -237,13 +237,9 @@ export async function createPendingOrder(
     const { computedSubtotal, computedDiscount, computedFinal, reservations } = validation;
 
     // ── 2. Map payment method to DB enum ───────────────────────────────────
-    const paymentSource: PaymentSource =
-      input.payment_method === "ONGATE_MANUAL" ? "ONGATE_MANUAL" : "PAYHERE_ONLINE";
+    const paymentSource: PaymentSource = input.payment_method as PaymentSource;
 
-    const remarks =
-      input.payment_method === "BANK_TRANSFER"
-        ? "BANK_TRANSFER"
-        : (input.remarks ?? null);
+    const remarks = input.remarks ?? null;
 
     // ── 3. Fetch event_id from primary reservation ──────────────────────────
     const eventId = reservations![0].event_id;
@@ -288,7 +284,7 @@ export async function createPendingOrder(
     }
 
     // ── 6. Build payment response ──────────────────────────────────────────
-    if (input.payment_method === "PAYHERE") {
+    if (input.payment_method === "PAYMENT_GATEWAY") {
       // Fetch user profile for PayHere form fields
       const { data: userProfile } = await getSupabaseAdmin()
         .from("users")
@@ -344,7 +340,7 @@ export async function createPendingOrder(
       };
     }
 
-    // ONGATE_MANUAL — staff confirm at gate
+    // ONGATE — staff confirm at gate
     return {
       success: true,
       message: "Order created. Complete payment at the gate.",

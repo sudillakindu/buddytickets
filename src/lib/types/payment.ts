@@ -4,13 +4,50 @@
 // ─── Enums (mirror DB) ────────────────────────────────────────────────────────
 
 /** DB enum: payment_source */
-export type PaymentSource = "PAYHERE_ONLINE" | "ONGATE_MANUAL";
+export type PaymentSource = "PAYMENT_GATEWAY" | "ONGATE" | "BANK_TRANSFER";
 
 /** DB enum: payment_status */
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
 
-/** UI-level payment method selection (maps to payment_source) */
-export type PaymentMethod = "PAYHERE" | "BANK_TRANSFER" | "ONGATE_MANUAL";
+/** DB enum: gateway_type */
+export type GatewayType = "PAYMENT_GATEWAY" | "CASH_DESK" | "BANK_TRANSFER";
+
+/** UI-level payment method selection (maps 1:1 to PaymentSource) */
+export type PaymentMethod = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
+
+// ─── Payment Method Display Config ───────────────────────────────────────────
+
+export interface PaymentMethodOption {
+  value: PaymentMethod;
+  label: string;
+  description: string;
+  icon: string;
+  available: boolean;
+}
+
+export const PAYMENT_METHODS: PaymentMethodOption[] = [
+  {
+    value: "PAYMENT_GATEWAY",
+    label: "Pay Online",
+    description: "Credit/Debit card or mobile payment via PayHere",
+    icon: "CreditCard",
+    available: true,
+  },
+  {
+    value: "BANK_TRANSFER",
+    label: "Bank Transfer",
+    description: "Direct bank deposit — tickets confirmed after verification",
+    icon: "Building2",
+    available: true,
+  },
+  {
+    value: "ONGATE",
+    label: "Pay at Gate",
+    description: "Pay cash at the event entrance",
+    icon: "Ticket",
+    available: true,
+  },
+];
 
 // ─── PayHere ─────────────────────────────────────────────────────────────────
 

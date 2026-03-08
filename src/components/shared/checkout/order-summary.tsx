@@ -181,16 +181,22 @@ const PAYMENT_METHODS: {
   icon: React.ReactNode;
 }[] = [
   {
-    id: "PAYHERE",
-    label: "PayHere",
-    description: "Pay securely with Card, Mobile Banking, or eZ Cash",
+    id: "PAYMENT_GATEWAY",
+    label: "Pay Online",
+    description: "Credit/Debit card or mobile payment via PayHere",
     icon: <CreditCard className="w-5 h-5" />,
   },
   {
     id: "BANK_TRANSFER",
     label: "Bank Transfer",
-    description: "Direct transfer to our bank account",
+    description: "Direct bank deposit — tickets confirmed after verification",
     icon: <Building2 className="w-5 h-5" />,
+  },
+  {
+    id: "ONGATE",
+    label: "Pay at Gate",
+    description: "Pay cash at the event entrance",
+    icon: <Ticket className="w-5 h-5" />,
   },
 ];
 
@@ -204,7 +210,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYHERE");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYMENT_GATEWAY");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -303,7 +309,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       return;
     }
 
-    // ONGATE_MANUAL or unknown
+    // ONGATE or unknown
     router.push(`/checkout/success?order_id=${result.order!.order_id}`);
   }, [isExpired, data, appliedPromo, discountAmount, finalTotal, paymentMethod, router]);
 
