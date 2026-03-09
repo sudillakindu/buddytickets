@@ -3,6 +3,7 @@
 // Mirrors: ticket_reservations, promotions, orders, ticket_types
 
 import type { TicketType } from "./event";
+import type { PaymentMethod } from "./payment";
 
 // ─── Enums (mirror DB) ────────────────────────────────────────────────────────
 
@@ -59,6 +60,8 @@ export interface CheckoutData {
   expires_at: string;          // Expiry of the PENDING reservations
   line_items: ReservationLineItem[];
   subtotal: number;
+  /** Payment methods allowed for this event. Always populated (defaults to all). */
+  allowed_payment_methods: PaymentMethod[];
 }
 
 /** Result of reserve_tickets_occ RPC */

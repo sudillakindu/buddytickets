@@ -23,6 +23,8 @@ export interface Event {
   status: EventStatus;
   is_active: boolean;
   is_vip: boolean;
+  /** Per-event payment method control. null = all methods allowed. */
+  allowed_payment_methods: import("./payment").PaymentMethod[] | null;
   created_at: string;
   updated_at: string | null;
   // Derived / joined fields

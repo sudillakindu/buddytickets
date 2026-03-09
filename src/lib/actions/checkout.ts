@@ -23,6 +23,8 @@ import type {
   ValidatedPromotion,
   PromotionRow,
 } from "@/lib/types/checkout";
+import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
+import type { PaymentMethod } from "@/lib/types/payment";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION 1 · RESERVATION CREATION
@@ -178,7 +180,7 @@ export async function getCheckoutData(
     // 4. Fetch event details
     const { data: event, error: evErr } = await getSupabaseAdmin()
       .from("events")
-      .select("event_id, name, start_at, location, status")
+      .select("event_id, name, start_at, location, status, allowed_payment_methods")
       .eq("event_id", eventId)
       .maybeSingle();
 
@@ -210,6 +212,11 @@ export async function getCheckoutData(
 
     const subtotal = lineItems.reduce((sum, li) => sum + li.line_total, 0);
 
+    // Resolve allowed payment methods — null/empty in DB means all methods
+    const rawMethods = (event as Record<string, unknown>).allowed_payment_methods as PaymentMethod[] | null;
+    const allowedPaymentMethods: PaymentMethod[] =
+      rawMethods && rawMethods.length > 0 ? rawMethods : [...ALL_PAYMENT_METHODS];
+
     const checkoutData: CheckoutData = {
       primary_reservation_id: primaryReservationId,
       event_id: eventId,
@@ -220,6 +227,7 @@ export async function getCheckoutData(
       expires_at: reservations[0].expires_at,
       line_items: lineItems,
       subtotal,
+      allowed_payment_methods: allowedPaymentMethods,
     };
 
     return { success: true, message: "OK", data: checkoutData };

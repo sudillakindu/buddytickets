@@ -32,7 +32,8 @@ const STATUS_PRIORITY: Record<string, number> = {
 // Matches all columns used in EVENT_CARD_SELECT against the DB schema
 const EVENT_CARD_SELECT = `
   event_id, organizer_id, category_id, name, subtitle, description, requirements,
-  location, map_link, start_at, end_at, status, is_active, is_vip, created_at, updated_at,
+  location, map_link, start_at, end_at, status, is_active, is_vip,
+  allowed_payment_methods, created_at, updated_at,
   categories ( name ),
   event_images ( image_url, priority_order ),
   ticket_types ( price, is_active ),
@@ -84,6 +85,7 @@ function mapRowToEvent(row: any): Event {
     status: row.status,
     is_active: row.is_active,
     is_vip: row.is_vip,
+    allowed_payment_methods: row.allowed_payment_methods ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at ?? null,
     category: (row.categories as { name: string } | null)?.name ?? "General",
@@ -185,7 +187,7 @@ export async function getEventById(
         `
         event_id, organizer_id, category_id, name, subtitle, description,
         requirements, location, map_link, start_at, end_at, status,
-        is_active, is_vip, created_at, updated_at,
+        is_active, is_vip, allowed_payment_methods, created_at, updated_at,
         categories ( category_id, name, description ),
         event_images ( event_id, priority_order, image_url, created_at ),
         ticket_types (
@@ -271,6 +273,7 @@ export async function getEventById(
       status: data.status,
       is_active: data.is_active,
       is_vip: data.is_vip,
+      allowed_payment_methods: (data as Record<string, unknown>).allowed_payment_methods as import("@/lib/types/payment").PaymentMethod[] | null,
       created_at: data.created_at,
       updated_at: data.updated_at ?? null,
       category: categoryDetails.name,
