@@ -159,7 +159,7 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
   const normalizedWhatsapp = whatsappNumber.startsWith("+")
     ? whatsappNumber
     : `+${whatsappNumber}`;
-  const whatsappHref = `tel:${normalizedWhatsapp.replace(/\s+/g, "")}`;
+  const whatsappHref = `https://wa.me/${normalizedWhatsapp.replace(/[+\s]/g, "")}`;
   const supportEmailHref = `mailto:${supportEmail}`;
 
   return (

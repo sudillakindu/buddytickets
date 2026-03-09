@@ -167,7 +167,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
                 alt={`${event.name} cover`}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                unoptimized
                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                 onError={handleImgError}
               />

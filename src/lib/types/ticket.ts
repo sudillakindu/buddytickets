@@ -1,12 +1,6 @@
 // lib/types/ticket.ts
-export type EventStatus =
-  | "DRAFT"
-  | "PUBLISHED"
-  | "ON_SALE"
-  | "SOLD_OUT"
-  | "ONGOING"
-  | "COMPLETED"
-  | "CANCELLED";
+import type { EventStatus } from "./event";
+export type { EventStatus };
 
 export type TicketStatus = "ACTIVE" | "PENDING" | "USED" | "CANCELLED";
 

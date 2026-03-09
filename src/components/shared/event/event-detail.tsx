@@ -208,7 +208,6 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
                 alt={`${eventName} — image ${activeIndex + 1}`}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                unoptimized
                 className="object-cover"
                 onError={() => handleError(activeIndex)}
                 priority={activeIndex === 0}
@@ -500,7 +499,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               alt={`${event.name} banner`}
               fill
               sizes="100vw"
-              unoptimized
               className="object-cover object-center"
               priority
             />
@@ -544,7 +542,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                       alt={event.organizer.name}
                       fill
                       sizes="40px"
-                      unoptimized
                       className="object-cover"
                     />
                   ) : (
@@ -780,7 +777,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                       alt={event.organizer.name}
                       fill
                       sizes="40px"
-                      unoptimized
                       className="object-cover"
                     />
                   ) : (

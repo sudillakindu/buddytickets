@@ -501,7 +501,6 @@ export function TicketDetails({ event }: TicketDetailsProps) {
               alt={`${event.name} banner`}
               fill
               sizes="100vw"
-              unoptimized
               className="object-cover object-center"
               priority
             />

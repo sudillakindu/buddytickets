@@ -104,9 +104,13 @@ function BankTransferPanel({ details }: { details: BankTransferDetails }) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const copy = async (val: string, key: string) => {
-    await navigator.clipboard.writeText(val);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
+    try {
+      await navigator.clipboard.writeText(val);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      /* clipboard may be unavailable in insecure contexts */
+    }
   };
 
   return (
