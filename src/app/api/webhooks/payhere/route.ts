@@ -23,7 +23,7 @@ import {
 import {
   generateQRHashesForReservation,
 } from "@/lib/utils/qrcode";
-import type { PayHereWebhookPayload } from "@/lib/types/payment";
+import type { PaymentGatewayWebhookPayload } from "@/lib/types/payment";
 import type { TicketQRItem } from "@/lib/types/payment";
 
 // PayHere retries on non-200 — always return 200 for processed/known states
@@ -36,14 +36,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // ── 1. Parse form body ────────────────────────────────────────────────
     const contentType = req.headers.get("content-type") ?? "";
-    let payload: PayHereWebhookPayload;
+    let payload: PaymentGatewayWebhookPayload;
 
     if (contentType.includes("application/x-www-form-urlencoded")) {
       const text = await req.text();
       const params = new URLSearchParams(text);
-      payload = Object.fromEntries(params.entries()) as unknown as PayHereWebhookPayload;
+      payload = Object.fromEntries(params.entries()) as unknown as PaymentGatewayWebhookPayload;
     } else {
-      payload = await req.json() as PayHereWebhookPayload;
+      payload = await req.json() as PaymentGatewayWebhookPayload;
     }
 
     orderId = payload.order_id;

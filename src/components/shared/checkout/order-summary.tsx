@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
 import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
-import type { PaymentMethod, PayHereFormData, BankTransferDetails } from "@/lib/types/payment";
+import type { PaymentMethod, PaymentGatewayFormData, BankTransferDetails } from "@/lib/types/payment";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -69,11 +69,11 @@ function useCountdown(expiresAt: string) {
   return { mins, secs, isUrgent, isExpired, secondsLeft };
 }
 
-// ─── PayHere Auto-Submit Form ────────────────────────────────────────────────
-// Renders a hidden form and auto-submits to PayHere checkout URL.
-// This is the correct way to initiate a PayHere payment from Next.js.
+// ─── Payment Gateway Auto-Submit Form ────────────────────────────────────────
+// Renders a hidden form and auto-submits to the payment gateway checkout URL.
+// Currently configured for PayHere — gateway can be swapped without changing this component.
 
-function PayHereAutoForm({ formData }: { formData: PayHereFormData }) {
+function PaymentGatewayAutoForm({ formData }: { formData: PaymentGatewayFormData }) {
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -214,8 +214,8 @@ export function OrderSummary({ data }: OrderSummaryProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // PayHere form state
-  const [payHereForm, setPayHereForm] = useState<PayHereFormData | null>(null);
+  // Payment gateway form state
+  const [gatewayForm, setGatewayForm] = useState<PaymentGatewayFormData | null>(null);
   const [bankDetails, setBankDetails] = useState<BankTransferDetails | null>(null);
   const [orderCreated, setOrderCreated] = useState<string | null>(null);
 
@@ -296,9 +296,9 @@ export function OrderSummary({ data }: OrderSummaryProps) {
 
     setOrderCreated(result.order!.order_id);
 
-    if (result.payhere_form) {
-      // PayHere: render hidden form and auto-submit
-      setPayHereForm(result.payhere_form);
+    if (result.gateway_form) {
+      // Payment gateway: render hidden form and auto-submit
+      setGatewayForm(result.gateway_form);
       // Keep isSubmitting=true — user is being redirected
       return;
     }
@@ -315,8 +315,8 @@ export function OrderSummary({ data }: OrderSummaryProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-5">
-      {/* ── PayHere auto-submit form (rendered invisible, auto-submits) ── */}
-      {payHereForm && <PayHereAutoForm formData={payHereForm} />}
+      {/* ── Payment gateway auto-submit form (rendered invisible, auto-submits) ── */}
+      {gatewayForm && <PaymentGatewayAutoForm formData={gatewayForm} />}
 
       {/* ── Countdown Timer ── */}
       <motion.div
@@ -531,7 +531,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       </div>
 
       {/* ── Payment Method ── */}
-      {!bankDetails && !payHereForm && (
+      {!bankDetails && !gatewayForm && (
         <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             <CreditCard className="w-4 h-4 text-[hsl(270,70%,50%)]" />
@@ -599,9 +599,9 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         {bankDetails && <BankTransferPanel details={bankDetails} />}
       </AnimatePresence>
 
-      {/* ── PayHere Redirecting State ── */}
+      {/* ── Payment Gateway Redirecting State ── */}
       <AnimatePresence>
-        {payHereForm && !bankDetails && (
+        {gatewayForm && !bankDetails && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -609,7 +609,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
           >
             <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
             <p className="font-secondary text-sm text-gray-600">
-              Redirecting to PayHere secure payment...
+              Redirecting to secure payment gateway...
             </p>
           </motion.div>
         )}
@@ -636,7 +636,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       </AnimatePresence>
 
       {/* ── Pay Now CTA ── */}
-      {!bankDetails && !payHereForm && (
+      {!bankDetails && !gatewayForm && (
         <Button
           onClick={handlePayNow}
           disabled={isSubmitting || isExpired}
@@ -675,7 +675,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       )}
 
       {/* ── Security badge ── */}
-      {!bankDetails && !payHereForm && (
+      {!bankDetails && !gatewayForm && (
         <p className="text-center font-secondary text-xs text-gray-400 flex items-center justify-center gap-1.5">
           <span className="text-emerald-500">🔒</span>
           Secured by 256-bit SSL encryption. Your payment details are never stored.

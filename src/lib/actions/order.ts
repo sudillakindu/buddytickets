@@ -1,6 +1,6 @@
 // lib/actions/order.ts
 // Order query server actions.
-// finalize_order_tickets RPC is called by the PayHere webhook — not here.
+// finalize_order_tickets RPC is called by the payment gateway webhook — not here.
 // These actions are for reading order state (success page, user order history).
 
 "use server";

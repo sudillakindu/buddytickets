@@ -1,4 +1,14 @@
 // lib/utils/payhere.ts
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT_GATEWAY implementation — PayHere (Sri Lanka)
+//
+// This file is the current concrete implementation of the PAYMENT_GATEWAY
+// payment method. The gateway can be swapped to Stripe, Dialog Pay, HNB Pay,
+// FriMi, or any other payment gateway in the future by replacing this file
+// and updating only the import in the payment action (src/lib/actions/payment.ts).
+// No other files need to change to swap gateways.
+// ─────────────────────────────────────────────────────────────────────────────
+//
 // PayHere Sri Lankan payment gateway integration utilities.
 //
 // PayHere Checkout Hash Formula:
@@ -11,7 +21,7 @@
 //   STEP 3: Compare local_sig with md5sig from webhook body
 
 import crypto from "crypto";
-import type { PayHereFormData, PayHereWebhookPayload } from "@/lib/types/payment";
+import type { PaymentGatewayFormData, PaymentGatewayWebhookPayload } from "@/lib/types/payment";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -71,7 +81,7 @@ export function generatePayHereCheckoutHash(
  * NEVER skip this verification — it prevents fake payment injections.
  */
 export function verifyPayHereWebhookSignature(
-  payload: PayHereWebhookPayload,
+  payload: PaymentGatewayWebhookPayload,
 ): boolean {
   try {
     const { merchantId, merchantSecret } = getPayHereConfig();
@@ -106,7 +116,7 @@ export function buildPayHereFormData(params: {
   userLastName: string;
   userEmail: string;
   userPhone: string;
-}): PayHereFormData {
+}): PaymentGatewayFormData {
   const { merchantId, checkoutUrl } = getPayHereConfig();
   const siteUrl = process.env.PUBLIC_SITE_URL ?? "http://localhost:3000";
   const amountStr = formatPayHereAmount(params.amount);

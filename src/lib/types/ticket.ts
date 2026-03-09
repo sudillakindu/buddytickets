@@ -8,7 +8,7 @@ export type EventStatus =
   | "COMPLETED"
   | "CANCELLED";
 
-export type TicketStatus = "ACTIVE" | "ONGATE_PENDING" | "USED" | "CANCELLED";
+export type TicketStatus = "ACTIVE" | "PENDING" | "USED" | "CANCELLED";
 
 export interface Ticket {
   ticket_id: string;

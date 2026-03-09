@@ -42,7 +42,7 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
             bgClass: "bg-emerald-50",
             textClass: "text-emerald-700",
           };
-        case "ONGATE_PENDING":
+        case "PENDING":
           return {
             text: "Pending",
             dotClass: "bg-amber-500",

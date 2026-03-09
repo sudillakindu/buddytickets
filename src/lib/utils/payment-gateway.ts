@@ -1,10 +1,10 @@
 // lib/utils/payment-gateway.ts
 // Gateway abstraction layer.
-// This is the ONLY place that imports PayHere-specific code.
+// This is the ONLY place that imports gateway-specific implementation code.
 // To swap gateway: change the imports and function bodies here — nothing else changes.
 
 import { buildPayHereFormData, verifyPayHereWebhookSignature, isPayHereSuccess } from "./payhere";
-import type { PayHereFormData, PayHereWebhookPayload } from "@/lib/types/payment";
+import type { PaymentGatewayFormData, PaymentGatewayWebhookPayload } from "@/lib/types/payment";
 
 // ─── Generic Gateway Interfaces ──────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ export interface GatewayWebhookPayload {
  * Build payment form data for the current gateway.
  * Currently delegates to PayHere. To swap gateway, change this function only.
  */
-export function initiatePaymentGateway(params: GatewayInitiateParams): PayHereFormData {
+export function initiatePaymentGateway(params: GatewayInitiateParams): PaymentGatewayFormData {
   return buildPayHereFormData({
     orderId: params.orderId,
     amount: params.amount,
@@ -49,7 +49,7 @@ export function initiatePaymentGateway(params: GatewayInitiateParams): PayHereFo
  * Verify a gateway webhook signature.
  * Currently delegates to PayHere verification.
  */
-export function verifyGatewayWebhookSignature(payload: PayHereWebhookPayload): boolean {
+export function verifyGatewayWebhookSignature(payload: PaymentGatewayWebhookPayload): boolean {
   return verifyPayHereWebhookSignature(payload);
 }
 
