@@ -18,7 +18,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
-import { buildPayHereFormData } from "@/lib/utils/payhere";
+import { initiatePaymentGateway } from "@/lib/utils/payment-gateway";
 import type {
   CreateOrderInput,
   CreateOrderResult,
@@ -285,7 +285,7 @@ export async function createPendingOrder(
 
     // ── 6. Build payment response ──────────────────────────────────────────
     if (input.payment_method === "PAYMENT_GATEWAY") {
-      // Fetch user profile for PayHere form fields
+      // Fetch user profile for gateway form fields
       const { data: userProfile } = await getSupabaseAdmin()
         .from("users")
         .select("name, email, mobile")
@@ -296,28 +296,29 @@ export async function createPendingOrder(
       const firstName = nameParts[0] ?? "Customer";
       const lastName = nameParts.slice(1).join(" ") || "-";
 
-      // Build event item description for PayHere "items" field
+      // Build event item description for gateway "items" field
       const { data: event } = await getSupabaseAdmin()
         .from("events")
         .select("name")
         .eq("event_id", eventId)
         .maybeSingle();
 
-      const payhereForm = buildPayHereFormData({
+      const gatewayForm = initiatePaymentGateway({
         orderId: newOrder.order_id,
         amount: computedFinal!,
-        itemDescription: `Tickets - ${(event as Record<string, unknown>)?.name ?? "Event"}`,
-        userFirstName: firstName,
-        userLastName: lastName,
-        userEmail: userProfile?.email ?? session.email,
-        userPhone: userProfile?.mobile ?? "N/A",
+        itemName: `Tickets - ${(event as Record<string, unknown>)?.name ?? "Event"}`,
+        customerFirstName: firstName,
+        customerLastName: lastName,
+        customerEmail: userProfile?.email ?? session.email,
+        customerPhone: userProfile?.mobile ?? "N/A",
+        currency: "LKR",
       });
 
       return {
         success: true,
-        message: "Order created. Redirecting to PayHere.",
+        message: "Order created. Redirecting to payment gateway.",
         order: newOrder,
-        payhere_form: payhereForm,
+        payhere_form: gatewayForm,
       };
     }
 

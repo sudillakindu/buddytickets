@@ -10,7 +10,7 @@ export type PaymentSource = "PAYMENT_GATEWAY" | "ONGATE" | "BANK_TRANSFER";
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
 
 /** DB enum: gateway_type */
-export type GatewayType = "PAYMENT_GATEWAY" | "CASH_DESK" | "BANK_TRANSFER";
+export type GatewayType = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
 
 /** UI-level payment method selection (maps 1:1 to PaymentSource) */
 export type PaymentMethod = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
