@@ -83,7 +83,9 @@ export function EventPaymentMethodsManager() {
 
   const toggleMethod = (eventId: string, method: PaymentMethod) => {
     setEdits((prev) => {
-      const current = new Set(prev[eventId] ?? ALL_PAYMENT_METHODS);
+      const ev = events.find((e) => e.event_id === eventId);
+      const fallback = ev?.allowed_payment_methods ?? ALL_PAYMENT_METHODS;
+      const current = new Set(prev[eventId] ?? fallback);
       if (current.has(method)) {
         // Don't allow deselecting if it's the only one left
         if (current.size <= 1) {

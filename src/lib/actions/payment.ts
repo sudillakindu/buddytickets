@@ -243,10 +243,10 @@ export async function createPendingOrder(
       return { success: false, message: formatValidationError(validation.error!) };
     }
 
-    const { computedSubtotal, computedDiscount, computedFinal, reservations, allowedPaymentMethods } = validation;
+    const { computedSubtotal, computedDiscount, computedFinal, reservations, allowedPaymentMethods = ALL_PAYMENT_METHODS } = validation;
 
     // ── 2. Validate payment method is allowed for this event ────────────────
-    if (!allowedPaymentMethods!.includes(input.payment_method)) {
+    if (!allowedPaymentMethods.includes(input.payment_method)) {
       return {
         success: false,
         message: "The selected payment method is not available for this event.",
