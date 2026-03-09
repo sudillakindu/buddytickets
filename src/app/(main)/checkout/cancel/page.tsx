@@ -1,10 +1,10 @@
 // app/(main)/checkout/cancel/page.tsx
-// Shown when user cancels the PayHere payment flow.
-// PayHere redirects here via the cancel_url parameter.
+// Shown when user cancels the payment gateway flow.
+// The gateway redirects here via the cancel_url parameter.
 // The order remains PENDING (not FAILED) until it either:
 //   - Times out (reservation expires → cron marks EXPIRED)
 //   - User retries
-//   - PayHere sends a failure webhook
+//   - Gateway sends a failure webhook
 
 "use client";
 

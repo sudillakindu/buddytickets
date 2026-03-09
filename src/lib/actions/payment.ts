@@ -200,7 +200,7 @@ async function runPrePaymentValidation(
 /**
  * Creates a pending order after full server-side validation.
  * Links all PENDING reservations to the created order (ticket_reservations.order_id).
- * Returns PayHere form data or bank transfer instructions based on payment method.
+ * Returns gateway form data or bank transfer instructions based on payment method.
  *
  * Flow:
  *  1. Auth check
@@ -318,7 +318,7 @@ export async function createPendingOrder(
         success: true,
         message: "Order created. Redirecting to payment gateway.",
         order: newOrder,
-        payhere_form: gatewayForm,
+        gateway_form: gatewayForm,
       };
     }
 

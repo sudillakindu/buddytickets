@@ -21,7 +21,7 @@
 //   STEP 3: Compare local_sig with md5sig from webhook body
 
 import crypto from "crypto";
-import type { PayHereFormData, PayHereWebhookPayload } from "@/lib/types/payment";
+import type { PaymentGatewayFormData, PaymentGatewayWebhookPayload } from "@/lib/types/payment";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export function generatePayHereCheckoutHash(
  * NEVER skip this verification — it prevents fake payment injections.
  */
 export function verifyPayHereWebhookSignature(
-  payload: PayHereWebhookPayload,
+  payload: PaymentGatewayWebhookPayload,
 ): boolean {
   try {
     const { merchantId, merchantSecret } = getPayHereConfig();
@@ -116,7 +116,7 @@ export function buildPayHereFormData(params: {
   userLastName: string;
   userEmail: string;
   userPhone: string;
-}): PayHereFormData {
+}): PaymentGatewayFormData {
   const { merchantId, checkoutUrl } = getPayHereConfig();
   const siteUrl = process.env.PUBLIC_SITE_URL ?? "http://localhost:3000";
   const amountStr = formatPayHereAmount(params.amount);

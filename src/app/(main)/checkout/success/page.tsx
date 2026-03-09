@@ -1,8 +1,8 @@
 // app/(main)/checkout/success/page.tsx
 // Order confirmation success page.
-// PayHere redirects here after payment: /checkout/success?order_id=<uuid>
+// Payment gateway redirects here after payment: /checkout/success?order_id=<uuid>
 //
-// IMPORTANT: PayHere's return_url fires BEFORE the webhook in most cases.
+// IMPORTANT: The gateway's return_url fires BEFORE the webhook in most cases.
 // The page polls the order payment_status until it transitions from PENDING → PAID.
 // This gives a good UX even if the webhook fires slightly after the redirect.
 

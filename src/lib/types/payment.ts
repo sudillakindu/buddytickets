@@ -49,10 +49,12 @@ export const PAYMENT_METHODS: PaymentMethodOption[] = [
   },
 ];
 
-// ─── PayHere ─────────────────────────────────────────────────────────────────
+// ─── Payment Gateway ─────────────────────────────────────────────────────────
+// Current implementation: PayHere (Sri Lanka). Can be swapped to Stripe, Dialog Pay, etc.
 
-/** Fields submitted as a form POST to PayHere checkout URL */
-export interface PayHereFormData {
+/** Fields submitted as a form POST to the payment gateway checkout URL.
+ *  Currently shaped for PayHere — field names are gateway-specific. */
+export interface PaymentGatewayFormData {
   merchant_id: string;
   return_url: string;
   cancel_url: string;
@@ -69,16 +71,17 @@ export interface PayHereFormData {
   city: string;
   country: string;
   hash: string;               // MD5 signature (server-generated)
-  checkout_url: string;       // PayHere form action URL
+  checkout_url: string;       // Gateway form action URL
 }
 
-/** PayHere webhook POST body fields */
-export interface PayHereWebhookPayload {
+/** Payment gateway webhook POST body fields.
+ *  Currently shaped for PayHere — field names are gateway-specific. */
+export interface PaymentGatewayWebhookPayload {
   merchant_id: string;
   order_id: string;
   payment_id: string;
-  payhere_amount: string;
-  payhere_currency: string;
+  payhere_amount: string;     // PayHere-specific field name required by gateway API
+  payhere_currency: string;   // PayHere-specific field name required by gateway API
   status_code: string;        // "2" = success, "0" = pending, "-1" = cancelled, "-2" = failed, "-3" = chargedback
   md5sig: string;             // Webhook signature
   method?: string;
@@ -128,7 +131,7 @@ export interface CreateOrderResult {
   success: boolean;
   message: string;
   order?: CreatedOrder;
-  payhere_form?: PayHereFormData;    // Present if payment method = PayHere
+  gateway_form?: PaymentGatewayFormData;  // Present if payment method = PAYMENT_GATEWAY
   bank_details?: BankTransferDetails; // Present if payment method = Bank Transfer
 }
 
