@@ -87,14 +87,18 @@ CREATE TYPE reservation_status AS ENUM (
     'CANCELLED'
 );
 
--- Order creation method identify කිරීම.
--- PAYHERE_ONLINE = online payment gateway,
--- ONGATE_MANUAL = gate staff cash-desk entry.
+-- Order creation / payment method identify කිරීම.
+-- PAYMENT_GATEWAY = online payment gateway (PayHere, Stripe, etc.),
+-- BANK_TRANSFER = direct bank deposit (admin confirms),
+-- ONGATE = gate staff cash-desk entry.
 -- finalize_order_tickets() RPC මේ value අනුව ticket status
--- ACTIVE හෝ ONGATE_PENDING ලෙස set කරයි.
+-- ACTIVE (paid) හෝ PENDING (awaiting confirmation) ලෙස set කරයි.
+-- events.allowed_payment_methods column මෙම enum array ලෙස
+-- per-event payment method restrictions configure කිරීමට use කරයි.
 CREATE TYPE payment_source AS ENUM (
-    'PAYHERE_ONLINE',
-    'ONGATE_MANUAL'
+    'PAYMENT_GATEWAY',
+    'BANK_TRANSFER',
+    'ONGATE'
 );
 
 -- Order payment lifecycle states.
@@ -109,21 +113,25 @@ CREATE TYPE payment_status AS ENUM (
 );
 
 -- Physical ticket validity states.
--- ACTIVE = valid for entry, ONGATE_PENDING = cash payment pending,
+-- ACTIVE = valid for entry (paid online),
+-- PENDING = awaiting payment confirmation (cash at gate / bank transfer),
 -- USED = already scanned at gate, CANCELLED = voided.
 -- tickets table සහ scan_logs table මෙය use කරයි.
 CREATE TYPE ticket_status AS ENUM (
     'ACTIVE',
-    'ONGATE_PENDING',
+    'PENDING',
     'USED',
     'CANCELLED'
 );
 
--- Payment gateway identify කිරීම.
+-- Payment gateway / method identify කිරීම.
 -- transactions table record කිරීමට භාවිතා වේ.
+-- PAYMENT_GATEWAY = online gateway (PayHere, etc.),
+-- BANK_TRANSFER = direct bank deposit, ONGATE = cash at gate.
 CREATE TYPE gateway_type AS ENUM (
-    'PAYHERE',
-    'CASH_DESK'
+    'PAYMENT_GATEWAY',
+    'BANK_TRANSFER',
+    'ONGATE'
 );
 
 -- Transaction attempt result states.
@@ -361,10 +369,17 @@ CREATE TABLE IF NOT EXISTS events (
     platform_fee_type   discount_type   NOT NULL DEFAULT 'PERCENTAGE',
     platform_fee_value  NUMERIC(15,2)   NOT NULL DEFAULT 3.00,
     platform_fee_cap    NUMERIC(15,2)   DEFAULT NULL,
+    -- Per-event payment method control.
+    -- NULL = all payment methods allowed (PAYMENT_GATEWAY, BANK_TRANSFER, ONGATE).
+    -- Array = only listed methods allowed for this event.
+    allowed_payment_methods payment_source[] DEFAULT NULL,
     created_at          TIMESTAMPTZ     DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMPTZ     DEFAULT NULL,
 
-    CONSTRAINT uq_event_name UNIQUE (name)
+    CONSTRAINT uq_event_name UNIQUE (name),
+    -- Ensure only valid non-empty arrays are stored. NULL = all methods.
+    CONSTRAINT chk_allowed_payment_methods_not_empty
+        CHECK (allowed_payment_methods IS NULL OR array_length(allowed_payment_methods, 1) > 0)
 );
 
 -- Organizer dashboard events list query සඳහා.
@@ -568,7 +583,7 @@ EXECUTE FUNCTION update_modified_column();
 -- tickets, transactions, promotion_usages tables order_id FK
 -- ලෙස reference කරයි.
 -- payment_source column finalize_order_tickets() RPC ticket_status
--- (ACTIVE vs ONGATE_PENDING) decide කිරීමට use කෙරේ.
+-- (ACTIVE vs PENDING) decide කිරීමට use කෙරේ.
 CREATE TABLE IF NOT EXISTS orders (
     order_id        UUID            PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID            NOT NULL
@@ -658,7 +673,7 @@ CREATE INDEX idx_reservation_order
 -- reservation.quantity ගේ count අනුව individual rows insert කරයි.
 -- qr_hash: backend unique hash, gate scanner validate කරයි.
 -- status USED → scan_logs ALLOWED entry record කෙරේ.
--- ONGATE_PENDING tickets: cash payment pending, gate entry DENY.
+-- PENDING tickets: payment confirmation pending (cash/bank), gate entry DENY.
 -- owner_user_id ticket transfer feature (future) සඳහා ද use කෙරේ.
 -- attendee_name/nic/email/mobile: buyer ටිකට් 5ක් ගත්තොත්
 -- ඒ 5 දෙනාගේ individual details capture කිරීමට.
@@ -883,7 +898,7 @@ EXECUTE FUNCTION update_modified_column();
 -- reason: user submitted refund reason (required).
 -- admin_note: admin approval/rejection decision note.
 -- gateway_refund_ref: PayHere refund API reference.
---   NULL = ONGATE_MANUAL orders (manual bank transfer needed).
+--   NULL = ONGATE orders (manual bank transfer needed).
 -- refund_amount: partial refund support.
 -- reviewed_by: refund approve/reject කළ admin user ID.
 CREATE TABLE IF NOT EXISTS refund_requests (

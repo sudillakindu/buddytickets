@@ -504,15 +504,17 @@ $$;
 -- SECTION 6 · RPC: finalize_order_tickets
 -- ─────────────────────────────────────────────────────────────
 
--- PayHere webhook callback හෝ cash-desk confirmation receive
--- කළ විට tickets create කිරීමේ RPC.
+-- PayHere webhook callback හෝ cash-desk / bank-transfer confirmation
+-- receive කළ විට tickets create කිරීමේ RPC.
 -- OCC (Optimistic Concurrency Control) + SELECT FOR UPDATE:
 -- concurrent finalize calls (webhook retries, parallel) safe.
 --
 -- Algorithm:
 --   1. Order validate: PENDING + user ownership (FOR UPDATE).
 --   2. payment_source → ticket_status:
---        ONGATE_MANUAL → ONGATE_PENDING, else → ACTIVE.
+--        PAYMENT_GATEWAY → ACTIVE (paid online, immediate entry)
+--        ONGATE          → PENDING (cash at gate, staff confirms)
+--        BANK_TRANSFER   → PENDING (admin confirms bank deposit)
 --   3. [BUG FIX] Promotion FCFS lock + validate BEFORE ticket creation:
 --        promotions row FOR UPDATE lock.
 --        usage_limit_global > 0 AND current_global_usage >= limit
@@ -580,10 +582,13 @@ BEGIN
     END IF;
 
     -- Payment source → ticket status mapping.
+    -- PAYMENT_GATEWAY = paid online  → ACTIVE (can enter immediately)
+    -- ONGATE          = cash at gate → PENDING (staff confirms at gate)
+    -- BANK_TRANSFER   = bank deposit → PENDING (admin confirms transfer)
     v_ticket_status := CASE
-        WHEN v_order.payment_source = 'ONGATE_MANUAL'
-            THEN 'ONGATE_PENDING'::ticket_status
-        ELSE 'ACTIVE'::ticket_status
+        WHEN v_order.payment_source = 'PAYMENT_GATEWAY'
+            THEN 'ACTIVE'::ticket_status
+        ELSE 'PENDING'::ticket_status  -- ONGATE, BANK_TRANSFER
     END;
 
     -- [BUG FIX] Promotion FCFS: ticket creation ට පෙර
@@ -706,9 +711,11 @@ BEGIN
         SELECT
             p_order_id,
             CASE
-                WHEN v_order.payment_source = 'PAYHERE_ONLINE'
-                    THEN 'PAYHERE'::gateway_type
-                ELSE 'CASH_DESK'::gateway_type
+                WHEN v_order.payment_source = 'PAYMENT_GATEWAY'
+                    THEN 'PAYMENT_GATEWAY'::gateway_type
+                WHEN v_order.payment_source = 'BANK_TRANSFER'
+                    THEN 'BANK_TRANSFER'::gateway_type
+                ELSE 'ONGATE'::gateway_type  -- ONGATE
             END,
             p_gateway_ref_id,
             final_amount,
