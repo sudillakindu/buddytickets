@@ -15,6 +15,13 @@ export type GatewayType = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
 /** UI-level payment method selection (maps 1:1 to PaymentSource) */
 export type PaymentMethod = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
 
+/** Complete set of all payment methods — used as default when event has no config */
+export const ALL_PAYMENT_METHODS: PaymentMethod[] = [
+  "PAYMENT_GATEWAY",
+  "BANK_TRANSFER",
+  "ONGATE",
+];
+
 // ─── Payment Method Display Config ───────────────────────────────────────────
 
 export interface PaymentMethodOption {

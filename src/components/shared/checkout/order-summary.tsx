@@ -204,13 +204,20 @@ export function OrderSummary({ data }: OrderSummaryProps) {
   const router = useRouter();
   const { mins, secs, isUrgent, isExpired } = useCountdown(data.expires_at);
 
+  // Filter payment methods to only those allowed for this event
+  const availableMethods = PAYMENT_METHODS.filter((m) =>
+    data.allowed_payment_methods.includes(m.id),
+  );
+
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<ValidatedPromotion | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAYMENT_GATEWAY");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    availableMethods[0]?.id ?? "PAYMENT_GATEWAY",
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -540,7 +547,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
             </h4>
           </div>
           <div className="space-y-2">
-            {PAYMENT_METHODS.map((method) => (
+            {availableMethods.map((method) => (
               <button
                 key={method.id}
                 onClick={() => setPaymentMethod(method.id)}

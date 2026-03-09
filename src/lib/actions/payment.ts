@@ -19,10 +19,12 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import { initiatePaymentGateway } from "@/lib/utils/payment-gateway";
+import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
 import type {
   CreateOrderInput,
   CreateOrderResult,
   PaymentSource,
+  PaymentMethod,
   BankTransferDetails,
 } from "@/lib/types/payment";
 import type { ValidatedPromotion, ReservationRow } from "@/lib/types/checkout";
@@ -38,6 +40,7 @@ interface PrePaymentValidationResult {
   computedDiscount?: number;
   computedFinal?: number;
   reservations?: ReservationRow[];
+  allowedPaymentMethods?: PaymentMethod[];
 }
 
 /**
@@ -104,7 +107,7 @@ async function runPrePaymentValidation(
   // 4. Validate event status
   const { data: event, error: evErr } = await getSupabaseAdmin()
     .from("events")
-    .select("event_id, status, is_active")
+    .select("event_id, status, is_active, allowed_payment_methods")
     .eq("event_id", eventId)
     .maybeSingle();
 
@@ -113,6 +116,11 @@ async function runPrePaymentValidation(
   if (event.status !== "ON_SALE" && event.status !== "ONGOING") {
     return { valid: false, error: "Ticket sales are closed for this event." };
   }
+
+  // Resolve allowed payment methods — null/empty means all methods
+  const rawMethods = event.allowed_payment_methods as PaymentMethod[] | null;
+  const allowedPaymentMethods: PaymentMethod[] =
+    rawMethods && rawMethods.length > 0 ? rawMethods : [...ALL_PAYMENT_METHODS];
 
   let computedSubtotal = 0;
 
@@ -190,6 +198,7 @@ async function runPrePaymentValidation(
     computedDiscount,
     computedFinal,
     reservations: reservations as ReservationRow[],
+    allowedPaymentMethods,
   };
 }
 
@@ -234,17 +243,25 @@ export async function createPendingOrder(
       return { success: false, message: formatValidationError(validation.error!) };
     }
 
-    const { computedSubtotal, computedDiscount, computedFinal, reservations } = validation;
+    const { computedSubtotal, computedDiscount, computedFinal, reservations, allowedPaymentMethods = ALL_PAYMENT_METHODS } = validation;
 
-    // ── 2. Map payment method to DB enum ───────────────────────────────────
+    // ── 2. Validate payment method is allowed for this event ────────────────
+    if (!allowedPaymentMethods.includes(input.payment_method)) {
+      return {
+        success: false,
+        message: "The selected payment method is not available for this event.",
+      };
+    }
+
+    // ── 3. Map payment method to DB enum ───────────────────────────────────
     const paymentSource: PaymentSource = input.payment_method as PaymentSource;
 
     const remarks = input.remarks ?? null;
 
-    // ── 3. Fetch event_id from primary reservation ──────────────────────────
+    // ── 4. Fetch event_id from primary reservation ──────────────────────────
     const eventId = reservations![0].event_id;
 
-    // ── 4. Create pending order ────────────────────────────────────────────
+    // ── 5. Create pending order ────────────────────────────────────────────
     const { data: newOrder, error: orderErr } = await getSupabaseAdmin()
       .from("orders")
       .insert({
@@ -263,7 +280,7 @@ export async function createPendingOrder(
 
     if (orderErr) throw orderErr;
 
-    // ── 5. Link reservations to this order ─────────────────────────────────
+    // ── 6. Link reservations to this order ─────────────────────────────────
     const reservationIds = reservations!.map((r: ReservationRow) => r.reservation_id);
 
     const { error: linkErr } = await getSupabaseAdmin()
@@ -283,7 +300,7 @@ export async function createPendingOrder(
       return { success: false, message: "Failed to link reservations. Please try again." };
     }
 
-    // ── 6. Build payment response ──────────────────────────────────────────
+    // ── 7. Build payment response ──────────────────────────────────────────
     if (input.payment_method === "PAYMENT_GATEWAY") {
       // Fetch user profile for gateway form fields
       const { data: userProfile } = await getSupabaseAdmin()
