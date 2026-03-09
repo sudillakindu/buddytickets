@@ -71,7 +71,7 @@ function useCountdown(expiresAt: string) {
 
 // ─── Payment Gateway Auto-Submit Form ────────────────────────────────────────
 // Renders a hidden form and auto-submits to the payment gateway checkout URL.
-// Currently configured for PayHere — gateway can be swapped without changing this component.
+// Currently configured for gateway can be swapped without changing this component.
 
 function PaymentGatewayAutoForm({ formData }: { formData: PaymentGatewayFormData }) {
   const formRef = useRef<HTMLFormElement>(null);

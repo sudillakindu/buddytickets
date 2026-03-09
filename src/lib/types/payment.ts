@@ -50,10 +50,8 @@ export const PAYMENT_METHODS: PaymentMethodOption[] = [
 ];
 
 // ─── Payment Gateway ─────────────────────────────────────────────────────────
-// Current implementation: PayHere (Sri Lanka). Can be swapped to Stripe, Dialog Pay, etc.
 
-/** Fields submitted as a form POST to the payment gateway checkout URL.
- *  Currently shaped for PayHere — field names are gateway-specific. */
+/** Fields submitted as a form POST to the payment gateway checkout URL. **/
 export interface PaymentGatewayFormData {
   merchant_id: string;
   return_url: string;
