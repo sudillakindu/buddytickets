@@ -117,11 +117,24 @@ export async function addStaffToEvent(
 
     // Find staff user by email or username
     const term = staffIdentifier.trim();
-    const { data: staffUser } = await admin
+    // Use separate safe queries to avoid filter injection
+    let staffUser: { user_id: string; role: string } | null = null;
+    const { data: byEmail } = await admin
       .from("users")
       .select("user_id, role")
-      .or(`email.eq.${term},username.eq.${term}`)
+      .eq("email", term)
       .maybeSingle();
+
+    if (byEmail) {
+      staffUser = byEmail;
+    } else {
+      const { data: byUsername } = await admin
+        .from("users")
+        .select("user_id, role")
+        .eq("username", term)
+        .maybeSingle();
+      staffUser = byUsername;
+    }
 
     if (!staffUser) {
       return { success: false, message: "User not found." };
