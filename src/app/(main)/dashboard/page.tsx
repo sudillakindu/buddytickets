@@ -2,7 +2,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/utils/session";
 
-import { SystemDashboard } from "./(system)/view";
 import { OrganizerDashboard } from "./(organizer)/view";
 import { StaffDashboard } from "./(staff)/view";
 
@@ -15,7 +14,7 @@ export default async function DashboardPage() {
 
   switch (session.role) {
     case "SYSTEM":
-      return <SystemDashboard user={session} />;
+      redirect("/dashboard/system-overview");
     case "ORGANIZER":
       return <OrganizerDashboard user={session} />;
     case "STAFF":
