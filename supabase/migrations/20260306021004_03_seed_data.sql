@@ -70,8 +70,8 @@ INSERT INTO users (user_id, name, image_url, email, is_email_verified, mobile, i
 ('00000000-0000-0000-0000-000000000024', 'Sachini Dharmasena',    'https://i.pravatar.cc/150?u=sdharmasena',      'sachini.d@gmail.com',            TRUE,  '+94711111024', TRUE,  'sachini_d',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'USER',         TRUE),
 ('00000000-0000-0000-0000-000000000025', 'Ruwan Madanayake',      'https://i.pravatar.cc/150?u=rmadanayake',      'ruwan.m@gmail.com',              TRUE,  '+94711111025', TRUE,  'ruwan_m',      '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'USER',         FALSE),
 
--- Admin / CO_ORGANIZER (1)
-('00000000-0000-0000-0000-000000000030', 'Nethmi Karunathilake',  'https://i.pravatar.cc/150?u=nkarunathilake',   'nethmi@buddyticket.lk',          TRUE,  '+94711111030', TRUE,  'nethmi_bt',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'CO_ORGANIZER', TRUE)
+-- Admin / STAFF (1)
+('00000000-0000-0000-0000-000000000030', 'Nethmi Karunathilake',  'https://i.pravatar.cc/150?u=nkarunathilake',   'nethmi@buddyticket.lk',          TRUE,  '+94711111030', TRUE,  'nethmi_bt',    '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'STAFF',        TRUE)
 
 ON CONFLICT (user_id) DO NOTHING;
 

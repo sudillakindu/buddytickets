@@ -24,14 +24,12 @@ ALTER DATABASE postgres SET timezone TO 'Asia/Colombo';
 
 -- Platform එකේ user roles define කිරීම.
 -- SYSTEM = internal automation, ORGANIZER = event creators,
--- CO_ORGANIZER = organizer assistants, STAFF = gate staff,
--- USER = ticket buyers.
+-- STAFF = gate staff, USER = ticket buyers.
 -- RLS (Row Level Security) policies මේ enum values මත
 -- depend වන නිසා rename කිරීමේදී ඉතා සැලකිලිමත් විය යුතු.
 CREATE TYPE user_role AS ENUM (
     'SYSTEM',
     'ORGANIZER',
-    'CO_ORGANIZER',
     'STAFF',
     'USER'
 );
@@ -503,7 +501,7 @@ EXECUTE FUNCTION update_modified_column();
 -- TABLE: event_community
 -- ─────────────────────────────────────────────────────────────
 
--- Event organizer team members (CO_ORGANIZER, STAFF) assign
+-- Event organizer team members (STAFF) assign
 -- කිරීමට. Gate scanning permission, event management access
 -- control මෙම table reference කරයි. Many-to-many: users ↔ events.
 -- (event_id, user_id) composite PK duplicate assignments prevent කරයි.

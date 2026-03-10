@@ -4,7 +4,6 @@ export type OrganizerStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type UserRole =
   | "SYSTEM"
   | "ORGANIZER"
-  | "CO_ORGANIZER"
   | "STAFF"
   | "USER";
 
