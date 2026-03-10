@@ -28,7 +28,7 @@ function StatCard({
 }) {
   const display =
     format === "currency"
-      ? `LKR ${value.toLocaleString("en-LK", { minimumFractionDigits: 2 })}`
+      ? `LKR ${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
       : value.toLocaleString();
 
   return (
@@ -79,7 +79,10 @@ function RevenueChart({ data }: { data: { month: string; revenue: number }[] }) 
                 height: `${(item.revenue / maxRevenue) * 100}%`,
               }}
             />
-            <span className="text-xs text-gray-400 -rotate-45 origin-top-left whitespace-nowrap">
+            <span
+              className="text-xs text-gray-400 -rotate-45 origin-top-left whitespace-nowrap"
+              aria-label={item.month}
+            >
               {item.month.slice(5)}
             </span>
           </div>

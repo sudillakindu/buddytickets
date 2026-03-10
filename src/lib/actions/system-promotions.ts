@@ -78,6 +78,13 @@ export async function createPromotion(input: {
     return { success: false, message: "Discount value must be positive" };
   }
 
+  if (
+    input.discount_type === "PERCENTAGE" &&
+    input.discount_value > 100
+  ) {
+    return { success: false, message: "Percentage discount cannot exceed 100%" };
+  }
+
   try {
     const admin = getSupabaseAdmin();
     const { error } = await admin.from("promotions").insert({
