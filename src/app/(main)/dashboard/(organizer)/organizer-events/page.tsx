@@ -11,16 +11,20 @@ import {
   getEvents,
   getActiveCategories,
   getOrganizerStatus,
+  getEventDetail,
   createEvent,
+  updateEvent,
   publishEvent,
   toggleOnSale,
   cancelEvent,
 } from "@/lib/actions/organizer_events-actions";
 import type {
   OrganizerEvent,
+  OrganizerEventDetail,
   EventStatus,
   CategoryOption,
   CreateEventInput,
+  UpdateEventInput,
   OrganizerVerificationStatus,
 } from "@/lib/types/organizer_dashboard";
 
@@ -78,6 +82,9 @@ export default function OrganizerEventsPage() {
   // Cancel confirmation
   const [cancelTarget, setCancelTarget] = useState<OrganizerEvent | null>(null);
 
+  // Edit modal
+  const [editTarget, setEditTarget] = useState<OrganizerEventDetail | null>(null);
+
   const [refreshKey, setRefreshKey] = useState(0);
   const perPage = 20;
 
@@ -118,6 +125,49 @@ export default function OrganizerEventsPage() {
     const r = await getActiveCategories();
     if (r.success && r.data) setCategories(r.data);
     setShowCreate(true);
+  }
+
+  async function handleOpenEdit(eventId: string) {
+    const [catResult, detailResult] = await Promise.all([
+      getActiveCategories(),
+      getEventDetail(eventId),
+    ]);
+    if (catResult.success && catResult.data) setCategories(catResult.data);
+    if (detailResult.success && detailResult.data) {
+      setEditTarget(detailResult.data);
+    } else {
+      Toast("Error", detailResult.message ?? "Failed to load event.", "error");
+    }
+  }
+
+  async function handleEdit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editTarget) return;
+    setActionLoading(true);
+    const fd = new FormData(e.currentTarget);
+
+    const input: UpdateEventInput = {
+      event_id: editTarget.event_id,
+      name: fd.get("name") as string,
+      subtitle: fd.get("subtitle") as string,
+      description: fd.get("description") as string,
+      requirements: (fd.get("requirements") as string) || undefined,
+      category_id: fd.get("category_id") as string,
+      location: fd.get("location") as string,
+      map_link: fd.get("map_link") as string,
+      start_at: fd.get("start_at") as string,
+      end_at: fd.get("end_at") as string,
+    };
+
+    const result = await updateEvent(input);
+    if (result.success) {
+      Toast("Updated", result.message, "success");
+      setEditTarget(null);
+      setRefreshKey((k) => k + 1);
+    } else {
+      Toast("Error", result.message, "error");
+    }
+    setActionLoading(false);
   }
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -337,6 +387,16 @@ export default function OrganizerEventsPage() {
                         {formatCurrency(ev.revenue)}
                       </td>
                       <td className="px-4 py-3 text-right space-x-1">
+                        {(ev.status === "DRAFT" || ev.status === "PUBLISHED") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={actionLoading}
+                            onClick={() => handleOpenEdit(ev.event_id)}
+                          >
+                            Edit
+                          </Button>
+                        )}
                         {ev.status === "DRAFT" && (
                           <Button
                             size="sm"
@@ -562,6 +622,138 @@ export default function OrganizerEventsPage() {
                 {actionLoading ? "Cancelling…" : "Cancel Event"}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Event Modal */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl mx-4">
+            <h3 className="font-primary text-lg font-semibold text-gray-900">
+              Edit Event
+            </h3>
+            <form onSubmit={handleEdit} className="mt-4 space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Event Name</Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  required
+                  defaultValue={editTarget.name}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-subtitle">Subtitle</Label>
+                <Input
+                  id="edit-subtitle"
+                  name="subtitle"
+                  required
+                  defaultValue={editTarget.subtitle}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-description">Description</Label>
+                <textarea
+                  id="edit-description"
+                  name="description"
+                  required
+                  rows={3}
+                  defaultValue={editTarget.description}
+                  className="w-full mt-1 rounded-md border border-gray-200 px-3 py-2 text-sm font-secondary"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-requirements">
+                  Requirements (optional)
+                </Label>
+                <textarea
+                  id="edit-requirements"
+                  name="requirements"
+                  rows={2}
+                  defaultValue={editTarget.requirements ?? ""}
+                  className="w-full mt-1 rounded-md border border-gray-200 px-3 py-2 text-sm font-secondary"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-category_id">Category</Label>
+                  <select
+                    id="edit-category_id"
+                    name="category_id"
+                    required
+                    defaultValue={editTarget.category_id}
+                    className="w-full h-10 mt-1 rounded-md border border-gray-200 px-3 text-sm font-secondary bg-white"
+                  >
+                    <option value="">Select category…</option>
+                    {categories.map((c) => (
+                      <option key={c.category_id} value={c.category_id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-location">Location</Label>
+                  <Input
+                    id="edit-location"
+                    name="location"
+                    required
+                    defaultValue={editTarget.location}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="edit-map_link">Map Link</Label>
+                <Input
+                  id="edit-map_link"
+                  name="map_link"
+                  required
+                  defaultValue={editTarget.map_link}
+                  className="mt-1"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-start_at">Start Date &amp; Time</Label>
+                  <Input
+                    id="edit-start_at"
+                    name="start_at"
+                    type="datetime-local"
+                    required
+                    defaultValue={editTarget.start_at?.slice(0, 16)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-end_at">End Date &amp; Time</Label>
+                  <Input
+                    id="edit-end_at"
+                    name="end_at"
+                    type="datetime-local"
+                    required
+                    defaultValue={editTarget.end_at?.slice(0, 16)}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditTarget(null)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={actionLoading}>
+                  {actionLoading ? "Saving…" : "Save Changes"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

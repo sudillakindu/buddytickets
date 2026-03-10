@@ -11,12 +11,14 @@ import {
   getStaff,
   addStaffToEvent,
   removeStaffFromEvent,
+  getStaffScanActivity,
 } from "@/lib/actions/organizer_staff-actions";
 import { getEvents } from "@/lib/actions/organizer_events-actions";
 import type {
   OrganizerStaffMember,
   OrganizerEvent,
 } from "@/lib/types/organizer_dashboard";
+import type { StaffScanEntry } from "@/lib/actions/organizer_staff-actions";
 
 export default function OrganizerStaffPage() {
   const [staff, setStaff] = useState<OrganizerStaffMember[]>([]);
@@ -27,6 +29,8 @@ export default function OrganizerStaffPage() {
   const [addEventId, setAddEventId] = useState("");
   const [addIdentifier, setAddIdentifier] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [scanActivity, setScanActivity] = useState<StaffScanEntry[]>([]);
+  const [scanStaffName, setScanStaffName] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -72,6 +76,16 @@ export default function OrganizerStaffPage() {
       Toast("Error", r.message, "error");
     }
     setActionLoading(false);
+  }
+
+  async function handleViewScans(userId: string, name: string) {
+    const r = await getStaffScanActivity(userId);
+    if (r.success && r.data) {
+      setScanActivity(r.data);
+      setScanStaffName(name);
+    } else {
+      Toast("Error", r.message ?? "Failed to load scan activity.", "error");
+    }
   }
 
   return (
@@ -142,7 +156,14 @@ export default function OrganizerStaffPage() {
                           timeZone: "Asia/Colombo",
                         })}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewScans(s.user_id, s.name)}
+                        >
+                          Scans
+                        </Button>
                         <Button
                           variant="destructive"
                           size="sm"
@@ -220,6 +241,75 @@ export default function OrganizerStaffPage() {
                 onClick={handleAdd}
               >
                 {actionLoading ? "Adding…" : "Add Staff"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scan Activity Modal */}
+      {scanStaffName && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
+            <h3 className="font-primary text-lg font-semibold text-gray-900">
+              Scan Activity — {scanStaffName}
+            </h3>
+            {scanActivity.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-400">No scan activity recorded.</p>
+            ) : (
+              <div className="mt-4 max-h-80 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left py-2 font-secondary font-medium text-gray-500">
+                        Event
+                      </th>
+                      <th className="text-left py-2 font-secondary font-medium text-gray-500">
+                        Result
+                      </th>
+                      <th className="text-left py-2 font-secondary font-medium text-gray-500">
+                        Time
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scanActivity.map((s) => (
+                      <tr key={s.scan_id} className="border-b border-gray-50">
+                        <td className="py-2 font-secondary text-gray-700 max-w-[150px] truncate">
+                          {s.event_name}
+                        </td>
+                        <td className="py-2">
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                              s.result === "ALLOWED"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {s.result}
+                          </span>
+                        </td>
+                        <td className="py-2 font-secondary text-gray-500 text-xs">
+                          {new Date(s.scanned_at).toLocaleString("en-LK", {
+                            timeZone: "Asia/Colombo",
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="flex justify-end mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setScanStaffName(null);
+                  setScanActivity([]);
+                }}
+              >
+                Close
               </Button>
             </div>
           </div>

@@ -215,3 +215,84 @@ export async function removeStaffFromEvent(
     return { success: false, message: "An unexpected error occurred." };
   }
 }
+
+// ─── Staff Scan Activity ─────────────────────────────────────────────────────
+
+export interface StaffScanEntry {
+  scan_id: number;
+  ticket_id: string;
+  result: string;
+  scanned_at: string;
+  event_name: string;
+}
+
+export async function getStaffScanActivity(
+  staffUserId: string,
+): Promise<ActionResultWithData<StaffScanEntry[]>> {
+  try {
+    const userId = await requireOrganizer();
+    if (!userId) return { success: false, message: "Unauthorized." };
+
+    const supabase = await createClient();
+
+    // Get organizer's events
+    const { data: events } = await supabase
+      .from("events")
+      .select("event_id, name")
+      .eq("organizer_id", userId);
+
+    const eventIds = (events ?? []).map((e) => e.event_id);
+    if (eventIds.length === 0) {
+      return { success: true, message: "No scan activity.", data: [] };
+    }
+
+    const eventMap = new Map((events ?? []).map((e) => [e.event_id, e.name]));
+
+    // Get scan logs for this staff member
+    const { data: logs, error } = await supabase
+      .from("scan_logs")
+      .select("scan_id, ticket_id, result, scanned_at")
+      .eq("scanned_by_user_id", staffUserId)
+      .order("scanned_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      logger.error({ fn: "getStaffScanActivity", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load scan activity." };
+    }
+
+    // Get ticket → event mapping to filter only this organizer's events
+    const ticketIds = [...new Set((logs ?? []).map((l) => l.ticket_id))];
+    if (ticketIds.length === 0) {
+      return { success: true, message: "No scan activity.", data: [] };
+    }
+
+    const { data: tickets } = await supabase
+      .from("tickets")
+      .select("ticket_id, event_id")
+      .in("ticket_id", ticketIds);
+
+    const ticketEventMap = new Map(
+      (tickets ?? []).map((t) => [t.ticket_id, t.event_id]),
+    );
+
+    // Filter logs to only those for organizer's events
+    const result: StaffScanEntry[] = (logs ?? [])
+      .filter((l) => {
+        const eventId = ticketEventMap.get(l.ticket_id);
+        return eventId && eventIds.includes(eventId);
+      })
+      .map((l) => ({
+        scan_id: l.scan_id,
+        ticket_id: l.ticket_id,
+        result: l.result,
+        scanned_at: l.scanned_at,
+        event_name: eventMap.get(ticketEventMap.get(l.ticket_id) ?? "") ?? "Unknown",
+      }));
+
+    return { success: true, message: "Scan activity loaded.", data: result };
+  } catch (err) {
+    logger.error({ fn: "getStaffScanActivity", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
+  }
+}

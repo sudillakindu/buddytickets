@@ -181,3 +181,73 @@ export async function getOrders(filters: {
     return { success: false, message: "An unexpected error occurred." };
   }
 }
+
+// ─── Per-Event Breakdown ─────────────────────────────────────────────────────
+
+export interface EventBreakdown {
+  event_id: string;
+  event_name: string;
+  tickets_sold: number;
+  revenue: number;
+}
+
+export async function getEventBreakdown(): Promise<
+  ActionResultWithData<EventBreakdown[]>
+> {
+  try {
+    const userId = await requireOrganizer();
+    if (!userId) return { success: false, message: "Unauthorized." };
+
+    const supabase = await createClient();
+
+    const { data: events } = await supabase
+      .from("events")
+      .select("event_id, name")
+      .eq("organizer_id", userId);
+
+    const eventIds = (events ?? []).map((e) => e.event_id);
+    if (eventIds.length === 0) {
+      return { success: true, message: "No data.", data: [] };
+    }
+
+    const eventMap = new Map((events ?? []).map((e) => [e.event_id, e.name]));
+
+    const [{ data: ticketData }, { data: orderData }] = await Promise.all([
+      supabase
+        .from("ticket_types")
+        .select("event_id, qty_sold")
+        .in("event_id", eventIds),
+      supabase
+        .from("orders")
+        .select("event_id, final_amount")
+        .in("event_id", eventIds)
+        .eq("payment_status", "PAID"),
+    ]);
+
+    // Aggregate per-event
+    const ticketMap = new Map<string, number>();
+    for (const t of ticketData ?? []) {
+      ticketMap.set(t.event_id, (ticketMap.get(t.event_id) ?? 0) + (t.qty_sold ?? 0));
+    }
+
+    const revMap = new Map<string, number>();
+    for (const o of orderData ?? []) {
+      revMap.set(o.event_id, (revMap.get(o.event_id) ?? 0) + Number(o.final_amount));
+    }
+
+    const result: EventBreakdown[] = (events ?? []).map((e) => ({
+      event_id: e.event_id,
+      event_name: eventMap.get(e.event_id) ?? "Unknown",
+      tickets_sold: ticketMap.get(e.event_id) ?? 0,
+      revenue: revMap.get(e.event_id) ?? 0,
+    }));
+
+    // Sort by revenue descending
+    result.sort((a, b) => b.revenue - a.revenue);
+
+    return { success: true, message: "Breakdown loaded.", data: result };
+  } catch (err) {
+    logger.error({ fn: "getEventBreakdown", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
+  }
+}

@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   Wallet,
   Star,
+  BarChart3,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
   },
   { label: "Sales", href: "/dashboard/organizer-sales", icon: ShoppingCart },
   { label: "Payouts", href: "/dashboard/organizer-payouts", icon: Wallet },
+  { label: "Analytics", href: "/dashboard/organizer-analytics", icon: BarChart3 },
   { label: "Reviews", href: "/dashboard/organizer-reviews", icon: Star },
 ] as const;
 

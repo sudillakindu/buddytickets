@@ -68,3 +68,51 @@ export async function getPayouts(): Promise<
     return { success: false, message: "An unexpected error occurred." };
   }
 }
+
+// ─── Bank Info ───────────────────────────────────────────────────────────────
+
+export interface OrganizerBankInfo {
+  bank_name: string;
+  bank_branch: string;
+  account_holder_name: string;
+  account_number: string;
+}
+
+export async function getOrganizerBankInfo(): Promise<
+  ActionResultWithData<OrganizerBankInfo>
+> {
+  try {
+    const userId = await requireOrganizer();
+    if (!userId) return { success: false, message: "Unauthorized." };
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("organizer_details")
+      .select("bank_name, bank_branch, account_holder_name, account_number")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) {
+      logger.error({ fn: "getOrganizerBankInfo", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load bank info." };
+    }
+
+    if (!data) {
+      return { success: false, message: "No organizer details found." };
+    }
+
+    return {
+      success: true,
+      message: "Bank info loaded.",
+      data: {
+        bank_name: data.bank_name,
+        bank_branch: data.bank_branch,
+        account_holder_name: data.account_holder_name,
+        account_number: data.account_number,
+      },
+    };
+  } catch (err) {
+    logger.error({ fn: "getOrganizerBankInfo", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
+  }
+}

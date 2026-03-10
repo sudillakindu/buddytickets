@@ -11,6 +11,7 @@ import {
   getPromotions,
   createPromotion,
   deactivatePromotion,
+  getPromotionUsages,
 } from "@/lib/actions/organizer_promotions-actions";
 import { getEvents } from "@/lib/actions/organizer_events-actions";
 import type {
@@ -19,6 +20,7 @@ import type {
   CreatePromotionInput,
   DiscountType,
 } from "@/lib/types/organizer_dashboard";
+import type { PromotionUsage } from "@/lib/actions/organizer_promotions-actions";
 
 function formatCurrency(n: number): string {
   return `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -31,6 +33,8 @@ export default function OrganizerPromotionsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [usages, setUsages] = useState<PromotionUsage[]>([]);
+  const [usagesPromoCode, setUsagesPromoCode] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -88,6 +92,16 @@ export default function OrganizerPromotionsPage() {
       Toast("Error", r.message, "error");
     }
     setActionLoading(false);
+  }
+
+  async function handleViewUsages(promoId: string, code: string) {
+    const r = await getPromotionUsages(promoId);
+    if (r.success && r.data) {
+      setUsages(r.data);
+      setUsagesPromoCode(code);
+    } else {
+      Toast("Error", r.message ?? "Failed to load usages.", "error");
+    }
   }
 
   return (
@@ -186,7 +200,16 @@ export default function OrganizerPromotionsPage() {
                           {p.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right space-x-1">
+                        {p.current_global_usage > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewUsages(p.promotion_id, p.code)}
+                          >
+                            Usages
+                          </Button>
+                        )}
                         {p.is_active && (
                           <Button
                             variant="outline"
@@ -364,6 +387,67 @@ export default function OrganizerPromotionsPage() {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Promotion Usages Modal */}
+      {usagesPromoCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
+            <h3 className="font-primary text-lg font-semibold text-gray-900">
+              Usages for {usagesPromoCode}
+            </h3>
+            {usages.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-400">No usages recorded.</p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left py-2 font-secondary font-medium text-gray-500">
+                        User
+                      </th>
+                      <th className="text-right py-2 font-secondary font-medium text-gray-500">
+                        Discount
+                      </th>
+                      <th className="text-left py-2 font-secondary font-medium text-gray-500">
+                        Date
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usages.map((u) => (
+                      <tr key={u.usage_id} className="border-b border-gray-50">
+                        <td className="py-2 font-secondary text-gray-900">
+                          {u.user_name}
+                        </td>
+                        <td className="py-2 text-right font-secondary text-gray-700 tabular-nums">
+                          {formatCurrency(u.discount_received)}
+                        </td>
+                        <td className="py-2 font-secondary text-gray-500 text-xs">
+                          {new Date(u.used_at).toLocaleDateString("en-LK", {
+                            timeZone: "Asia/Colombo",
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="flex justify-end mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setUsagesPromoCode(null);
+                  setUsages([]);
+                }}
+              >
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

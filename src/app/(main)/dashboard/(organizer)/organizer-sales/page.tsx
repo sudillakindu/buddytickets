@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   getOrders,
   getSalesSummary,
+  getEventBreakdown,
 } from "@/lib/actions/organizer_sales-actions";
 import { getEvents } from "@/lib/actions/organizer_events-actions";
 import type {
@@ -16,6 +17,7 @@ import type {
   PaymentStatus,
   PaymentSource,
 } from "@/lib/types/organizer_dashboard";
+import type { EventBreakdown } from "@/lib/actions/organizer_sales-actions";
 
 const PAYMENT_STATUSES: PaymentStatus[] = ["PENDING", "PAID", "FAILED", "REFUNDED"];
 const PAYMENT_SOURCES: PaymentSource[] = [
@@ -68,6 +70,7 @@ export default function OrganizerSalesPage() {
   const [orders, setOrders] = useState<OrganizerOrder[]>([]);
   const [events, setEvents] = useState<OrganizerEvent[]>([]);
   const [summary, setSummary] = useState<OrganizerSalesSummary | null>(null);
+  const [breakdown, setBreakdown] = useState<EventBreakdown[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -80,12 +83,14 @@ export default function OrganizerSalesPage() {
 
   useEffect(() => {
     async function loadInitial() {
-      const [evResult, sumResult] = await Promise.all([
+      const [evResult, sumResult, bdResult] = await Promise.all([
         getEvents({ per_page: 100 }),
         getSalesSummary(),
+        getEventBreakdown(),
       ]);
       if (evResult.success && evResult.data) setEvents(evResult.data);
       if (sumResult.success && sumResult.data) setSummary(sumResult.data);
+      if (bdResult.success && bdResult.data) setBreakdown(bdResult.data);
     }
     loadInitial();
   }, []);
@@ -319,6 +324,52 @@ export default function OrganizerSalesPage() {
           </div>
         )}
       </div>
+
+      {/* Per-Event Revenue Breakdown */}
+      {breakdown.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100">
+            <h2 className="font-primary text-base font-semibold text-gray-900">
+              Per-Event Revenue Breakdown
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="text-left px-4 py-2.5 font-secondary font-medium text-gray-500">
+                    Event
+                  </th>
+                  <th className="text-right px-4 py-2.5 font-secondary font-medium text-gray-500">
+                    Tickets Sold
+                  </th>
+                  <th className="text-right px-4 py-2.5 font-secondary font-medium text-gray-500">
+                    Revenue
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {breakdown.map((b) => (
+                  <tr
+                    key={b.event_id}
+                    className="border-b border-gray-50 hover:bg-gray-50/50"
+                  >
+                    <td className="px-4 py-3 font-secondary text-gray-900 max-w-[200px] truncate">
+                      {b.event_name}
+                    </td>
+                    <td className="px-4 py-3 text-right font-secondary text-gray-700 tabular-nums">
+                      {b.tickets_sold}
+                    </td>
+                    <td className="px-4 py-3 text-right font-secondary text-gray-900 tabular-nums">
+                      {formatCurrency(b.revenue)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

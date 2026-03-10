@@ -2,8 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getPayouts } from "@/lib/actions/organizer_payouts-actions";
+import { getPayouts, getOrganizerBankInfo } from "@/lib/actions/organizer_payouts-actions";
 import type { OrganizerPayout, PayoutStatus } from "@/lib/types/organizer_dashboard";
+import type { OrganizerBankInfo } from "@/lib/actions/organizer_payouts-actions";
 
 function formatCurrency(n: number): string {
   return `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -27,14 +28,21 @@ function statusBadge(status: PayoutStatus) {
 
 export default function OrganizerPayoutsPage() {
   const [payouts, setPayouts] = useState<OrganizerPayout[]>([]);
+  const [bankInfo, setBankInfo] = useState<OrganizerBankInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const r = await getPayouts();
-      if (r.success && r.data) {
-        setPayouts(r.data);
+      const [payoutsResult, bankResult] = await Promise.all([
+        getPayouts(),
+        getOrganizerBankInfo(),
+      ]);
+      if (payoutsResult.success && payoutsResult.data) {
+        setPayouts(payoutsResult.data);
+      }
+      if (bankResult.success && bankResult.data) {
+        setBankInfo(bankResult.data);
       }
       setLoading(false);
     }
@@ -58,6 +66,34 @@ export default function OrganizerPayoutsPage() {
           completes. Funds will be transferred to your registered bank account.
         </p>
       </div>
+
+      {bankInfo && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 className="font-primary text-sm font-semibold text-gray-900 mb-3">
+            Registered Bank Account
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <p className="font-secondary text-xs text-gray-500">Bank</p>
+              <p className="font-secondary text-sm text-gray-900">{bankInfo.bank_name}</p>
+            </div>
+            <div>
+              <p className="font-secondary text-xs text-gray-500">Branch</p>
+              <p className="font-secondary text-sm text-gray-900">{bankInfo.bank_branch}</p>
+            </div>
+            <div>
+              <p className="font-secondary text-xs text-gray-500">Account Holder</p>
+              <p className="font-secondary text-sm text-gray-900">{bankInfo.account_holder_name}</p>
+            </div>
+            <div>
+              <p className="font-secondary text-xs text-gray-500">Account No.</p>
+              <p className="font-secondary text-sm text-gray-900">
+                ****{bankInfo.account_number.slice(-4)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">

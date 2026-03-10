@@ -199,3 +199,70 @@ export async function deactivatePromotion(
     return { success: false, message: "An unexpected error occurred." };
   }
 }
+
+// ─── Promotion Usages ────────────────────────────────────────────────────────
+
+export interface PromotionUsage {
+  usage_id: string;
+  user_name: string;
+  discount_received: number;
+  used_at: string;
+}
+
+export async function getPromotionUsages(
+  promotionId: string,
+): Promise<ActionResultWithData<PromotionUsage[]>> {
+  try {
+    const userId = await requireOrganizer();
+    if (!userId) return { success: false, message: "Unauthorized." };
+
+    const admin = getSupabaseAdmin();
+
+    // Verify promotion ownership
+    const { data: promo } = await admin
+      .from("promotions")
+      .select("promotion_id")
+      .eq("promotion_id", promotionId)
+      .eq("created_by", userId)
+      .maybeSingle();
+
+    if (!promo) {
+      return { success: false, message: "Promotion not found." };
+    }
+
+    const supabase = await createClient();
+    const { data: usages, error } = await supabase
+      .from("promotion_usages")
+      .select("usage_id, user_id, discount_received, used_at")
+      .eq("promotion_id", promotionId)
+      .order("used_at", { ascending: false });
+
+    if (error) {
+      logger.error({ fn: "getPromotionUsages", message: "DB error", meta: error.message });
+      return { success: false, message: "Failed to load usages." };
+    }
+
+    // Get user names
+    const userIds = [...new Set((usages ?? []).map((u) => u.user_id))];
+    let userMap = new Map<string, string>();
+    if (userIds.length > 0) {
+      const { data: users } = await supabase
+        .from("users")
+        .select("user_id, name")
+        .in("user_id", userIds);
+      userMap = new Map((users ?? []).map((u) => [u.user_id, u.name]));
+    }
+
+    const result: PromotionUsage[] = (usages ?? []).map((u) => ({
+      usage_id: u.usage_id,
+      user_name: userMap.get(u.user_id) ?? "Unknown",
+      discount_received: Number(u.discount_received),
+      used_at: u.used_at,
+    }));
+
+    return { success: true, message: "Usages loaded.", data: result };
+  } catch (err) {
+    logger.error({ fn: "getPromotionUsages", message: "Unexpected error", meta: err });
+    return { success: false, message: "An unexpected error occurred." };
+  }
+}
