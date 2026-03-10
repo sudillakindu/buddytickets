@@ -62,7 +62,7 @@ export async function getUsers(filters: {
       const term = filters.search.trim();
       if (term) {
         // Sanitize: remove chars that are special in PostgREST .or() filter syntax
-        const safeTerm = term.replace(/[,()\\.]/g, "");
+        const safeTerm = term.replace(/[,()]/g, "");
         if (safeTerm) {
           query = query.or(
             `name.ilike.%${safeTerm}%,email.ilike.%${safeTerm}%,username.ilike.%${safeTerm}%`,
