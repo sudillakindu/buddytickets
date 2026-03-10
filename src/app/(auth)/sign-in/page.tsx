@@ -1,10 +1,11 @@
 // app/(auth)/sign-in/page.tsx
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
@@ -78,8 +79,10 @@ const AuthInput = memo(
 
 AuthInput.displayName = "AuthInput";
 
-export default function SignInPage() {
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") ?? "";
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -103,15 +106,17 @@ export default function SignInPage() {
 
         if (result.success) {
           Toast("Success", result.message, "success");
-          const params = new URLSearchParams(window.location.search);
-          const redirectTo = params.get("redirect") ?? result.redirectTo ?? "/";
+          const redirectTo = redirectParam || result.redirectTo || "/";
           window.location.href = redirectTo;
           return;
         }
 
         if (result.needsVerification && result.token) {
           Toast("Verification Required", result.message, "warning");
-          router.push(`/verify-email?token=${result.token}`);
+          const verifyUrl = redirectParam
+            ? `/verify-email?token=${result.token}&redirect=${encodeURIComponent(redirectParam)}`
+            : `/verify-email?token=${result.token}`;
+          router.push(verifyUrl);
           return;
         }
 
@@ -127,7 +132,15 @@ export default function SignInPage() {
         setLoading(false);
       }
     },
-    [formData, router],
+    [formData, router, redirectParam],
+  );
+
+  const signUpHref = useMemo(
+    () =>
+      redirectParam
+        ? `/sign-up?redirect=${encodeURIComponent(redirectParam)}`
+        : "/sign-up",
+    [redirectParam],
   );
 
   const isFocused = (field: string) => focusedField === field;
@@ -217,7 +230,7 @@ export default function SignInPage() {
         <p className="mt-5 text-sm text-center font-secondary text-[hsl(215.4,16.3%,46.9%)] w-full">
           Don&apos;t have an account?{" "}
           <Link
-            href="/sign-up"
+            href={signUpHref}
             className="font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
           >
             Create account
@@ -225,5 +238,19 @@ export default function SignInPage() {
         </p>
       </div>
     </section>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-[100dvh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+        </div>
+      }
+    >
+      <SignInForm />
+    </Suspense>
   );
 }
