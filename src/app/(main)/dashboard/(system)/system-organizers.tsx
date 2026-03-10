@@ -1,7 +1,7 @@
 // app/(main)/dashboard/(system)/system-organizers.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   UserCheck,
   UserX,
@@ -268,13 +268,15 @@ export function SystemOrganizers() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const load = useCallback(async () => {
+  // Inline fetcher used by the modal's onAction to refresh data after changes
+  function refresh() {
     setLoading(true);
-    const res = await getOrganizers(filter, page, PAGE_SIZE);
-    setOrganizers(res.data);
-    setTotal(res.total);
-    setLoading(false);
-  }, [filter, page]);
+    getOrganizers(filter, page, PAGE_SIZE).then((res) => {
+      setOrganizers(res.data);
+      setTotal(res.total);
+      setLoading(false);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -430,7 +432,7 @@ export function SystemOrganizers() {
         <OrganizerDetailModal
           organizer={selected}
           onClose={() => setSelected(null)}
-          onAction={load}
+          onAction={refresh}
         />
       )}
     </div>
