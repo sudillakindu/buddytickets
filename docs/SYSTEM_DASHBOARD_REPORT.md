@@ -174,3 +174,90 @@
 | **Design consistency** | **✅ PASS** | Uses existing font classes, color system, UI components, zero new dependencies |
 | **Build + Lint** | **✅ PASS** | `npm run lint` clean, `npm run build` clean, all 9 routes registered as dynamic |
 | **Build prompt completion** | **~80%** | 9/9 sections built with core functionality. Missing: detail views (user detail, event detail), Recharts charts, @tanstack/react-table, promotion usage history, event_community management, active nav highlighting |
+
+---
+
+## 9. QA PASS — BUGS FOUND & FIXED
+
+> QA pass performed on 2026-03-10. All bugs below have been fixed.
+
+### Bug #1 — SECURITY: `.or()` filter injection via unsanitized user input
+- **File**: `src/lib/actions/system_users-actions.ts`, line 63
+- **Category**: F (Security) + B (Supabase Query)
+- **Severity**: Critical
+- **BEFORE**: `query = query.or(\`name.ilike.%${term}%,email.ilike.%${term}%,...\`)`
+- **AFTER**: Term is sanitized with `term.replace(/[,()]/g, "")` to strip PostgREST filter syntax separators before interpolation
+- **Why**: PostgREST `.or()` uses commas as condition separators. A search term containing `,` or `()` could break/manipulate the filter string.
+
+### Bug #2 — MISSING STATUS GUARDS: Payout mutations accept any status
+- **File**: `src/lib/actions/system_payouts-actions.ts`, lines 102-228
+- **Category**: C (Server Action)
+- **Severity**: High
+- **BEFORE**: `markPayoutProcessing`, `markPayoutCompleted`, `markPayoutFailed` all performed UPDATE without checking current status
+- **AFTER**: Each mutation now fetches current status first and validates: PENDING→PROCESSING, PROCESSING→COMPLETED, PENDING|PROCESSING→FAILED
+- **Why**: Without guards, a race condition or stale UI could transition a COMPLETED payout to FAILED.
+
+### Bug #3 — MISSING STATUS GUARDS: Refund mutations accept any status
+- **File**: `src/lib/actions/system_refunds-actions.ts`, lines 104-189
+- **Category**: C (Server Action)
+- **Severity**: High
+- **BEFORE**: `approveRefund` and `rejectRefund` performed UPDATE without checking if refund is PENDING
+- **AFTER**: Both mutations now fetch and validate `status === "PENDING"` before proceeding
+- **Why**: An already-APPROVED refund could be re-approved or rejected via stale UI or race condition.
+
+### Bug #4 — MISSING STATUS GUARD: cancelEvent allows re-cancellation
+- **File**: `src/lib/actions/system_events-actions.ts`, line 251
+- **Category**: C (Server Action)
+- **Severity**: Medium
+- **BEFORE**: `cancelEvent` ran `UPDATE SET status='CANCELLED'` without checking current status
+- **AFTER**: Fetches current status and rejects if already CANCELLED or COMPLETED
+- **Why**: Cancelling a COMPLETED event makes no semantic sense and could confuse audit trails.
+
+### Bug #5 — MISSING STATUS GUARD: changeUserRole allows no-op changes
+- **File**: `src/lib/actions/system_users-actions.ts`, line 157
+- **Category**: C (Server Action)
+- **Severity**: Low
+- **BEFORE**: `changeUserRole` ran UPDATE even if the new role was the same as current
+- **AFTER**: Fetches current role and returns early with "User already has this role" if unchanged
+- **Why**: Unnecessary DB write and confusing success message.
+
+### Bug #6 — MISSING revalidatePath: Server-rendered overview page stale after mutations
+- **Files**: All 7 mutation action files (users, events, categories, promotions, payouts, refunds, reviews, organizer-verification)
+- **Category**: C (Server Action) + D (Next.js)
+- **Severity**: Medium
+- **BEFORE**: No `revalidatePath` calls after any mutation
+- **AFTER**: All successful mutations call `revalidatePath("/dashboard/system-overview")`
+- **Why**: The overview page is a server component that may be cached by Next.js. After toggling user active, cancelling an event, etc., the overview stats would be stale without revalidation.
+
+### Bug #7 — DATE FORMATTING: Server-rendered dates use wrong timezone
+- **File**: `src/app/(main)/dashboard/(system)/system-overview/page.tsx`, line 200
+- **Category**: E (UI/Logic)
+- **Severity**: Medium
+- **BEFORE**: `new Date(o.created_at).toLocaleDateString()` — uses server's timezone (UTC)
+- **AFTER**: `new Date(o.created_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })`
+- **Why**: The overview page is a server component. Without specifying timezone, dates render in UTC which could be off by a day for Sri Lankan users (UTC+5:30).
+
+### Bug #8 — DATE FORMATTING: Client pages inconsistent timezone
+- **Files**: system-users, system-organizer-verification, system-promotions, system-reviews page files
+- **Category**: E (UI/Logic)
+- **Severity**: Low
+- **BEFORE**: `new Date(x).toLocaleDateString()` — relies on browser timezone
+- **AFTER**: `new Date(x).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })` across all date renders
+- **Why**: Platform targets Sri Lankan users. Standardizing on Asia/Colombo ensures consistent date display.
+
+### Bug #9 — UX: Role change modal opens for same-role selection
+- **File**: `src/app/(main)/dashboard/(system)/system-users/page.tsx`, line 234
+- **Category**: E (UI/Logic)
+- **Severity**: Low
+- **BEFORE**: `onChange={(e) => setRoleModal({ user: u, newRole: e.target.value as UserRole })}` — always opens modal
+- **AFTER**: Added `if (newRole !== u.role)` guard before opening modal
+- **Why**: Selecting the same role from the dropdown opened a confusing "Confirm role change from X to X" modal.
+
+### Summary
+
+| Category | Found | Fixed | Deferred |
+|----------|-------|-------|----------|
+| Security (F) | 1 | 1 | 0 |
+| Server Action (C) | 5 | 5 | 0 |
+| UI/Logic (E) | 3 | 3 | 0 |
+| **Total** | **9** | **9** | **0** |
