@@ -42,7 +42,6 @@ import type { UserProfile } from "@/lib/types/profile";
 const ROLE_LABEL: Record<string, string> = {
   SYSTEM: "System",
   ORGANIZER: "Organizer",
-  CO_ORGANIZER: "Co-Organizer",
   STAFF: "Staff",
   USER: "User",
 };

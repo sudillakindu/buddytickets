@@ -154,7 +154,7 @@ Route protection is handled in `src/proxy.ts` using JWT session verification.
 |-------|------|
 | `/profile`, `/tickets`, `/become-an-organizer` | Requires authentication |
 | `/checkout/*` | Requires authentication (prefix match) |
-| `/dashboard/*` | Requires authentication + role (`SYSTEM`, `ORGANIZER`, `CO_ORGANIZER`, or `STAFF`) |
+| `/dashboard/*` | Requires authentication + role (`SYSTEM`, `ORGANIZER`, or `STAFF`) |
 | `/sign-in`, `/sign-up`, `/forget-password` | Authenticated users redirected to `/` |
 | `/verify-email`, `/reset-password` | Requires valid `?token=` query parameter |
 | `/maintenance` | Only accessible when `MAINTENANCE_MODE=true` |

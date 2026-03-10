@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/utils/session";
 
-const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF"]);
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 export default async function DashboardLayout({
   children,

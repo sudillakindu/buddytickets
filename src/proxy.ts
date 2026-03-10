@@ -11,7 +11,7 @@ const PROTECTED_PREFIXES = ["/checkout"];
 const AUTH_ONLY_PAGES = new Set(["/sign-in", "/sign-up", "/forget-password"]);
 const FLOW_PAGES = new Set(["/verify-email", "/reset-password"]);
 
-const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF"]);
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 let cachedSecret: Uint8Array | null = null;
 

@@ -35,7 +35,7 @@ import type {
 
 // ─── Internal Helpers ────────────────────────────────────────────────────────
 
-const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF"]);
+const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 function newToken(): string {
   return crypto.randomUUID();
