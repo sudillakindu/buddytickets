@@ -236,7 +236,8 @@ function VerifyEmailForm() {
           return;
         }
 
-        window.location.href = redirectParam || result.redirectTo || "/";
+        const isSafeRedirect = redirectParam.startsWith("/") && !redirectParam.startsWith("//");
+        window.location.href = isSafeRedirect ? redirectParam : (result.redirectTo || "/");
       } catch (error) {
         logger.error({
           fn: "VerifyEmailPage.handleSubmit",

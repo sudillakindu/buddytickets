@@ -121,7 +121,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Bounce authenticated users away from auth-only routes
   if (AUTH_ONLY_PAGES.has(pathname) && authenticated) {
     const redirectParam = searchParams.get("redirect");
-    if (redirectParam && redirectParam.startsWith("/")) {
+    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
       url.pathname = redirectParam;
       url.search = "";
     } else {

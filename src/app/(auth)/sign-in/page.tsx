@@ -106,7 +106,8 @@ function SignInForm() {
 
         if (result.success) {
           Toast("Success", result.message, "success");
-          const redirectTo = redirectParam || result.redirectTo || "/";
+          const isSafeRedirect = redirectParam.startsWith("/") && !redirectParam.startsWith("//");
+          const redirectTo = isSafeRedirect ? redirectParam : (result.redirectTo || "/");
           window.location.href = redirectTo;
           return;
         }
