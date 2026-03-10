@@ -237,8 +237,8 @@ export default function SystemPromotionsPage() {
                           : ""}
                       </td>
                       <td className="px-4 py-3 font-secondary text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(p.start_at).toLocaleDateString()} –{" "}
-                        {new Date(p.end_at).toLocaleDateString()}
+                        {new Date(p.start_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })} –{" "}
+                        {new Date(p.end_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <button

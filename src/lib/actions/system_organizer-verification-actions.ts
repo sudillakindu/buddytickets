@@ -1,6 +1,7 @@
 // lib/actions/system_organizer-verification-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -129,6 +130,7 @@ export async function approveOrganizer(
       return { success: false, message: "Failed to approve organizer." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Organizer approved." };
   } catch (err) {
     logger.error({
@@ -176,6 +178,7 @@ export async function rejectOrganizer(
       return { success: false, message: "Failed to reject organizer." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Organizer rejected." };
   } catch (err) {
     logger.error({

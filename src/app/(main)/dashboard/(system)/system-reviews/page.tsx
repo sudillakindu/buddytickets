@@ -173,7 +173,7 @@ export default function SystemReviewsPage() {
                         </button>
                       </td>
                       <td className="px-4 py-3 font-secondary text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(r.created_at).toLocaleDateString()}
+                        {new Date(r.created_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Button

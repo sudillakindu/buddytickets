@@ -1,6 +1,7 @@
 // lib/actions/system_refunds-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -111,6 +112,30 @@ export async function approveRefund(
 
     const admin = getSupabaseAdmin();
 
+    // Guard: verify refund is in PENDING status
+    const { data: refund, error: fetchErr } = await admin
+      .from("refund_requests")
+      .select("status")
+      .eq("refund_id", refundId)
+      .maybeSingle();
+
+    if (fetchErr || !refund) {
+      if (fetchErr)
+        logger.error({
+          fn: "approveRefund",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "Refund request not found." };
+    }
+
+    if (refund.status !== "PENDING") {
+      return {
+        success: false,
+        message: `Cannot approve: refund is currently ${refund.status}.`,
+      };
+    }
+
     const { error } = await admin
       .from("refund_requests")
       .update({
@@ -130,6 +155,7 @@ export async function approveRefund(
       return { success: false, message: "Failed to approve refund." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Refund approved." };
   } catch (err) {
     logger.error({
@@ -158,6 +184,30 @@ export async function rejectRefund(
 
     const admin = getSupabaseAdmin();
 
+    // Guard: verify refund is in PENDING status
+    const { data: refund, error: fetchErr } = await admin
+      .from("refund_requests")
+      .select("status")
+      .eq("refund_id", refundId)
+      .maybeSingle();
+
+    if (fetchErr || !refund) {
+      if (fetchErr)
+        logger.error({
+          fn: "rejectRefund",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "Refund request not found." };
+    }
+
+    if (refund.status !== "PENDING") {
+      return {
+        success: false,
+        message: `Cannot reject: refund is currently ${refund.status}.`,
+      };
+    }
+
     const { error } = await admin
       .from("refund_requests")
       .update({
@@ -177,6 +227,7 @@ export async function rejectRefund(
       return { success: false, message: "Failed to reject refund." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Refund rejected." };
   } catch (err) {
     logger.error({

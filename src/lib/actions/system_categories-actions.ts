@@ -1,6 +1,7 @@
 // lib/actions/system_categories-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -108,6 +109,7 @@ export async function createCategory(
       return { success: false, message: "Failed to create category." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Category created." };
   } catch (err) {
     logger.error({
@@ -151,6 +153,7 @@ export async function updateCategory(
       return { success: false, message: "Failed to update category." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Category updated." };
   } catch (err) {
     logger.error({
@@ -229,6 +232,7 @@ export async function toggleCategoryActive(
       return { success: false, message: "Failed to update category status." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return {
       success: true,
       message: category.is_active

@@ -197,7 +197,7 @@ async function RecentOrdersSection() {
                   {statusBadge(o.payment_status)}
                 </td>
                 <td className="px-4 py-3 font-secondary text-gray-500 text-xs whitespace-nowrap">
-                  {new Date(o.created_at).toLocaleDateString()}
+                  {new Date(o.created_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })}
                 </td>
               </tr>
             ))}

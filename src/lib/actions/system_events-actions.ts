@@ -1,6 +1,7 @@
 // lib/actions/system_events-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -181,6 +182,7 @@ export async function toggleEventActive(
       return { success: false, message: "Failed to update event status." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return {
       success: true,
       message: event.is_active ? "Event deactivated." : "Event activated.",
@@ -232,6 +234,7 @@ export async function toggleEventVip(eventId: string): Promise<ActionResult> {
       return { success: false, message: "Failed to update VIP status." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return {
       success: true,
       message: event.is_vip
@@ -255,6 +258,30 @@ export async function cancelEvent(eventId: string): Promise<ActionResult> {
 
     const admin = getSupabaseAdmin();
 
+    // Guard: verify event is not already CANCELLED or COMPLETED
+    const { data: event, error: fetchErr } = await admin
+      .from("events")
+      .select("status")
+      .eq("event_id", eventId)
+      .maybeSingle();
+
+    if (fetchErr || !event) {
+      if (fetchErr)
+        logger.error({
+          fn: "cancelEvent",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "Event not found." };
+    }
+
+    if (event.status === "CANCELLED") {
+      return { success: false, message: "Event is already cancelled." };
+    }
+    if (event.status === "COMPLETED") {
+      return { success: false, message: "Cannot cancel a completed event." };
+    }
+
     const { error } = await admin
       .from("events")
       .update({ status: "CANCELLED" })
@@ -269,6 +296,7 @@ export async function cancelEvent(eventId: string): Promise<ActionResult> {
       return { success: false, message: "Failed to cancel event." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Event cancelled." };
   } catch (err) {
     logger.error({

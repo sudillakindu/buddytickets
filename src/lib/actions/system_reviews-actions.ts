@@ -1,6 +1,7 @@
 // lib/actions/system_reviews-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -147,6 +148,7 @@ export async function toggleReviewVisibility(
       };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return {
       success: true,
       message: review.is_visible ? "Review hidden." : "Review visible.",

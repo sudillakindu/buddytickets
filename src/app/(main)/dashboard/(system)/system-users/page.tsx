@@ -221,22 +221,22 @@ export default function SystemUsersPage() {
                         </button>
                       </td>
                       <td className="px-4 py-3 font-secondary text-gray-500 text-xs whitespace-nowrap">
-                        {new Date(u.created_at).toLocaleDateString()}
+                        {new Date(u.created_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })}
                       </td>
                       <td className="px-4 py-3 font-secondary text-gray-500 text-xs whitespace-nowrap">
                         {u.last_login_at
-                          ? new Date(u.last_login_at).toLocaleDateString()
+                          ? new Date(u.last_login_at).toLocaleDateString("en-LK", { timeZone: "Asia/Colombo" })
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <select
                           value={u.role}
-                          onChange={(e) =>
-                            setRoleModal({
-                              user: u,
-                              newRole: e.target.value as UserRole,
-                            })
-                          }
+                          onChange={(e) => {
+                            const newRole = e.target.value as UserRole;
+                            if (newRole !== u.role) {
+                              setRoleModal({ user: u, newRole });
+                            }
+                          }}
                           className="h-8 rounded border border-gray-200 px-2 text-xs font-secondary bg-white"
                         >
                           {ROLES.map((r) => (

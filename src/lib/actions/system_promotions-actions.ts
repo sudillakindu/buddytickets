@@ -1,6 +1,7 @@
 // lib/actions/system_promotions-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -161,6 +162,7 @@ export async function createPromotion(data: {
       return { success: false, message: "Failed to create promotion." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Promotion created." };
   } catch (err) {
     logger.error({
@@ -214,6 +216,7 @@ export async function togglePromotionActive(
       };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return {
       success: true,
       message: promo.is_active

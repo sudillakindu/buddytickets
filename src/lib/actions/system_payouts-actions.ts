@@ -1,6 +1,7 @@
 // lib/actions/system_payouts-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -116,6 +117,30 @@ export async function markPayoutProcessing(
 
     const admin = getSupabaseAdmin();
 
+    // Guard: verify payout is in PENDING status
+    const { data: payout, error: fetchErr } = await admin
+      .from("payouts")
+      .select("status")
+      .eq("payout_id", payoutId)
+      .maybeSingle();
+
+    if (fetchErr || !payout) {
+      if (fetchErr)
+        logger.error({
+          fn: "markPayoutProcessing",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "Payout not found." };
+    }
+
+    if (payout.status !== "PENDING") {
+      return {
+        success: false,
+        message: `Cannot mark as processing: payout is currently ${payout.status}.`,
+      };
+    }
+
     const { error } = await admin
       .from("payouts")
       .update({
@@ -133,6 +158,7 @@ export async function markPayoutProcessing(
       return { success: false, message: "Failed to update payout status." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Payout marked as processing." };
   } catch (err) {
     logger.error({
@@ -153,6 +179,30 @@ export async function markPayoutCompleted(
 
     const admin = getSupabaseAdmin();
 
+    // Guard: verify payout is in PROCESSING status
+    const { data: payout, error: fetchErr } = await admin
+      .from("payouts")
+      .select("status")
+      .eq("payout_id", payoutId)
+      .maybeSingle();
+
+    if (fetchErr || !payout) {
+      if (fetchErr)
+        logger.error({
+          fn: "markPayoutCompleted",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "Payout not found." };
+    }
+
+    if (payout.status !== "PROCESSING") {
+      return {
+        success: false,
+        message: `Cannot mark as completed: payout is currently ${payout.status}.`,
+      };
+    }
+
     const { error } = await admin
       .from("payouts")
       .update({
@@ -171,6 +221,7 @@ export async function markPayoutCompleted(
       return { success: false, message: "Failed to mark payout completed." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Payout marked as completed." };
   } catch (err) {
     logger.error({
@@ -199,6 +250,30 @@ export async function markPayoutFailed(
 
     const admin = getSupabaseAdmin();
 
+    // Guard: verify payout is in PENDING or PROCESSING status
+    const { data: payout, error: fetchErr } = await admin
+      .from("payouts")
+      .select("status")
+      .eq("payout_id", payoutId)
+      .maybeSingle();
+
+    if (fetchErr || !payout) {
+      if (fetchErr)
+        logger.error({
+          fn: "markPayoutFailed",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "Payout not found." };
+    }
+
+    if (payout.status !== "PENDING" && payout.status !== "PROCESSING") {
+      return {
+        success: false,
+        message: `Cannot mark as failed: payout is currently ${payout.status}.`,
+      };
+    }
+
     const { error } = await admin
       .from("payouts")
       .update({
@@ -216,6 +291,7 @@ export async function markPayoutFailed(
       return { success: false, message: "Failed to update payout status." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: "Payout marked as failed." };
   } catch (err) {
     logger.error({

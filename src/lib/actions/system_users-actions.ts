@@ -1,6 +1,7 @@
 // lib/actions/system_users-actions.ts
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -60,9 +61,13 @@ export async function getUsers(filters: {
     if (filters.search) {
       const term = filters.search.trim();
       if (term) {
-        query = query.or(
-          `name.ilike.%${term}%,email.ilike.%${term}%,username.ilike.%${term}%`,
-        );
+        // Sanitize: remove chars that are special in PostgREST .or() filter syntax
+        const safeTerm = term.replace(/[,()\\.]/g, "");
+        if (safeTerm) {
+          query = query.or(
+            `name.ilike.%${safeTerm}%,email.ilike.%${safeTerm}%,username.ilike.%${safeTerm}%`,
+          );
+        }
       }
     }
 
@@ -140,6 +145,7 @@ export async function toggleUserActive(userId: string): Promise<ActionResult> {
       return { success: false, message: "Failed to update user status." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return {
       success: true,
       message: user.is_active ? "User deactivated." : "User activated.",
@@ -172,6 +178,27 @@ export async function changeUserRole(
 
     const admin = getSupabaseAdmin();
 
+    // Verify the user exists and check current role
+    const { data: user, error: fetchErr } = await admin
+      .from("users")
+      .select("role")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (fetchErr || !user) {
+      if (fetchErr)
+        logger.error({
+          fn: "changeUserRole",
+          message: "DB fetch error",
+          meta: fetchErr.message,
+        });
+      return { success: false, message: "User not found." };
+    }
+
+    if (user.role === newRole) {
+      return { success: false, message: "User already has this role." };
+    }
+
     const { error } = await admin
       .from("users")
       .update({ role: newRole })
@@ -186,6 +213,7 @@ export async function changeUserRole(
       return { success: false, message: "Failed to change user role." };
     }
 
+    revalidatePath("/dashboard/system-overview");
     return { success: true, message: `User role changed to ${newRole}.` };
   } catch (err) {
     logger.error({
