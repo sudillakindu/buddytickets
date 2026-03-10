@@ -316,28 +316,33 @@ export async function signUp(data: {
         message: "Password must be at least 6 characters.",
       };
 
-    const safeEmail = email.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    const safeUsername = username.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    const safeMobile = mobile.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const [emailCheck, usernameCheck, mobileCheck] = await Promise.all([
+      getSupabaseAdmin()
+        .from("users")
+        .select("email")
+        .eq("email", email)
+        .maybeSingle(),
+      getSupabaseAdmin()
+        .from("users")
+        .select("username")
+        .eq("username", username)
+        .maybeSingle(),
+      getSupabaseAdmin()
+        .from("users")
+        .select("mobile")
+        .eq("mobile", mobile)
+        .maybeSingle(),
+    ]);
 
-    const { data: conflicts } = await getSupabaseAdmin()
-      .from("users")
-      .select("email, username, mobile")
-      .or(`email.eq."${safeEmail}",username.eq."${safeUsername}",mobile.eq."${safeMobile}"`) as {
-      data: { email: string; username: string; mobile: string }[] | null;
-    };
-
-    if (conflicts && conflicts.length > 0) {
-      if (conflicts.some((r) => r.email === email))
-        return { success: false, message: "Email is already registered." };
-      if (conflicts.some((r) => r.username === username))
-        return { success: false, message: "Username is already taken." };
-      if (conflicts.some((r) => r.mobile === mobile))
-        return {
-          success: false,
-          message: "Mobile number is already registered.",
-        };
-    }
+    if (emailCheck.data)
+      return { success: false, message: "Email is already registered." };
+    if (usernameCheck.data)
+      return { success: false, message: "Username is already taken." };
+    if (mobileCheck.data)
+      return {
+        success: false,
+        message: "Mobile number is already registered.",
+      };
 
     const passwordHash = await hashPassword(password);
 

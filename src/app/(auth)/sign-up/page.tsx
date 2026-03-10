@@ -1,10 +1,11 @@
 // app/(auth)/sign-up/page.tsx
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import { useState, useCallback, useMemo, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Lock, Mail, User, Phone, Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
@@ -100,8 +101,10 @@ const AuthInput = memo(
 
 AuthInput.displayName = "AuthInput";
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect") ?? "";
 
   const [formData, setFormData] = useState({
     name: "",
@@ -131,7 +134,10 @@ export default function SignUpPage() {
 
         if (result.success && result.token) {
           Toast("Success", result.message, "success");
-          router.push(`/verify-email?token=${result.token}`);
+          const verifyUrl = redirectParam
+            ? `/verify-email?token=${result.token}&redirect=${encodeURIComponent(redirectParam)}`
+            : `/verify-email?token=${result.token}`;
+          router.push(verifyUrl);
           return;
         }
         Toast("Error", result.message, "error");
@@ -146,7 +152,15 @@ export default function SignUpPage() {
         setLoading(false);
       }
     },
-    [formData, router],
+    [formData, router, redirectParam],
+  );
+
+  const signInHref = useMemo(
+    () =>
+      redirectParam
+        ? `/sign-in?redirect=${encodeURIComponent(redirectParam)}`
+        : "/sign-in",
+    [redirectParam],
   );
 
   const isFocused = (field: string) => focusedField === field;
@@ -271,7 +285,7 @@ export default function SignUpPage() {
         <p className="mt-5 text-sm text-center font-secondary text-[hsl(215.4,16.3%,46.9%)] w-full">
           Already have an account?{" "}
           <Link
-            href="/sign-in"
+            href={signInHref}
             className="font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
           >
             Sign In
@@ -279,5 +293,19 @@ export default function SignUpPage() {
         </p>
       </div>
     </section>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-[100dvh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+        </div>
+      }
+    >
+      <SignUpForm />
+    </Suspense>
   );
 }

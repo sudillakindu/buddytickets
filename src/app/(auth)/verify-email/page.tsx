@@ -91,6 +91,7 @@ function VerifyEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const redirectParam = searchParams.get("redirect") ?? "";
 
   const [email, setEmail] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -235,7 +236,8 @@ function VerifyEmailForm() {
           return;
         }
 
-        window.location.href = result.redirectTo ?? "/";
+        const isSafeRedirect = redirectParam.startsWith("/") && !redirectParam.startsWith("//");
+        window.location.href = isSafeRedirect ? redirectParam : (result.redirectTo || "/");
       } catch (error) {
         logger.error({
           fn: "VerifyEmailPage.handleSubmit",
@@ -247,7 +249,7 @@ function VerifyEmailForm() {
         setLoading(false);
       }
     },
-    [digits, token, router],
+    [digits, token, router, redirectParam],
   );
 
   const handleResend = useCallback(async () => {
