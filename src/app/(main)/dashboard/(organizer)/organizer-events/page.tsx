@@ -225,6 +225,17 @@ export default function OrganizerEventsPage() {
           </p>
         </div>
       )}
+      {orgStatus === "NO_RECORD" && (
+        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+          <p className="font-secondary text-sm text-orange-800">
+            You haven&apos;t submitted organizer details yet.{" "}
+            <a href="/become-an-organizer" className="underline font-medium">
+              Complete your organizer onboarding
+            </a>{" "}
+            to start creating events.
+          </p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">

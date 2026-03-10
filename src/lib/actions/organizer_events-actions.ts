@@ -50,7 +50,7 @@ export async function getOrganizerStatus(): Promise<
       return {
         success: true,
         message: "No organizer record found.",
-        data: { status: "PENDING" as OrganizerVerificationStatus, remarks: null },
+        data: { status: "NO_RECORD" as OrganizerVerificationStatus, remarks: null },
       };
     }
 

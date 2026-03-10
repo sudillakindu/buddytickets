@@ -28,7 +28,7 @@ export type ScanResult =
   | "DENIED_UNPAID"
   | "DENIED_INVALID";
 
-export type OrganizerVerificationStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type OrganizerVerificationStatus = "PENDING" | "APPROVED" | "REJECTED" | "NO_RECORD";
 
 // ─── Overview ────────────────────────────────────────────────────────────────
 

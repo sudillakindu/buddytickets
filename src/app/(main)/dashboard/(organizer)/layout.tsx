@@ -1,4 +1,6 @@
 // app/(main)/dashboard/(organizer)/layout.tsx
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getSession } from "@/lib/utils/session";
