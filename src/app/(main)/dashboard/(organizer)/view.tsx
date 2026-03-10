@@ -1,7 +1,7 @@
 // app/(main)/dashboard/(organizer)/view.tsx
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -749,61 +749,53 @@ export function OrganizerDashboard({ user }: { user: SessionUser }) {
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [promotionsLoaded, setPromotionsLoaded] = useState(false);
 
-  // ── Fetch helpers ──
-  const loadStats = useCallback(async () => {
-    setStatsLoading(true);
-    const res = await getOrganizerDashboardStats();
-    if (res.success && res.stats) setStats(res.stats);
-    setStatsLoading(false);
-  }, []);
-
-  const loadEvents = useCallback(async () => {
-    setEventsLoading(true);
-    const res = await getOrganizerEvents();
-    if (res.success && res.data) setEvents(res.data);
-    setEventsLoading(false);
-  }, []);
-
-  const loadOrders = useCallback(async () => {
-    setOrdersLoading(true);
-    const res = await getOrganizerOrders();
-    if (res.success && res.data) setOrders(res.data);
-    setOrdersLoading(false);
-    setOrdersLoaded(true);
-  }, []);
-
-  const loadPromotions = useCallback(async () => {
-    setPromotionsLoading(true);
-    const res = await getOrganizerPromotions();
-    if (res.success && res.data) setPromotions(res.data);
-    setPromotionsLoading(false);
-    setPromotionsLoaded(true);
-  }, []);
-
   // ── Initial load: stats + overview data ──
   useEffect(() => {
-    loadStats();
-    loadEvents();
-  }, [loadStats, loadEvents]);
+    let cancelled = false;
+    (async () => {
+      const [statsRes, eventsRes] = await Promise.all([
+        getOrganizerDashboardStats(),
+        getOrganizerEvents(),
+      ]);
+      if (cancelled) return;
+      if (statsRes.success && statsRes.stats) setStats(statsRes.stats);
+      setStatsLoading(false);
+      if (eventsRes.success && eventsRes.data) setEvents(eventsRes.data);
+      setEventsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Lazy-load tab data on first visit ──
   const tabNeedsOrders = activeTab === "orders" || activeTab === "overview";
 
   useEffect(() => {
-    if (tabNeedsOrders && !ordersLoaded) {
-      loadOrders();
-    }
-    if (activeTab === "promotions" && !promotionsLoaded) {
-      loadPromotions();
-    }
-  }, [
-    activeTab,
-    tabNeedsOrders,
-    ordersLoaded,
-    promotionsLoaded,
-    loadOrders,
-    loadPromotions,
-  ]);
+    if (!tabNeedsOrders || ordersLoaded) return;
+    let cancelled = false;
+    (async () => {
+      setOrdersLoading(true);
+      const res = await getOrganizerOrders();
+      if (cancelled) return;
+      if (res.success && res.data) setOrders(res.data);
+      setOrdersLoading(false);
+      setOrdersLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [tabNeedsOrders, ordersLoaded]);
+
+  useEffect(() => {
+    if (activeTab !== "promotions" || promotionsLoaded) return;
+    let cancelled = false;
+    (async () => {
+      setPromotionsLoading(true);
+      const res = await getOrganizerPromotions();
+      if (cancelled) return;
+      if (res.success && res.data) setPromotions(res.data);
+      setPromotionsLoading(false);
+      setPromotionsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, promotionsLoaded]);
 
   // ── Stat cards config ──
   const statCards: { icon: React.ElementType; label: string; value: string }[] =

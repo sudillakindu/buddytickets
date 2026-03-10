@@ -1,7 +1,7 @@
 // app/(main)/dashboard/(staff)/view.tsx
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -594,41 +594,37 @@ export function StaffDashboard({ user }: { user: SessionUser }) {
   // Track whether scan logs have been fetched at least once
   const [scanLogsLoaded, setScanLogsLoaded] = useState(false);
 
-  // ── Fetch helpers ──
-  const loadStats = useCallback(async () => {
-    setStatsLoading(true);
-    const res = await getStaffDashboardStats();
-    if (res.success && res.stats) setStats(res.stats);
-    setStatsLoading(false);
-  }, []);
-
-  const loadEvents = useCallback(async () => {
-    setEventsLoading(true);
-    const res = await getStaffEvents();
-    if (res.success && res.data) setEvents(res.data);
-    setEventsLoading(false);
-  }, []);
-
-  const loadScanLogs = useCallback(async () => {
-    setScanLogsLoading(true);
-    const res = await getStaffScanLogs();
-    if (res.success && res.data) setScanLogs(res.data);
-    setScanLogsLoading(false);
-    setScanLogsLoaded(true);
-  }, []);
-
   // ── Initial load: stats + events (used in overview) ──
   useEffect(() => {
-    loadStats();
-    loadEvents();
-  }, [loadStats, loadEvents]);
+    let cancelled = false;
+    (async () => {
+      const [statsRes, eventsRes] = await Promise.all([
+        getStaffDashboardStats(),
+        getStaffEvents(),
+      ]);
+      if (cancelled) return;
+      if (statsRes.success && statsRes.stats) setStats(statsRes.stats);
+      setStatsLoading(false);
+      if (eventsRes.success && eventsRes.data) setEvents(eventsRes.data);
+      setEventsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Lazy-load scan logs on first visit to scans or overview tab ──
   useEffect(() => {
-    if ((activeTab === "scans" || activeTab === "overview") && !scanLogsLoaded) {
-      loadScanLogs();
-    }
-  }, [activeTab, scanLogsLoaded, loadScanLogs]);
+    if ((activeTab !== "scans" && activeTab !== "overview") || scanLogsLoaded) return;
+    let cancelled = false;
+    (async () => {
+      setScanLogsLoading(true);
+      const res = await getStaffScanLogs();
+      if (cancelled) return;
+      if (res.success && res.data) setScanLogs(res.data);
+      setScanLogsLoading(false);
+      setScanLogsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, scanLogsLoaded]);
 
   // ── Stat cards config ──
   const statCards: {

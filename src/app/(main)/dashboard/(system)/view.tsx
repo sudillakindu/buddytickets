@@ -1,7 +1,7 @@
 // app/(main)/dashboard/(system)/view.tsx
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, memo } from "react";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -12,17 +12,9 @@ import {
   Activity,
   LayoutDashboard,
   UserCog,
-  Landmark,
   CalendarDays,
   Wallet,
   RotateCcw,
-  ChevronRight,
-  MapPin,
-  Mail,
-  Shield,
-  CreditCard,
-  FileText,
-  Ticket,
 } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
 import type { SessionUser } from "@/lib/utils/session";
@@ -920,79 +912,70 @@ export function SystemDashboard({ user }: { user: SessionUser }) {
   const [payoutsLoaded, setPayoutsLoaded] = useState(false);
   const [refundsLoaded, setRefundsLoaded] = useState(false);
 
-  // ── Fetch helpers ──
-  const loadStats = useCallback(async () => {
-    setStatsLoading(true);
-    const res = await getSystemDashboardStats();
-    if (res.success && res.stats) setStats(res.stats);
-    setStatsLoading(false);
-  }, []);
-
-  const loadUsers = useCallback(async () => {
-    setUsersLoading(true);
-    const res = await getSystemUsers();
-    if (res.success && res.data) setUsers(res.data);
-    setUsersLoading(false);
-  }, []);
-
-  const loadOrganizers = useCallback(async () => {
-    setOrganizersLoading(true);
-    const res = await getSystemOrganizers();
-    if (res.success && res.data) setOrganizers(res.data);
-    setOrganizersLoading(false);
-    setOrganizersLoaded(true);
-  }, []);
-
-  const loadEvents = useCallback(async () => {
-    setEventsLoading(true);
-    const res = await getSystemEvents();
-    if (res.success && res.data) setEvents(res.data);
-    setEventsLoading(false);
-  }, []);
-
-  const loadPayouts = useCallback(async () => {
-    setPayoutsLoading(true);
-    const res = await getSystemPayouts();
-    if (res.success && res.data) setPayouts(res.data);
-    setPayoutsLoading(false);
-    setPayoutsLoaded(true);
-  }, []);
-
-  const loadRefunds = useCallback(async () => {
-    setRefundsLoading(true);
-    const res = await getSystemRefunds();
-    if (res.success && res.data) setRefunds(res.data);
-    setRefundsLoading(false);
-    setRefundsLoaded(true);
-  }, []);
-
   // ── Initial load: stats + overview data ──
   useEffect(() => {
-    loadStats();
-    loadUsers();
-    loadEvents();
-  }, [loadStats, loadUsers, loadEvents]);
+    let cancelled = false;
+    (async () => {
+      const [statsRes, usersRes, eventsRes] = await Promise.all([
+        getSystemDashboardStats(),
+        getSystemUsers(),
+        getSystemEvents(),
+      ]);
+      if (cancelled) return;
+      if (statsRes.success && statsRes.stats) setStats(statsRes.stats);
+      if (usersRes.success && usersRes.data) setUsers(usersRes.data);
+      setUsersLoading(false);
+      if (eventsRes.success && eventsRes.data) setEvents(eventsRes.data);
+      setEventsLoading(false);
+      setStatsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  // ── Lazy-load tab data on first visit ──
+  // ── Lazy-load organizers on first visit ──
   useEffect(() => {
-    if (activeTab === "organizers" && !organizersLoaded) {
-      loadOrganizers();
-    }
-    if (activeTab === "payouts" && !payoutsLoaded) {
-      loadPayouts();
-    }
-    if (activeTab === "refunds" && !refundsLoaded) {
-      loadRefunds();
-    }
-  }, [
-    activeTab,
-    organizersLoaded,
-    payoutsLoaded,
-    refundsLoaded,
-    loadOrganizers,
-    loadPayouts,
-    loadRefunds,
-  ]);
+    if (activeTab !== "organizers" || organizersLoaded) return;
+    let cancelled = false;
+    (async () => {
+      setOrganizersLoading(true);
+      const res = await getSystemOrganizers();
+      if (cancelled) return;
+      if (res.success && res.data) setOrganizers(res.data);
+      setOrganizersLoading(false);
+      setOrganizersLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, organizersLoaded]);
+
+  // ── Lazy-load payouts on first visit ──
+  useEffect(() => {
+    if (activeTab !== "payouts" || payoutsLoaded) return;
+    let cancelled = false;
+    (async () => {
+      setPayoutsLoading(true);
+      const res = await getSystemPayouts();
+      if (cancelled) return;
+      if (res.success && res.data) setPayouts(res.data);
+      setPayoutsLoading(false);
+      setPayoutsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, payoutsLoaded]);
+
+  // ── Lazy-load refunds on first visit ──
+  useEffect(() => {
+    if (activeTab !== "refunds" || refundsLoaded) return;
+    let cancelled = false;
+    (async () => {
+      setRefundsLoading(true);
+      const res = await getSystemRefunds();
+      if (cancelled) return;
+      if (res.success && res.data) setRefunds(res.data);
+      setRefundsLoading(false);
+      setRefundsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [activeTab, refundsLoaded]);
 
   // ── Stat cards config ──
   const statCards: { icon: React.ElementType; label: string; value: string }[] =
