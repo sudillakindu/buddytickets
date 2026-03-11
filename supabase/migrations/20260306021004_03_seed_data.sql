@@ -108,18 +108,18 @@ ON CONFLICT (user_id) DO NOTHING;
 -- ─────────────────────────────────────────────────────────────
 
 INSERT INTO categories (category_id, name, description, is_active) VALUES
-('00000000-0000-0000-0001-000000000001', 'Music & Concerts',      'Live music, concerts, DJ nights සහ music festivals.',                     TRUE),
-('00000000-0000-0000-0001-000000000002', 'Technology',            'Tech talks, hackathons, developer conferences සහ IT expos.',              TRUE),
-('00000000-0000-0000-0001-000000000003', 'Comedy & Entertainment','Stand-up comedy, improv shows සහ entertainment evenings.',                TRUE),
-('00000000-0000-0000-0001-000000000004', 'Literature & Arts',     'Book fairs, art exhibitions, poetry slams සහ literary festivals.',        TRUE),
-('00000000-0000-0000-0001-000000000005', 'Food & Beverage',       'Food expos, cooking competitions, wine tastings සහ culinary events.',     TRUE),
-('00000000-0000-0000-0001-000000000006', 'Sports & Fitness',      'Cricket, rugby, volleyball, marathons සහ fitness events.',               TRUE),
-('00000000-0000-0000-0001-000000000007', 'Dance & Performance',   'Contemporary dance, ballet, cultural performances සහ dance shows.',       TRUE),
-('00000000-0000-0000-0001-000000000008', 'Fashion & Lifestyle',   'Fashion weeks, beauty expos සහ lifestyle events.',                        TRUE),
+('00000000-0000-0000-0001-000000000001', 'Music & Concerts',      'Live music, concerts, DJ nights and music festivals.',                     TRUE),
+('00000000-0000-0000-0001-000000000002', 'Technology',            'Tech talks, hackathons, developer conferences and IT expos.',              TRUE),
+('00000000-0000-0000-0001-000000000003', 'Comedy & Entertainment','Stand-up comedy, improv shows and entertainment evenings.',                TRUE),
+('00000000-0000-0000-0001-000000000004', 'Literature & Arts',     'Book fairs, art exhibitions, poetry slams and literary festivals.',        TRUE),
+('00000000-0000-0000-0001-000000000005', 'Food & Beverage',       'Food expos, cooking competitions, wine tastings and culinary events.',     TRUE),
+('00000000-0000-0000-0001-000000000006', 'Sports & Fitness',      'Cricket, rugby, volleyball, marathons and fitness events.',               TRUE),
+('00000000-0000-0000-0001-000000000007', 'Dance & Performance',   'Contemporary dance, ballet, cultural performances and dance shows.',       TRUE),
+('00000000-0000-0000-0001-000000000008', 'Fashion & Lifestyle',   'Fashion weeks, beauty expos and lifestyle events.',                        TRUE),
 ('00000000-0000-0000-0001-000000000009', 'Film & Cinema',         'Film festivals, movie premieres, short film screenings.',                 TRUE),
-('00000000-0000-0000-0001-000000000010', 'Business & Networking', 'B2B expos, startup pitches, investor meetups සහ networking sessions.',   TRUE),
-('00000000-0000-0000-0001-000000000011', 'Cultural & Heritage',   'Perahera, cultural pageants, heritage walks සහ traditional festivals.',  TRUE),
-('00000000-0000-0000-0001-000000000012', 'Gaming & Esports',      'LAN parties, esports tournaments සහ gaming conventions.',                 FALSE)
+('00000000-0000-0000-0001-000000000010', 'Business & Networking', 'B2B expos, startup pitches, investor meetups and networking sessions.',   TRUE),
+('00000000-0000-0000-0001-000000000011', 'Cultural & Heritage',   'Perahera, cultural pageants, heritage walks and traditional festivals.',  TRUE),
+('00000000-0000-0000-0001-000000000012', 'Gaming & Esports',      'LAN parties, esports tournaments and gaming conventions.',                 FALSE)
 
 ON CONFLICT (category_id) DO NOTHING;
 
@@ -1062,7 +1062,7 @@ INSERT INTO reviews (review_id, event_id, user_id, ticket_id, rating, review_tex
 -- ── Cricket T20 (evt06, COMPLETED) — users 011, 012, 015 ──
 ('00000000-0000-0000-0012-000000000001',
  '00000000-0000-0000-0002-000000000006', '00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0007-000000000001',
- 5, 'ඉතාම හොඳ ගේම් ගාණකි. R. Premadasa Stadium atmosphere excellent. BuddyTicket through seat allocation was smooth — no queue issues at all!',
+ 5, 'Absolutely fantastic game! R. Premadasa Stadium atmosphere excellent. BuddyTicket through seat allocation was smooth — no queue issues at all!',
  TRUE),
 
 ('00000000-0000-0000-0012-000000000002',
