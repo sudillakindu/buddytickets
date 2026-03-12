@@ -12,7 +12,7 @@ export interface TicketsResult {
   tickets?: Ticket[];
 }
 
-// ─── Internal Helpers ────────────────────────────────────────────────────────
+// --- Internal Helpers ---
 
 interface TicketTypeJoin {
   ticket_type_id: string;
@@ -77,7 +77,7 @@ function mapToTicket(row: TicketRow): Ticket {
   };
 }
 
-// ─── Queries (GET) ───────────────────────────────────────────────────────────
+// --- Queries ---
 
 export async function getUserTickets(): Promise<TicketsResult> {
   try {
