@@ -10,17 +10,7 @@
 //   4. Re-compute expected hash and compare (optional secondary check)
 
 import crypto from "crypto";
-
-let QR_SECRET: string | null = null;
-
-function getQRSecret(): string {
-  if (!QR_SECRET) {
-    const s = process.env.QR_HMAC_SECRET;
-    if (!s) throw new Error("Missing QR_HMAC_SECRET environment variable.");
-    QR_SECRET = s;
-  }
-  return QR_SECRET;
-}
+import { getEnvSecret, hmacSha256 } from "./crypto";
 
 /**
  * Generate a cryptographically secure, unique QR hash for a single ticket.
@@ -39,9 +29,8 @@ export function generateQRHash(
   reservationId: string,
   ticketIndex: number,
 ): string {
-  const secret = getQRSecret();
   const payload = `${orderId}:${reservationId}:${ticketIndex}`;
-  return crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  return hmacSha256(getEnvSecret("QR_HMAC_SECRET"), payload);
 }
 
 /**

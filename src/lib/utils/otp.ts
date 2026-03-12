@@ -1,6 +1,6 @@
 // lib/utils/otp.ts
-import { createHmac } from "crypto";
 import { hash, compare } from "bcryptjs";
+import { getEnvSecret, hmacSha256 } from "./crypto";
 
 const SALT_ROUNDS = 12;
 const EXPIRY_MINUTES = 10;
@@ -8,19 +8,8 @@ const RESEND_DELAYS = [60, 120, 300, 900, 3600, 86400];
 
 export const MAX_ATTEMPTS = 5;
 
-let OTP_SECRET: string | null = null;
-
-function getSecret(): string {
-  if (!OTP_SECRET) {
-    OTP_SECRET = process.env.OTP_SECRET ?? "";
-    if (!OTP_SECRET)
-      throw new Error("Missing OTP_SECRET environment variable.");
-  }
-  return OTP_SECRET;
-}
-
 function pepper(value: string): string {
-  return createHmac("sha256", getSecret()).update(value).digest("hex");
+  return hmacSha256(getEnvSecret("OTP_SECRET"), value);
 }
 
 export function generateOtp(): string {

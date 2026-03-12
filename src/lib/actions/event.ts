@@ -7,6 +7,7 @@ import type {
   Event,
   EventDetails,
   EventImage,
+  EventStatus,
   TicketType,
   Organizer,
   CategoryDetails,
@@ -42,19 +43,36 @@ const EVENT_CARD_SELECT = `
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+interface EventCardRow {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus;
+  is_active: boolean;
+  is_vip: boolean;
+  allowed_payment_methods: import("@/lib/types/payment").PaymentMethod[] | null;
+  created_at: string;
+  updated_at: string | null;
+  categories: { name: string } | { name: string }[] | null;
+  event_images: { image_url: string; priority_order: number }[] | null;
+  ticket_types: { price: number; is_active: boolean }[] | null;
+  vip_events: { priority_order: number }[] | null;
+}
+
 // Maps a raw Supabase row from EVENT_CARD_SELECT to a typed Event object
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapRowToEvent(row: any): Event {
-  const images = (row.event_images ?? []) as {
-    image_url: string;
-    priority_order: number;
-  }[];
-  const tickets = (row.ticket_types ?? []) as {
-    price: number;
-    is_active: boolean;
-  }[];
+function mapRowToEvent(row: EventCardRow): Event {
+  const images = row.event_images ?? [];
+  const tickets = row.ticket_types ?? [];
   // vip_events PK is event_id — array always has at most 1 row per event
-  const vipRows = (row.vip_events ?? []) as { priority_order: number }[];
+  const vipRows = row.vip_events ?? [];
 
   const sortedImages = [...images].sort(
     (a, b) => a.priority_order - b.priority_order,
@@ -88,7 +106,9 @@ function mapRowToEvent(row: any): Event {
     allowed_payment_methods: row.allowed_payment_methods ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at ?? null,
-    category: (row.categories as { name: string } | null)?.name ?? "General",
+    category: (Array.isArray(row.categories)
+      ? row.categories[0]?.name
+      : row.categories?.name) ?? "General",
     thumbnail_image: thumbnailImage,
     start_ticket_price: startTicketPrice,
     vip_priority_order: vipRows[0]?.priority_order ?? null,
@@ -123,7 +143,7 @@ export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
 
     if (error) throw error;
 
-    const sorted = (data ?? []).map(mapRowToEvent).sort(sortEvents);
+    const sorted = ((data ?? []) as unknown as EventCardRow[]).map(mapRowToEvent).sort(sortEvents);
     const activeEvents = sorted
       .filter((e) => e.status === "ON_SALE" || e.status === "ONGOING")
       .slice(0, FEATURED_ACTIVE_LIMIT);
@@ -162,7 +182,7 @@ export async function getAllEvents(): Promise<GetAllEventsResult> {
 
     return {
       success: true,
-      events: (data ?? []).map(mapRowToEvent).sort(sortEvents),
+      events: ((data ?? []) as unknown as EventCardRow[]).map(mapRowToEvent).sort(sortEvents),
     };
   } catch (err) {
     logger.error({

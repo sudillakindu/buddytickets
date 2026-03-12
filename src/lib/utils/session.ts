@@ -77,19 +77,3 @@ export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
 }
-
-export async function verifySessionToken(
-  token: string,
-): Promise<SessionUser | null> {
-  try {
-    const { payload } = await jwtVerify(token, getSecret());
-    return payload as SessionUser;
-  } catch (err) {
-    logger.error({
-      fn: "verifySessionToken",
-      message: "Invalid session token",
-      meta: err,
-    });
-    return null;
-  }
-}

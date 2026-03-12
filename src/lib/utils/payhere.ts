@@ -99,7 +99,7 @@ export function verifyPayHereWebhookSignature(
  * Format a numeric amount to the 2-decimal-place string PayHere requires.
  * e.g. 1500 → "1500.00", 1500.5 → "1500.50"
  */
-export function formatPayHereAmount(amount: number): string {
+function formatPayHereAmount(amount: number): string {
   return amount.toFixed(2);
 }
 
@@ -152,8 +152,4 @@ export function buildPayHereFormData(params: {
  */
 export function isPayHereSuccess(statusCode: string): boolean {
   return statusCode === "2";
-}
-
-export function isPayHerePending(statusCode: string): boolean {
-  return statusCode === "0";
 }
