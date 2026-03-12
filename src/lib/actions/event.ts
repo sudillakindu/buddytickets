@@ -7,6 +7,7 @@ import type {
   Event,
   EventDetails,
   EventImage,
+  EventStatus,
   TicketType,
   Organizer,
   CategoryDetails,
@@ -15,7 +16,7 @@ import type {
   GetEventByIdResult,
 } from "@/lib/types/event";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
@@ -40,21 +41,44 @@ const EVENT_CARD_SELECT = `
   vip_events ( priority_order )
 ` as const;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
+
+// Raw shape returned by Supabase for EVENT_CARD_SELECT queries
+interface EventCardRow {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus;
+  is_active: boolean;
+  is_vip: boolean;
+  allowed_payment_methods: import("@/lib/types/payment").PaymentMethod[] | null;
+  created_at: string;
+  updated_at: string | null;
+  categories: { name: string }[] | { name: string } | null;
+  event_images: { image_url: string; priority_order: number }[];
+  ticket_types: { price: number; is_active: boolean }[];
+  vip_events: { priority_order: number }[];
+}
 
 // Maps a raw Supabase row from EVENT_CARD_SELECT to a typed Event object
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapRowToEvent(row: any): Event {
-  const images = (row.event_images ?? []) as {
-    image_url: string;
-    priority_order: number;
-  }[];
-  const tickets = (row.ticket_types ?? []) as {
-    price: number;
-    is_active: boolean;
-  }[];
+function mapRowToEvent(row: EventCardRow): Event {
+  const images = row.event_images ?? [];
+  const tickets = row.ticket_types ?? [];
   // vip_events PK is event_id — array always has at most 1 row per event
-  const vipRows = (row.vip_events ?? []) as { priority_order: number }[];
+  const vipRows = row.vip_events ?? [];
+
+  // Supabase may return the join as an array or a single object
+  const categoryName = Array.isArray(row.categories)
+    ? row.categories[0]?.name
+    : row.categories?.name;
 
   const sortedImages = [...images].sort(
     (a, b) => a.priority_order - b.priority_order,
@@ -88,7 +112,7 @@ function mapRowToEvent(row: any): Event {
     allowed_payment_methods: row.allowed_payment_methods ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at ?? null,
-    category: (row.categories as { name: string } | null)?.name ?? "General",
+    category: categoryName ?? "General",
     thumbnail_image: thumbnailImage,
     start_ticket_price: startTicketPrice,
     vip_priority_order: vipRows[0]?.priority_order ?? null,
@@ -110,7 +134,7 @@ function sortEvents(a: Event, b: Event): number {
   return (STATUS_PRIORITY[a.status] ?? 7) - (STATUS_PRIORITY[b.status] ?? 7);
 }
 
-// ─── Actions ─────────────────────────────────────────────────────────────────
+// --- Actions ---
 
 export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
   try {
@@ -273,7 +297,7 @@ export async function getEventById(
       status: data.status,
       is_active: data.is_active,
       is_vip: data.is_vip,
-      allowed_payment_methods: (data as Record<string, unknown>).allowed_payment_methods as import("@/lib/types/payment").PaymentMethod[] | null,
+      allowed_payment_methods: (data as { allowed_payment_methods?: import("@/lib/types/payment").PaymentMethod[] | null }).allowed_payment_methods ?? null,
       created_at: data.created_at,
       updated_at: data.updated_at ?? null,
       category: categoryDetails.name,
