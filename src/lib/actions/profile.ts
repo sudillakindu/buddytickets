@@ -16,7 +16,7 @@ import { logger } from "@/lib/logger";
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await getSession();
@@ -39,7 +39,7 @@ function validateImageFile(file: File | null): ProfileImageResult | null {
   return null;
 }
 
-// ─── Queries ─────────────────────────────────────────────────────────────────
+// --- Queries ---
 
 export async function getUserProfile(): Promise<ProfileFetchResult> {
   try {
@@ -79,7 +79,7 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
   }
 }
 
-// ─── Mutations ───────────────────────────────────────────────────────────────
+// --- Mutations ---
 
 export async function uploadProfileImage(
   formData: FormData,
@@ -196,18 +196,18 @@ export async function updateProfile(data: {
       return { success: false, message: "Mobile must be 10 digits." };
     }
 
-    const { data: current, error: fetchErr } = await getSupabaseAdmin()
+    const { data: current, error: fetchError } = await getSupabaseAdmin()
       .from("users")
       .select("mobile")
       .eq("user_id", userId)
       .maybeSingle();
 
-    if (fetchErr || !current) {
-      if (fetchErr)
+    if (fetchError || !current) {
+      if (fetchError)
         logger.error({
           fn: "updateProfile",
           message: "DB fetch error",
-          meta: fetchErr.message,
+          meta: fetchError.message,
         });
       return { success: false, message: "Unable to validate profile update." };
     }
@@ -246,16 +246,16 @@ export async function updateProfile(data: {
       payload.is_mobile_verified = false;
     }
 
-    const { error: updateErr } = await getSupabaseAdmin()
+    const { error: updateError } = await getSupabaseAdmin()
       .from("users")
       .update(payload)
       .eq("user_id", userId);
 
-    if (updateErr) {
+    if (updateError) {
       logger.error({
         fn: "updateProfile",
         message: "DB update error",
-        meta: updateErr.message,
+        meta: updateError.message,
       });
       return { success: false, message: "Failed to update profile." };
     }
@@ -322,16 +322,16 @@ export async function changePassword(data: {
 
     const newHash = await hashPassword(newPassword);
 
-    const { error: updateErr } = await getSupabaseAdmin()
+    const { error: updateError } = await getSupabaseAdmin()
       .from("users")
       .update({ password_hash: newHash })
       .eq("user_id", userId);
 
-    if (updateErr) {
+    if (updateError) {
       logger.error({
         fn: "changePassword",
         message: "DB update error",
-        meta: updateErr.message,
+        meta: updateError.message,
       });
       return { success: false, message: "Failed to change password." };
     }

@@ -16,7 +16,7 @@ import { logger } from "@/lib/logger";
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-// ─── Internal Types & Helpers ────────────────────────────────────────────────
+// --- Internal Types & Helpers ---
 
 interface UserRow {
   user_id: string;
@@ -120,7 +120,7 @@ function validateImageFile(
   return null;
 }
 
-// ─── Queries ─────────────────────────────────────────────────────────────────
+// --- Queries ---
 
 export async function getOrganizerOnboardingState(): Promise<OrganizerStateResult> {
   try {
@@ -206,7 +206,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
   }
 }
 
-// ─── Mutations ───────────────────────────────────────────────────────────────
+// --- Mutations ---
 
 export async function submitOrganizerDetails(
   formData: FormData,
