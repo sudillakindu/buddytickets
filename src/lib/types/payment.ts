@@ -1,7 +1,7 @@
 // lib/types/payment.ts
 // All types mirror DB schema: orders, transactions, ticket_reservations
 
-// ─── Enums (mirror DB) ────────────────────────────────────────────────────────
+// --- Enums (mirror DB) ---
 
 /** DB enum: payment_source */
 export type PaymentSource = "PAYMENT_GATEWAY" | "ONGATE" | "BANK_TRANSFER";
@@ -22,7 +22,7 @@ export const ALL_PAYMENT_METHODS: PaymentMethod[] = [
   "ONGATE",
 ];
 
-// ─── Payment Method Display Config ───────────────────────────────────────────
+// --- Payment Method Display Config ---
 
 export interface PaymentMethodOption {
   value: PaymentMethod;
@@ -56,7 +56,7 @@ export const PAYMENT_METHODS: PaymentMethodOption[] = [
   },
 ];
 
-// ─── Payment Gateway ─────────────────────────────────────────────────────────
+// --- Payment Gateway ---
 
 /** Fields submitted as a form POST to the payment gateway checkout URL. **/
 export interface PaymentGatewayFormData {
@@ -95,7 +95,7 @@ export interface PaymentGatewayWebhookPayload {
   custom_2?: string;
 }
 
-// ─── Order ────────────────────────────────────────────────────────────────────
+// --- Order ---
 
 /** Matches orders table row */
 export interface OrderRow {
@@ -140,7 +140,7 @@ export interface CreateOrderResult {
   bank_details?: BankTransferDetails; // Present if payment method = Bank Transfer
 }
 
-// ─── Bank Transfer ────────────────────────────────────────────────────────────
+// --- Bank Transfer ---
 
 export interface BankTransferDetails {
   order_id: string;
@@ -152,7 +152,7 @@ export interface BankTransferDetails {
   instructions: string;
 }
 
-// ─── QR Data for finalize_order_tickets RPC ───────────────────────────────────
+// --- QR Data for finalize_order_tickets RPC ---
 
 /** Structure passed as p_ticket_qr_data to finalize_order_tickets */
 export interface TicketQRItem {
@@ -161,7 +161,7 @@ export interface TicketQRItem {
   qr_hashes: string[];
 }
 
-// ─── Finalize Result ──────────────────────────────────────────────────────────
+// --- Finalize Result ---
 
 export interface FinalizeOrderResult {
   success: boolean;
@@ -170,7 +170,7 @@ export interface FinalizeOrderResult {
   ticket_count?: number;
 }
 
-// ─── Success Page Data ────────────────────────────────────────────────────────
+// --- Success Page Data ---
 
 export interface OrderSuccessData {
   order_id: string;

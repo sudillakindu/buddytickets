@@ -5,12 +5,12 @@
 import type { TicketType } from "./event";
 import type { PaymentMethod } from "./payment";
 
-// ─── Enums (mirror DB) ────────────────────────────────────────────────────────
+// --- Enums (mirror DB) ---
 
 export type ReservationStatus = "PENDING" | "CONFIRMED" | "EXPIRED" | "CANCELLED";
 export type DiscountType = "PERCENTAGE" | "FIXED_AMOUNT";
 
-// ─── Cart ─────────────────────────────────────────────────────────────────────
+// --- Cart ---
 
 /** A single line in the ticket selection UI */
 export interface CartItem {
@@ -18,7 +18,7 @@ export interface CartItem {
   quantity: number;
 }
 
-// ─── Reservation ─────────────────────────────────────────────────────────────
+// --- Reservation ---
 
 /** Matches ticket_reservations table row */
 export interface ReservationRow {
@@ -71,7 +71,7 @@ export interface ReserveTicketsResult {
   expires_at: string;
 }
 
-// ─── Promotions ──────────────────────────────────────────────────────────────
+// --- Promotions ---
 
 /** Matches promotions table row (fields needed for validation) */
 export interface PromotionRow {
@@ -112,7 +112,7 @@ export interface PromoValidationResult {
   promo?: ValidatedPromotion;
 }
 
-// ─── Order Summary ────────────────────────────────────────────────────────────
+// --- Order Summary ---
 
 /** Full pricing breakdown shown on checkout page */
 export interface PricingBreakdown {
@@ -122,7 +122,7 @@ export interface PricingBreakdown {
   applied_promo: ValidatedPromotion | null;
 }
 
-// ─── Server Action Responses ─────────────────────────────────────────────────
+// --- Server Action Responses ---
 
 export interface CreateReservationResult {
   success: boolean;
@@ -137,7 +137,7 @@ export interface GetCheckoutDataResult {
   data?: CheckoutData;
 }
 
-// ─── Enriched ticket type for buy-tickets page ────────────────────────────────
+// --- Enriched ticket type for buy-tickets page ---
 
 export interface BuyTicketItem extends TicketType {
   available: number;
