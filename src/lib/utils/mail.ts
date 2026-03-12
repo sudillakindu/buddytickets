@@ -34,6 +34,7 @@ function getMailerCredentials(): { user: string; pass: string } {
   return { user, pass };
 }
 
+// Module-level cache is safe in Node.js single-threaded event loop
 let cachedTransporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 
 function getTransporter() {
@@ -46,8 +47,12 @@ function getTransporter() {
   return cachedTransporter;
 }
 
+let cachedSenderAddress: string | null = null;
+
 function getSenderAddress(): string {
-  return `"BuddyTickets" <${getMailerCredentials().user}>`;
+  if (cachedSenderAddress) return cachedSenderAddress;
+  cachedSenderAddress = `"BuddyTickets" <${getMailerCredentials().user}>`;
+  return cachedSenderAddress;
 }
 
 async function sendEmail(to: string, subject: string, html: string): Promise<void> {
