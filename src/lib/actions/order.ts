@@ -10,9 +10,13 @@ import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import type { OrderSuccessData } from "@/lib/types/payment";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 1 · ORDER SUCCESS DATA
-// ─────────────────────────────────────────────────────────────────────────────
+interface EventJoin {
+  name: string;
+  start_at: string;
+  location: string;
+}
+
+// --- Order Success Data ---
 
 /**
  * Fetch order success page data.
@@ -31,7 +35,7 @@ export async function getOrderSuccessData(orderId: string): Promise<{
 
   try {
     // Fetch order with event details
-    const { data: order, error: orderErr } = await getSupabaseAdmin()
+    const { data: order, error: orderError } = await getSupabaseAdmin()
       .from("orders")
       .select(
         `order_id, user_id, final_amount, payment_status,
@@ -41,27 +45,28 @@ export async function getOrderSuccessData(orderId: string): Promise<{
       .eq("user_id", session.sub)
       .maybeSingle();
 
-    if (orderErr) throw orderErr;
+    if (orderError) throw orderError;
     if (!order) return { success: false, message: "Order not found." };
 
     // Count tickets for this order
-    const { count: ticketCount, error: countErr } = await getSupabaseAdmin()
+    const { count: ticketCount, error: countError } = await getSupabaseAdmin()
       .from("tickets")
       .select("ticket_id", { count: "exact", head: true })
       .eq("order_id", orderId);
 
-    if (countErr) throw countErr;
+    if (countError) throw countError;
 
     const ev = Array.isArray(order.events) ? order.events[0] : order.events;
+    const eventData = ev as EventJoin | null;
 
     return {
       success: true,
       message: "Order found.",
       data: {
         order_id: order.order_id,
-        event_name: (ev as Record<string, unknown>)?.name as string ?? "—",
-        event_start_at: (ev as Record<string, unknown>)?.start_at as string ?? "",
-        event_location: (ev as Record<string, unknown>)?.location as string ?? "—",
+        event_name: eventData?.name ?? "—",
+        event_start_at: eventData?.start_at ?? "",
+        event_location: eventData?.location ?? "—",
         ticket_count: ticketCount ?? 0,
         final_amount: Number(order.final_amount),
         payment_status: order.payment_status,
@@ -73,9 +78,7 @@ export async function getOrderSuccessData(orderId: string): Promise<{
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 2 · ORDER STATUS POLLING
-// ─────────────────────────────────────────────────────────────────────────────
+// --- Order Status Polling ---
 
 /**
  * Poll order payment status.
@@ -99,7 +102,8 @@ export async function getOrderPaymentStatus(orderId: string): Promise<{
 
     if (error || !data) return { success: false };
     return { success: true, status: data.payment_status };
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "getOrderPaymentStatus", message: "Unexpected error", meta: err });
     return { success: false };
   }
 }
