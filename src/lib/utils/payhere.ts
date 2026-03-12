@@ -1,5 +1,5 @@
 // lib/utils/payhere.ts
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 // PAYMENT_GATEWAY implementation — PayHere (Sri Lanka)
 //
 // This file is the current concrete implementation of the PAYMENT_GATEWAY
@@ -7,7 +7,7 @@
 // FriMi, or any other payment gateway in the future by replacing this file
 // and updating only the import in the payment action (src/lib/actions/payment.ts).
 // No other files need to change to swap gateways.
-// ─────────────────────────────────────────────────────────────────────────────
+// ---
 //
 // PayHere Sri Lankan payment gateway integration utilities.
 //
@@ -23,12 +23,12 @@
 import crypto from "crypto";
 import type { PaymentGatewayFormData, PaymentGatewayWebhookPayload } from "@/lib/types/payment";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const PAYHERE_SANDBOX_URL = "https://sandbox.payhere.lk/pay/checkout";
 const PAYHERE_LIVE_URL = "https://www.payhere.lk/pay/checkout";
 
-// ─── Env validation ───────────────────────────────────────────────────────────
+// --- Env validation ---
 
 function getPayHereConfig(): {
   merchantId: string;
@@ -52,7 +52,7 @@ function getPayHereConfig(): {
   };
 }
 
-// ─── Hash Utilities ───────────────────────────────────────────────────────────
+// --- Hash Utilities ---
 
 function md5(input: string): string {
   return crypto.createHash("md5").update(input).digest("hex");

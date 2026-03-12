@@ -6,7 +6,7 @@
 import { buildPayHereFormData, verifyPayHereWebhookSignature, isPayHereSuccess } from "./payhere";
 import type { PaymentGatewayFormData, PaymentGatewayWebhookPayload } from "@/lib/types/payment";
 
-// ─── Generic Gateway Interfaces ──────────────────────────────────────────────
+// --- Generic Gateway Interfaces ---
 
 export interface GatewayInitiateParams {
   orderId: string;
@@ -27,7 +27,7 @@ export interface GatewayWebhookPayload {
   rawPayload: Record<string, string>;
 }
 
-// ─── Gateway Functions (swap these to change gateways) ───────────────────────
+// --- Gateway Functions (swap these to change gateways) ---
 
 /**
  * Build payment form data for the current gateway.

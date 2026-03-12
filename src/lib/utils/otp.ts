@@ -24,9 +24,9 @@ function pepper(value: string): string {
 }
 
 export function generateOtp(): string {
-  const arr = new Uint32Array(1);
-  globalThis.crypto.getRandomValues(arr);
-  return String(100000 + (arr[0] % 900000));
+  const randomValues = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(randomValues);
+  return String(100000 + (randomValues[0] % 900000));
 }
 
 export async function hashOtp(otp: string): Promise<string> {

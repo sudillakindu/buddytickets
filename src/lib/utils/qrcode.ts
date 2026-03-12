@@ -15,9 +15,9 @@ let QR_SECRET: string | null = null;
 
 function getQRSecret(): string {
   if (!QR_SECRET) {
-    const s = process.env.QR_HMAC_SECRET;
-    if (!s) throw new Error("Missing QR_HMAC_SECRET environment variable.");
-    QR_SECRET = s;
+    const secret = process.env.QR_HMAC_SECRET;
+    if (!secret) throw new Error("Missing QR_HMAC_SECRET environment variable.");
+    QR_SECRET = secret;
   }
   return QR_SECRET;
 }
