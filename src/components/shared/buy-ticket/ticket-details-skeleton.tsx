@@ -5,7 +5,7 @@ import React, { memo } from "react";
 
 export const TicketDetailsSkeleton: React.FC = memo(() => (
   <div className="animate-pulse w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
-    {/* ── Banner ── */}
+    {/* --- Banner --- */}
     <div className="relative w-full h-48 sm:h-56 lg:h-64 bg-gray-200">
       <div className="absolute inset-0 flex flex-col justify-end pb-5">
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -22,14 +22,14 @@ export const TicketDetailsSkeleton: React.FC = memo(() => (
     </div>
 
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-    {/* ── Section Header ── */}
+    {/* --- Section Header --- */}
     <div className="flex items-center gap-3 mb-6">
       <div className="w-7 h-7 rounded bg-gray-200 shrink-0" />
       <div className="h-7 w-36 rounded bg-gray-200" />
       <div className="flex-1 h-px bg-gray-100" />
     </div>
 
-    {/* ── Ticket Type Cards ── */}
+    {/* --- Ticket Type Cards --- */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
       {[1, 2].map((i) => (
         <div
@@ -83,7 +83,7 @@ export const TicketDetailsSkeleton: React.FC = memo(() => (
       ))}
     </div>
 
-    {/* ── Cart Summary ── */}
+    {/* --- Cart Summary --- */}
     <div className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white shadow-sm border border-gray-100">
       <div className="space-y-2">
         <div className="h-3 w-20 bg-gray-200 rounded-full" />

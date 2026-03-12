@@ -14,7 +14,7 @@ import { logger } from "@/lib/logger";
 import { getFeaturedEvents } from "@/lib/actions/event";
 import type { Event } from "@/lib/types/event";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const VISIBLE_STATUSES = new Set<Event["status"]>([
   "ON_SALE",
@@ -22,7 +22,7 @@ const VISIBLE_STATUSES = new Set<Event["status"]>([
   "PUBLISHED",
 ]);
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// --- Sub-components ---
 
 interface SectionHeaderProps {
   highlight: string;
@@ -75,7 +75,6 @@ const SectionHeader = memo<SectionHeaderProps>(({ highlight, title, link }) => {
 
 SectionHeader.displayName = "SectionHeader";
 
-// ─────────────────────────────────────────────────────────────────────────────
 
 const EmptyState = memo(() => (
   <motion.div
@@ -99,7 +98,6 @@ const EmptyState = memo(() => (
 
 EmptyState.displayName = "EmptyState";
 
-// ─────────────────────────────────────────────────────────────────────────────
 
 const EventGrid = memo(({ events }: { events: Event[] }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-8 w-full">
@@ -119,7 +117,7 @@ const EventGrid = memo(({ events }: { events: Event[] }) => (
 
 EventGrid.displayName = "EventGrid";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// --- Main Component ---
 
 export default function FeaturedEvents() {
   const [events, setEvents] = useState<Event[]>([]);

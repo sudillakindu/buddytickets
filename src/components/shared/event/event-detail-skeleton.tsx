@@ -5,13 +5,13 @@ import React, { memo } from "react";
 
 export const EventDetailSkeleton: React.FC = memo(() => (
   <div className="animate-pulse w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
-    {/* ── Banner ── */}
+    {/* --- Banner --- */}
     <div className="w-full h-64 sm:h-64 lg:h-80 bg-gray-200" />
 
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-14">
         
-        {/* ── Left Column: Gallery + Organizer ── */}
+        {/* --- Left Column: Gallery + Organizer --- */}
         <div className="relative z-20 -mt-40 sm:-mt-40 lg:-mt-56 flex flex-col gap-4">
           {/* Main Image Gallery */}
           <div className="aspect-square w-full rounded-2xl bg-gray-200 border border-gray-100 shadow-sm" />
@@ -29,7 +29,7 @@ export const EventDetailSkeleton: React.FC = memo(() => (
           </div>
         </div>
 
-        {/* ── Right Column: Event Info ── */}
+        {/* --- Right Column: Event Info --- */}
         <div className="flex flex-col gap-3">
           
           {/* Nav buttons & Badges */}
@@ -94,7 +94,7 @@ export const EventDetailSkeleton: React.FC = memo(() => (
         </div>
       </div>
 
-      {/* ── Tickets Section ── */}
+      {/* --- Tickets Section --- */}
       <div className="mt-8 sm:mt-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-8 h-8 rounded bg-gray-200 shrink-0" />

@@ -20,7 +20,7 @@ import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import type { Event, EventStatus } from "@/lib/types/event";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 interface StatusUI {
   text: string;
@@ -83,7 +83,7 @@ const FALLBACK_STATUS_UI: StatusUI = {
   isActive: false,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 const formatDate = (iso: string): string =>
   iso
@@ -108,7 +108,7 @@ const formatPrice = (price: number | null): string => {
   return `LKR ${price.toLocaleString()}`;
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// --- Component ---
 
 interface EventCardProps {
   event: Event;
@@ -152,7 +152,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
           transition={{ duration: 0.4, delay: index * 0.06 }}
           className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative w-full cursor-pointer"
         >
-          {/* ── Thumbnail ── */}
+          {/* --- Thumbnail --- */}
           <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
             {imgError || !event.thumbnail_image ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 bg-gray-50">
@@ -207,7 +207,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
             </div>
           </div>
 
-          {/* ── Card Body ── */}
+          {/* --- Card Body --- */}
           <div className="p-4 flex flex-col flex-grow gap-2.5">
             {/* Date & time row */}
             <div className="flex items-center justify-between w-full font-secondary text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">

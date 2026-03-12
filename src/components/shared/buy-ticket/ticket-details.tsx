@@ -29,7 +29,7 @@ import type { TicketType, EventDetails, EventStatus } from "@/lib/types/event";
 import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const MAX_QTY_PER_TYPE = 10;
 const ACCENT = "hsl(270,70%,50%)";
@@ -75,7 +75,7 @@ const FALLBACK_STATUS: StatusConfig = {
   pillClass: "bg-gray-50 border-gray-200 text-gray-500",
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 function enrichTicketType(
   ticket: TicketType,
@@ -120,7 +120,7 @@ const formatSaleEnd = (saleEndAt: string | null, eventEndAt: string) => {
   });
 };
 
-// ─── QuantityStepper ─────────────────────────────────────────────────────────
+// --- QuantityStepper ---
 
 interface StepperProps {
   value: number;
@@ -183,7 +183,7 @@ const QuantityStepper = memo<StepperProps>(
 
 QuantityStepper.displayName = "QuantityStepper";
 
-// ─── TicketTypeCard ───────────────────────────────────────────────────────────
+// --- TicketTypeCard ---
 
 interface TicketTypeCardProps {
   ticket: BuyTicketItem;
@@ -400,7 +400,7 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
 
 TicketTypeCard.displayName = "TicketTypeCard";
 
-// ─── Main TicketDetails Component ────────────────────────────────────────────
+// --- Main TicketDetails Component ---
 
 interface TicketDetailsProps {
   event: EventDetails;
@@ -492,7 +492,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
-      {/* ── Banner ── */}
+      {/* --- Banner --- */}
       <div className="relative w-full h-48 sm:h-56 lg:h-64 overflow-hidden bg-[hsl(222.2,47.4%,11.2%)]">
         {event.banner_image || event.thumbnail_image ? (
           <>
@@ -580,7 +580,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-      {/* ── Section Header ── */}
+      {/* --- Section Header --- */}
       <div className="flex items-center gap-3 mb-6">
         <ShoppingCart
           className="w-7 h-7 text-[hsl(270,70%,50%)]"
@@ -603,7 +603,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
         </div>
       )}
 
-      {/* ── Ticket Type Cards ── */}
+      {/* --- Ticket Type Cards --- */}
       {enrichedTickets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Ticket className="w-12 h-12 text-gray-300 mb-3" />
@@ -626,7 +626,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
         </div>
       )}
 
-      {/* ── Error Banner ── */}
+      {/* --- Error Banner --- */}
       <AnimatePresence>
         {error && (
           <motion.div
@@ -641,7 +641,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
         )}
       </AnimatePresence>
 
-      {/* ── Cart Summary + CTA ── */}
+      {/* --- Cart Summary + CTA --- */}
       <motion.div
         layout
         className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white shadow-sm border border-gray-100"

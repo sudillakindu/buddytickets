@@ -31,7 +31,7 @@ import { createPendingOrder } from "@/lib/actions/payment";
 import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
 import type { PaymentMethod, PaymentGatewayFormData, BankTransferDetails } from "@/lib/types/payment";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 const formatLKR = (n: number) =>
   n === 0 ? "Free" : `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
@@ -46,7 +46,7 @@ const formatDate = (iso: string) =>
     minute: "2-digit",
   });
 
-// ─── Countdown Timer ─────────────────────────────────────────────────────────
+// --- Countdown Timer ---
 
 function useCountdown(expiresAt: string) {
   const calc = useCallback(
@@ -69,7 +69,7 @@ function useCountdown(expiresAt: string) {
   return { mins, secs, isUrgent, isExpired, secondsLeft };
 }
 
-// ─── Payment Gateway Auto-Submit Form ────────────────────────────────────────
+// --- Payment Gateway Auto-Submit Form ---
 // Renders a hidden form and auto-submits to the payment gateway checkout URL.
 // Currently configured for gateway can be swapped without changing this component.
 
@@ -98,7 +98,7 @@ function PaymentGatewayAutoForm({ formData }: { formData: PaymentGatewayFormData
   );
 }
 
-// ─── Bank Transfer Instructions ──────────────────────────────────────────────
+// --- Bank Transfer Instructions ---
 
 function BankTransferPanel({ details }: { details: BankTransferDetails }) {
   const [copied, setCopied] = useState<string | null>(null);
@@ -168,7 +168,7 @@ function BankTransferPanel({ details }: { details: BankTransferDetails }) {
   );
 }
 
-// ─── Main OrderSummary Component ─────────────────────────────────────────────
+// --- Main OrderSummary Component ---
 
 interface OrderSummaryProps {
   data: CheckoutData;
@@ -240,7 +240,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
     }
   }, [isExpired, router, data.event_id]);
 
-  // ── Promo handlers ──────────────────────────────────────────────────────────
+  // --- Promo handlers ---
 
   const handleApplyPromo = useCallback(async () => {
     if (!promoCode.trim()) return;
@@ -274,7 +274,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
     setPromoError(null);
   }, []);
 
-  // ── Payment submission ──────────────────────────────────────────────────────
+  // --- Payment submission ---
 
   const handlePayNow = useCallback(async () => {
     if (isExpired) {
@@ -322,10 +322,10 @@ export function OrderSummary({ data }: OrderSummaryProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-5">
-      {/* ── Payment gateway auto-submit form (rendered invisible, auto-submits) ── */}
+      {/* --- Payment gateway auto-submit form (rendered invisible, auto-submits) --- */}
       {gatewayForm && <PaymentGatewayAutoForm formData={gatewayForm} />}
 
-      {/* ── Countdown Timer ── */}
+      {/* --- Countdown Timer --- */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -346,7 +346,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </p>
       </motion.div>
 
-      {/* ── Event Info ── */}
+      {/* --- Event Info --- */}
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm space-y-3">
         <h3 className="font-primary font-black text-base uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
           {data.event_name}
@@ -361,7 +361,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </div>
       </div>
 
-      {/* ── Order Items ── */}
+      {/* --- Order Items --- */}
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <ShoppingBag className="w-4 h-4 text-[hsl(270,70%,50%)]" />
@@ -437,7 +437,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </div>
       </div>
 
-      {/* ── Promo Code ── */}
+      {/* --- Promo Code --- */}
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <Tag className="w-4 h-4 text-[hsl(270,70%,50%)]" />
@@ -537,7 +537,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </AnimatePresence>
       </div>
 
-      {/* ── Payment Method ── */}
+      {/* --- Payment Method --- */}
       {!bankDetails && !gatewayForm && (
         <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -601,12 +601,12 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </div>
       )}
 
-      {/* ── Bank Transfer Panel ── */}
+      {/* --- Bank Transfer Panel --- */}
       <AnimatePresence>
         {bankDetails && <BankTransferPanel details={bankDetails} />}
       </AnimatePresence>
 
-      {/* ── Payment Gateway Redirecting State ── */}
+      {/* --- Payment Gateway Redirecting State --- */}
       <AnimatePresence>
         {gatewayForm && !bankDetails && (
           <motion.div
@@ -622,7 +622,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         )}
       </AnimatePresence>
 
-      {/* ── Submit Error ── */}
+      {/* --- Submit Error --- */}
       <AnimatePresence>
         {submitError && (
           <motion.div
@@ -642,7 +642,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         )}
       </AnimatePresence>
 
-      {/* ── Pay Now CTA ── */}
+      {/* --- Pay Now CTA --- */}
       {!bankDetails && !gatewayForm && (
         <Button
           onClick={handlePayNow}
@@ -681,7 +681,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </Button>
       )}
 
-      {/* ── Security badge ── */}
+      {/* --- Security badge --- */}
       {!bankDetails && !gatewayForm && (
         <p className="text-center font-secondary text-xs text-gray-400 flex items-center justify-center gap-1.5">
           <span className="text-emerald-500">🔒</span>

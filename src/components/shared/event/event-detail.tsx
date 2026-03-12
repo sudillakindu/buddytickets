@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 interface StatusConfig {
   label: string;
@@ -109,7 +109,7 @@ const FALLBACK_STATUS_CONFIG: StatusConfig = {
   isActive: false,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 const formatFullDate = (iso: string): string =>
   iso
@@ -152,7 +152,7 @@ const formatSaleEndParts = (
   return { date, time };
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// --- Sub-components ---
 
 interface ImageGalleryProps {
   images: { image_url: string; priority_order: number }[];
@@ -245,7 +245,6 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
 
 ImageGallery.displayName = "ImageGallery";
 
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface EventTicketCardProps {
   ticket: TicketType;
@@ -454,7 +453,7 @@ const EventTicketCard = memo<EventTicketCardProps>(
 
 EventTicketCard.displayName = "EventTicketCard";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// --- Main Component ---
 
 interface EventDetailProps {
   event: EventDetails;
@@ -491,7 +490,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]  pb-12">
-      {/* ── Banner ── */}
+      {/* --- Banner --- */}
       <div className="relative w-full h-64 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
         {event.banner_image ? (
           <>
@@ -525,7 +524,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-14">
-          {/* ── Left Column: Gallery + Organizer ── */}
+          {/* --- Left Column: Gallery + Organizer --- */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -571,7 +570,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             </div>
           </motion.div>
 
-          {/* ── Right Column: Event Info ── */}
+          {/* --- Right Column: Event Info --- */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -808,7 +807,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           </motion.div>
         </div>
 
-        {/* ── Tickets Section ── */}
+        {/* --- Tickets Section --- */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

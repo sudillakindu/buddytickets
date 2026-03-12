@@ -3,11 +3,11 @@
 
 import React, { memo } from "react";
 
-// ─── Single Card Skeleton ─────────────────────────────────────────────────────
+// --- Single Card Skeleton ---
 
 export const EventCardSkeleton: React.FC = memo(() => (
   <div className="animate-pulse flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm w-full">
-    {/* ── Thumbnail ── */}
+    {/* --- Thumbnail --- */}
     <div className="relative w-full aspect-square bg-gray-100/80">
       {/* Top Left Badge (VIP/Live) */}
       <div className="absolute top-3 left-3 h-6 w-14 rounded-lg bg-gray-200/80 backdrop-blur-md" />
@@ -15,7 +15,7 @@ export const EventCardSkeleton: React.FC = memo(() => (
       <div className="absolute top-3 right-3 h-6 w-16 rounded-lg bg-gray-200/80 backdrop-blur-md" />
     </div>
 
-    {/* ── Card Body ── */}
+    {/* --- Card Body --- */}
     <div className="p-4 flex flex-col flex-grow gap-2.5">
       {/* Date & time row */}
       <div className="flex items-center justify-between w-full">
@@ -55,7 +55,7 @@ export const EventCardSkeleton: React.FC = memo(() => (
 
 EventCardSkeleton.displayName = "EventCardSkeleton";
 
-// ─── Grid Skeleton ────────────────────────────────────────────────────────────
+// --- Grid Skeleton ---
 
 interface EventGridSkeletonProps {
   count?: number;
