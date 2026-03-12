@@ -60,7 +60,7 @@ export const formatSaleEndParts = (
 export const formatLKR = (amount: number, fractionDigits?: number): string => {
   if (amount === 0) return "Free";
   return fractionDigits !== undefined
-    ? `LKR ${amount.toLocaleString("en-US", { minimumFractionDigits: fractionDigits })}`
+    ? `LKR ${amount.toLocaleString("en-US", { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits })}`
     : `LKR ${amount.toLocaleString("en-US")}`;
 };
 

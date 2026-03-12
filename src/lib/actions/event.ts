@@ -130,6 +130,12 @@ function sortEvents(a: Event, b: Event): number {
   return (STATUS_PRIORITY[a.status] ?? 7) - (STATUS_PRIORITY[b.status] ?? 7);
 }
 
+// Supabase's generated types don't include joined relations from .select(),
+// so we cast the result to our typed EventCardRow interface.
+function toEventCards(rows: unknown[]): Event[] {
+  return (rows as EventCardRow[]).map(mapRowToEvent);
+}
+
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
@@ -143,7 +149,7 @@ export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
 
     if (error) throw error;
 
-    const sorted = ((data ?? []) as unknown as EventCardRow[]).map(mapRowToEvent).sort(sortEvents);
+    const sorted = toEventCards(data ?? []).sort(sortEvents);
     const activeEvents = sorted
       .filter((e) => e.status === "ON_SALE" || e.status === "ONGOING")
       .slice(0, FEATURED_ACTIVE_LIMIT);
@@ -182,7 +188,7 @@ export async function getAllEvents(): Promise<GetAllEventsResult> {
 
     return {
       success: true,
-      events: ((data ?? []) as unknown as EventCardRow[]).map(mapRowToEvent).sort(sortEvents),
+      events: toEventCards(data ?? []).sort(sortEvents),
     };
   } catch (err) {
     logger.error({
