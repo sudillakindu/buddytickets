@@ -37,7 +37,7 @@ import {
 
 import type { UserProfile } from "@/lib/types/profile";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const ROLE_LABEL: Record<string, string> = {
   SYSTEM: "System",
@@ -46,7 +46,7 @@ const ROLE_LABEL: Record<string, string> = {
   USER: "User",
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 function formatJoinDate(iso: string | null): string {
   if (!iso) return "—";
@@ -70,7 +70,7 @@ function formatLastLogin(iso: string | null): string {
   });
 }
 
-// ─── Shared UI Components ────────────────────────────────────────────────────
+// --- Shared UI Components ---
 
 function SectionCard({
   title,
@@ -180,7 +180,7 @@ function FormInput({
   );
 }
 
-// ─── Avatar Section ──────────────────────────────────────────────────────────
+// --- Avatar Section ---
 
 interface AvatarSectionProps {
   profile: UserProfile;
@@ -363,7 +363,7 @@ function AvatarSection({ profile, onImageChange }: AvatarSectionProps) {
   );
 }
 
-// ─── Edit Profile Form ───────────────────────────────────────────────────────
+// --- Edit Profile Form ---
 
 interface EditProfileFormProps {
   profile: UserProfile;
@@ -481,7 +481,7 @@ function EditProfileForm({ profile, onSuccess }: EditProfileFormProps) {
   );
 }
 
-// ─── Change Password Form ────────────────────────────────────────────────────
+// --- Change Password Form ---
 
 function ChangePasswordForm({ onCancel }: { onCancel: () => void }) {
   const [formData, setFormData] = useState({
@@ -595,7 +595,7 @@ function ChangePasswordForm({ onCancel }: { onCancel: () => void }) {
   );
 }
 
-// ─── Page Skeleton ───────────────────────────────────────────────────────────
+// --- Page Skeleton ---
 
 function ProfilePageSkeleton() {
   return (
@@ -655,7 +655,7 @@ function ProfilePageSkeleton() {
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// --- Main Page ---
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);

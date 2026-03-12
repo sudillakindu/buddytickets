@@ -34,7 +34,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let orderId: string | undefined;
 
   try {
-    // ── 1. Parse form body ────────────────────────────────────────────────
+    // --- 1. Parse form body ---
     const contentType = req.headers.get("content-type") ?? "";
     let payload: PaymentGatewayWebhookPayload;
 
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       message: `Received webhook for order ${orderId} — status_code: ${payload.status_code}`,
     });
 
-    // ── 2. Merchant ID validation — reject webhooks from unknown merchants ──
+    // --- 2. Merchant ID validation — reject webhooks from unknown merchants ---
     const expectedMerchantId = process.env.PAYHERE_MERCHANT_ID;
     if (expectedMerchantId && payload.merchant_id !== expectedMerchantId) {
       logger.error({
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 3. Signature verification — CRITICAL security check ───────────────
+    // --- 3. Signature verification — CRITICAL security check ---
     if (!verifyPayHereWebhookSignature(payload)) {
       logger.error({
         fn: "payhere.webhook",
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 3. Only process successful payments ────────────────────────────────
+    // --- 3. Only process successful payments ---
     if (!isPayHereSuccess(payload.status_code)) {
       logger.info({
         fn: "payhere.webhook",
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 4. Idempotency check — prevent duplicate processing ────────────────
+    // --- 4. Idempotency check — prevent duplicate processing ---
     // finalize_order_tickets also guards against this (order status PENDING check),
     // but an early check avoids unnecessary work.
     const { data: existingOrder, error: orderFetchErr } = await getSupabaseAdmin()
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const userId = existingOrder.user_id;
 
-    // ── Amount validation — verify paid amount matches order total ──────────
+    // --- Amount validation — verify paid amount matches order total ---
     const paidAmount = Number(payload.payhere_amount);
     const expectedAmount = Number(existingOrder.final_amount);
     if (
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 6. Fetch PENDING reservations linked to this order ─────────────────
+    // --- 6. Fetch PENDING reservations linked to this order ---
     const { data: reservations, error: resErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .select("reservation_id, ticket_type_id, quantity, expires_at, status")
@@ -186,7 +186,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 6. Fetch ticket type versions for OCC ─────────────────────────────
+    // --- 6. Fetch ticket type versions for OCC ---
     const ticketTypeIds = [...new Set(reservations.map((r: Record<string, unknown>) => r.ticket_type_id as string))];
 
     const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
@@ -203,7 +203,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       (ticketTypes ?? []).map((tt: Record<string, unknown>) => [tt.ticket_type_id as string, tt.version as number]),
     );
 
-    // ── 7. Generate QR hashes for all tickets ─────────────────────────────
+    // --- 7. Generate QR hashes for all tickets ---
     // One QR hash per physical ticket seat (reservation.quantity tickets each)
     const ticketQRData: TicketQRItem[] = reservations.map((r: Record<string, unknown>) => ({
       reservation_id: r.reservation_id as string,
@@ -215,7 +215,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       ),
     }));
 
-    // ── 8. Call finalize_order_tickets RPC (atomic transaction) ────────────
+    // --- 8. Call finalize_order_tickets RPC (atomic transaction) ---
     // This single RPC atomically:
     //  - Validates reservation expiry (DB-layer edge-case protection)
     //  - OCC version check + qty_sold increment

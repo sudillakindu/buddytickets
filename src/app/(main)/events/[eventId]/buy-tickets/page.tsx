@@ -14,13 +14,13 @@ import { TicketDetails } from "@/components/shared/buy-ticket/ticket-details";
 import { TicketDetailsSkeleton } from "@/components/shared/buy-ticket/ticket-details-skeleton";
 import { logger } from "@/lib/logger";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types ---
 
 interface PageProps {
   params: Promise<{ eventId: string }>;
 }
 
-// ─── Metadata ─────────────────────────────────────────────────────────────────
+// --- Metadata ---
 
 export async function generateMetadata({
   params,
@@ -49,7 +49,7 @@ export async function generateMetadata({
   };
 }
 
-// ─── Loader ───────────────────────────────────────────────────────────────────
+// --- Loader ---
 
 async function TicketDetailsLoader({ eventId }: { eventId: string }) {
   const result = await getEventById(eventId);
@@ -66,7 +66,7 @@ async function TicketDetailsLoader({ eventId }: { eventId: string }) {
   return <TicketDetails event={result.event} />;
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---
 
 export default async function BuyTicketsPage({ params }: PageProps) {
   const { eventId } = await params;

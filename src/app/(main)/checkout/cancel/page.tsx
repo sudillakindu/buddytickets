@@ -21,7 +21,7 @@ export default function CheckoutCancelPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] flex items-center justify-center px-4 pt-16 pb-16">
       <div className="max-w-md mx-auto text-center">
-        {/* ── Cancel Icon ── */}
+        {/* --- Cancel Icon --- */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -33,7 +33,7 @@ export default function CheckoutCancelPage() {
           </div>
         </motion.div>
 
-        {/* ── Message ── */}
+        {/* --- Message --- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -58,7 +58,7 @@ export default function CheckoutCancelPage() {
           )}
         </motion.div>
 
-        {/* ── Info card ── */}
+        {/* --- Info card --- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -83,7 +83,7 @@ export default function CheckoutCancelPage() {
           </ul>
         </motion.div>
 
-        {/* ── CTAs ── */}
+        {/* --- CTAs --- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -113,7 +113,7 @@ export default function CheckoutCancelPage() {
           </Button>
         </motion.div>
 
-        {/* ── Support ── */}
+        {/* --- Support --- */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

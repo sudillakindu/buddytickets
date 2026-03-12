@@ -21,14 +21,14 @@ import { OrderSummary } from "@/components/shared/checkout/order-summary";
 import { OrderSummarySkeleton } from "@/components/shared/checkout/order-summary-skeleton";
 import { Button } from "@/components/ui/button";
 
-// ─── Metadata ────────────────────────────────────────────────────────────────
+// --- Metadata ---
 
 export const metadata = {
   title: "Checkout — BuddyTicket",
   description: "Complete your ticket purchase securely.",
 };
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---
 
 interface PageProps {
   params: Promise<{ reservationId: string }>;
@@ -37,13 +37,13 @@ interface PageProps {
 export default async function CheckoutPage({ params }: PageProps) {
   const { reservationId } = await params;
 
-  // ── 1. Auth Guard ──────────────────────────────────────────────────────────
+  // --- 1. Auth Guard ---
   const session = await getSession();
   if (!session) {
     redirect(`/sign-in?redirect=/checkout/${reservationId}`);
   }
 
-  // ── 2. Fetch and validate checkout data ────────────────────────────────────
+  // --- 2. Fetch and validate checkout data ---
   const result = await getCheckoutData(reservationId);
 
   if (!result.success) {
@@ -64,7 +64,7 @@ export default async function CheckoutPage({ params }: PageProps) {
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16">
       <div className="w-full max-w-2xl mx-auto px-4 sm:px-6">
-        {/* ── Header ── */}
+        {/* --- Header --- */}
         <div className="mb-6">
           <Button
             asChild
@@ -103,7 +103,7 @@ export default async function CheckoutPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* ── Order Summary (client component with timer + payment) ── */}
+        {/* --- Order Summary (client component with timer + payment) --- */}
         <Suspense fallback={<OrderSummarySkeleton />}>
           <OrderSummary data={data} />
         </Suspense>

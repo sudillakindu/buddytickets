@@ -68,7 +68,7 @@ export default function TicketsPage() {
     <section className="w-full min-h-[80dvh] bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* ── Header ── */}
+        {/* --- Header --- */}
         <div className="mb-8 sm:mb-10">
           <div className="flex items-center justify-between w-full">
             <div>
@@ -95,7 +95,7 @@ export default function TicketsPage() {
           </div>
         </div>
 
-        {/* ── Grid ── */}
+        {/* --- Grid --- */}
         {isLoading ? (
           <TicketGridSkeleton />
         ) : tickets.length === 0 ? (

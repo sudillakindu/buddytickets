@@ -34,7 +34,7 @@ import type {
   OrganizerOnboardingUser,
 } from "@/lib/types/organizer";
 
-// ─── Internal Types & Helpers ────────────────────────────────────────────────
+// --- Internal Types & Helpers ---
 
 interface OrganizerFormState {
   nic_number: string;
@@ -122,7 +122,7 @@ function validateForm(
   return null;
 }
 
-// ─── Components ──────────────────────────────────────────────────────────────
+// --- Components ---
 
 const StepItem = memo(
   ({
@@ -180,7 +180,7 @@ const StepItem = memo(
 
 StepItem.displayName = "StepItem";
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// --- Main Page ---
 
 export default function BecomeAnOrganizerPage() {
   const [loading, setLoading] = useState(true);

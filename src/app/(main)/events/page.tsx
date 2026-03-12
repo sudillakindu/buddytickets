@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { logger } from "@/lib/logger";
 import type { Event, EventStatus } from "@/lib/types/event";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 interface FilterTab {
   label: string;
@@ -56,7 +56,7 @@ const SORT_OPTIONS: { label: string; value: SortValue }[] = [
   { label: "Price: High to Low", value: "price-desc" },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// --- Sub-components ---
 
 const EmptyState = memo(() => (
   <motion.div
@@ -80,7 +80,7 @@ const EmptyState = memo(() => (
 
 EmptyState.displayName = "EmptyState";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// --- Main Component ---
 
 export default function EventsPage() {
   const router = useRouter();

@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { jwtVerify, type JWTPayload } from "jose";
 import { logger } from "@/lib/logger";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// --- Constants ---
 
 const COOKIE_NAME = "bt_session";
 
@@ -15,7 +15,7 @@ const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 let cachedSecret: Uint8Array | null = null;
 
-// ─── Internal Helpers ────────────────────────────────────────────────────────
+// --- Internal Helpers ---
 
 function getJwtSecret(): Uint8Array {
   if (!cachedSecret) {
@@ -52,7 +52,7 @@ async function getSessionPayload(
   }
 }
 
-// ─── Proxy Middleware ────────────────────────────────────────────────────────
+// --- Proxy Middleware ---
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const url = request.nextUrl.clone();
@@ -87,7 +87,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionPayload(request);
   const authenticated = session !== null;
 
-  // ─── Dashboard Protection ─────────────────────────────────────────────────
+  // --- Dashboard Protection ---
 
   if (pathname.startsWith("/dashboard")) {
     if (!authenticated) {
@@ -105,7 +105,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // ─── Standard Protected Pages ─────────────────────────────────────────────
+  // --- Standard Protected Pages ---
 
   // Redirect unauthenticated users from protected routes to sign-in
   const isProtected =
@@ -134,7 +134,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   return NextResponse.next();
 }
 
-// ─── Configuration ───────────────────────────────────────────────────────────
+// --- Configuration ---
 
 export const config = {
   matcher: [

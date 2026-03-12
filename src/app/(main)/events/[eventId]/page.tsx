@@ -8,13 +8,13 @@ import { EventDetail } from "@/components/shared/event/event-detail";
 import { EventDetailSkeleton } from "@/components/shared/event/event-detail-skeleton";
 import { logger } from "@/lib/logger";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types ---
 
 interface PageProps {
   params: Promise<{ eventId: string }>;
 }
 
-// ─── Metadata ─────────────────────────────────────────────────────────────────
+// --- Metadata ---
 
 export async function generateMetadata({
   params,
@@ -39,7 +39,7 @@ export async function generateMetadata({
   };
 }
 
-// ─── Loader ───────────────────────────────────────────────────────────────────
+// --- Loader ---
 
 async function EventDetailLoader({ eventId }: { eventId: string }) {
   const result = await getEventById(eventId);
@@ -56,7 +56,7 @@ async function EventDetailLoader({ eventId }: { eventId: string }) {
   return <EventDetail event={result.event} />;
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// --- Page ---
 
 export default async function EventDetailPage({ params }: PageProps) {
   const { eventId } = await params;

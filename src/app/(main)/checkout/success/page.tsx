@@ -29,7 +29,7 @@ import { getOrderSuccessData, getOrderPaymentStatus } from "@/lib/actions/order"
 import { cn } from "@/lib/ui/utils";
 import type { OrderSuccessData } from "@/lib/types/payment";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// --- Helpers ---
 
 const formatLKR = (n: number) =>
   `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
@@ -52,11 +52,11 @@ const formatTime = (iso: string) =>
       })
     : "—";
 
-// ─── Status States ────────────────────────────────────────────────────────────
+// --- Status States ---
 
 type PageState = "loading" | "confirming" | "confirmed" | "bank_pending" | "error";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// --- Main Component ---
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
@@ -67,7 +67,7 @@ export default function CheckoutSuccessPage() {
   const [pollCount, setPollCount] = useState(0);
   const MAX_POLLS = 12; // 12 × 5s = 60s max
 
-  // ── Fetch initial order data ────────────────────────────────────────────────
+  // --- Fetch initial order data ---
   useEffect(() => {
     const fetchData = async () => {
       if (!orderId) {
@@ -98,7 +98,7 @@ export default function CheckoutSuccessPage() {
     fetchData();
   }, [orderId]);
 
-  // ── Poll payment status ────────────────────────────────────────────────────
+  // --- Poll payment status ---
   const poll = useCallback(async () => {
     if (!orderId || state !== "confirming") return;
 
@@ -127,7 +127,7 @@ export default function CheckoutSuccessPage() {
     return () => clearInterval(id);
   }, [state, poll]);
 
-  // ── Share handler ───────────────────────────────────────────────────────────
+  // --- Share handler ---
   const handleShare = async () => {
     try {
       if (navigator.share) {
@@ -140,9 +140,9 @@ export default function CheckoutSuccessPage() {
     } catch { /* silent fail */ }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
+
   // RENDER STATES
-  // ─────────────────────────────────────────────────────────────────────────
+
 
   if (state === "loading") {
     return (
@@ -218,13 +218,13 @@ export default function CheckoutSuccessPage() {
     );
   }
 
-  // ── Confirmed (PAID) or Bank Transfer Pending ─────────────────────────────
+  // --- Confirmed (PAID) or Bank Transfer Pending ---
   const isPaid = state === "confirmed";
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16 px-4">
       <div className="max-w-lg mx-auto">
-        {/* ── Success Icon ── */}
+        {/* --- Success Icon --- */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -247,7 +247,7 @@ export default function CheckoutSuccessPage() {
           </div>
         </motion.div>
 
-        {/* ── Status Heading ── */}
+        {/* --- Status Heading --- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -264,7 +264,7 @@ export default function CheckoutSuccessPage() {
           </p>
         </motion.div>
 
-        {/* ── Order Details Card ── */}
+        {/* --- Order Details Card --- */}
         {orderData && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -319,7 +319,7 @@ export default function CheckoutSuccessPage() {
           </motion.div>
         )}
 
-        {/* ── Bank Transfer Pending Instructions ── */}
+        {/* --- Bank Transfer Pending Instructions --- */}
         <AnimatePresence>
           {state === "bank_pending" && (
             <motion.div
@@ -344,7 +344,7 @@ export default function CheckoutSuccessPage() {
           )}
         </AnimatePresence>
 
-        {/* ── CTAs ── */}
+        {/* --- CTAs --- */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -383,7 +383,7 @@ export default function CheckoutSuccessPage() {
           </div>
         </motion.div>
 
-        {/* ── Support note ── */}
+        {/* --- Support note --- */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
