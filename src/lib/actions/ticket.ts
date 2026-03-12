@@ -79,6 +79,15 @@ function mapToTicket(row: TicketRow): Ticket {
 
 // ─── Queries (GET) ───────────────────────────────────────────────────────────
 
+const TICKET_DETAILS_SELECT = `
+  ticket_id, qr_hash, status, price_purchased, created_at,
+  ticket_types ( ticket_type_id, name, description ),
+  events (
+    event_id, name, location, start_at, end_at, status,
+    event_images ( priority_order, image_url )
+  )
+` as const;
+
 export async function getUserTickets(): Promise<TicketsResult> {
   try {
     const session = await getSession();
@@ -86,16 +95,7 @@ export async function getUserTickets(): Promise<TicketsResult> {
 
     const { data, error } = await getSupabaseAdmin()
       .from("tickets")
-      .select(
-        `
-        ticket_id, qr_hash, status, price_purchased, created_at,
-        ticket_types ( ticket_type_id, name, description ),
-        events (
-          event_id, name, location, start_at, end_at, status,
-          event_images ( priority_order, image_url )
-        )
-      `,
-      )
+      .select(TICKET_DETAILS_SELECT)
       .eq("owner_user_id", session.sub)
       .order("created_at", { ascending: false });
 
@@ -131,16 +131,7 @@ export async function getTicketById(ticketId: string): Promise<{
 
     const { data, error } = await getSupabaseAdmin()
       .from("tickets")
-      .select(
-        `
-        ticket_id, qr_hash, status, price_purchased, created_at,
-        ticket_types ( ticket_type_id, name, description ),
-        events (
-          event_id, name, location, start_at, end_at, status,
-          event_images ( priority_order, image_url )
-        )
-      `,
-      )
+      .select(TICKET_DETAILS_SELECT)
       .eq("ticket_id", ticketId)
       .eq("owner_user_id", session.sub)
       .maybeSingle();

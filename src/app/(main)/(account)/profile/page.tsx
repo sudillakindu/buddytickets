@@ -36,6 +36,7 @@ import {
 } from "@/lib/actions/profile";
 
 import type { UserProfile } from "@/lib/types/profile";
+import { formatDateTime } from "@/lib/utils/formatting";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -48,26 +49,9 @@ const ROLE_LABEL: Record<string, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatJoinDate(iso: string | null): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function formatLastLogin(iso: string | null): string {
   if (!iso) return "Never";
-  return new Date(iso).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(iso);
 }
 
 // ─── Shared UI Components ────────────────────────────────────────────────────
@@ -345,7 +329,7 @@ function AvatarSection({ profile, onImageChange }: AvatarSectionProps) {
           label="Member Since"
           value={
             <span className="truncate">
-              {formatJoinDate(profile.created_at)}
+              {formatDateTime(profile.created_at)}
             </span>
           }
         />

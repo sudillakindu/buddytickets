@@ -25,6 +25,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
+import {
+  formatFullDate,
+  formatTime,
+  formatPrice,
+  formatSaleEndParts,
+} from "@/lib/utils/formatting";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
@@ -107,49 +113,6 @@ const FALLBACK_STATUS_CONFIG: StatusConfig = {
   buttonClass: "bg-gray-400",
   buttonDisabled: true,
   isActive: false,
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatFullDate = (iso: string): string =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "—";
-
-const formatTime = (iso: string): string =>
-  iso
-    ? new Date(iso).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
-
-const formatPrice = (price: number | null): string => {
-  if (price === null) return "—";
-  if (price === 0) return "Free";
-  return `LKR ${price.toLocaleString()}`;
-};
-
-const formatSaleEndParts = (
-  saleEndAt: string | null,
-  eventEndAt: string,
-): { date: string; time: string } => {
-  const source = saleEndAt ?? eventEndAt;
-  const date = new Date(source).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  const time = new Date(source).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return { date, time };
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────

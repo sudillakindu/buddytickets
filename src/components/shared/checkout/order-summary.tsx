@@ -28,23 +28,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
+import { formatLKR, formatCheckoutDate } from "@/lib/utils/formatting";
 import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
 import type { PaymentMethod, PaymentGatewayFormData, BankTransferDetails } from "@/lib/types/payment";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatLKR = (n: number) =>
-  n === 0 ? "Free" : `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 // ─── Countdown Timer ─────────────────────────────────────────────────────────
 
@@ -353,7 +339,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </h3>
         <div className="flex items-center gap-2 text-sm font-secondary text-gray-500">
           <Calendar className="w-4 h-4 shrink-0 text-[hsl(270,70%,50%)]" />
-          {formatDate(data.event_start_at)}
+          {formatCheckoutDate(data.event_start_at)}
         </div>
         <div className="flex items-center gap-2 text-sm font-secondary text-gray-500">
           <MapPin className="w-4 h-4 shrink-0 text-[hsl(270,70%,50%)]" />

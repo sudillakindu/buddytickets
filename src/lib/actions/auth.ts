@@ -37,6 +37,10 @@ import type {
 
 const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
+function getDashboardRedirect(role: string): string {
+  return DASHBOARD_ROLES.has(role) ? "/dashboard" : "/";
+}
+
 function newToken(): string {
   return crypto.randomUUID();
 }
@@ -445,8 +449,7 @@ export async function signIn(data: {
       .update({ last_login_at: new Date().toISOString() })
       .eq("user_id", user.user_id);
 
-    const dashboardRoles = DASHBOARD_ROLES;
-    const redirectTo = dashboardRoles.has(user.role) ? "/dashboard" : "/";
+    const redirectTo = getDashboardRedirect(user.role);
 
     return {
       success: true,
@@ -599,10 +602,7 @@ export async function verifyOtp(
           .eq("user_id", rec.user_id);
         const role = await autoLogin(rec.user_id);
         if (role) {
-          const dashboardRoles = DASHBOARD_ROLES;
-          if (dashboardRoles.has(role)) {
-            redirectTo = "/dashboard";
-          }
+          redirectTo = getDashboardRedirect(role);
         }
       }
       return {

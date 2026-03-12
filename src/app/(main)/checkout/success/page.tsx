@@ -27,30 +27,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { getOrderSuccessData, getOrderPaymentStatus } from "@/lib/actions/order";
 import { cn } from "@/lib/ui/utils";
+import { formatLKR, formatFullDate, formatTime } from "@/lib/utils/formatting";
 import type { OrderSuccessData } from "@/lib/types/payment";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatLKR = (n: number) =>
-  `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-
-const formatDate = (iso: string) =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "—";
-
-const formatTime = (iso: string) =>
-  iso
-    ? new Date(iso).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
 
 // ─── Status States ────────────────────────────────────────────────────────────
 
@@ -279,7 +257,7 @@ export default function CheckoutSuccessPage() {
             <div className="space-y-3 mb-5">
               <div className="flex items-center gap-3 text-sm font-secondary text-gray-600">
                 <Calendar className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0" />
-                {formatDate(orderData.event_start_at)}
+                {formatFullDate(orderData.event_start_at)}
               </div>
               <div className="flex items-center gap-3 text-sm font-secondary text-gray-600">
                 <Clock className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0" />

@@ -18,6 +18,7 @@ import {
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
+import { formatDate, formatTime, formatPrice } from "@/lib/utils/formatting";
 import type { Event, EventStatus } from "@/lib/types/event";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -81,31 +82,6 @@ const FALLBACK_STATUS_UI: StatusUI = {
   className: "bg-[hsl(222.2,47.4%,11.2%)]",
   disabled: true,
   isActive: false,
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatDate = (iso: string): string =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-      })
-    : "—";
-
-const formatTime = (iso: string): string =>
-  iso
-    ? new Date(iso).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
-
-const formatPrice = (price: number | null): string => {
-  if (price === null) return "—";
-  if (price === 0) return "Free";
-  return `LKR ${price.toLocaleString()}`;
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────

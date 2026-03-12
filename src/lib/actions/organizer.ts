@@ -12,9 +12,12 @@ import type {
   UserRole,
 } from "@/lib/types/organizer";
 import { logger } from "@/lib/logger";
-
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+import {
+  isValidImageFile,
+  isAllowedImageType,
+  isWithinSizeLimit,
+  MAX_IMAGE_SIZE,
+} from "@/lib/utils/file-validation";
 
 // ─── Internal Types & Helpers ────────────────────────────────────────────────
 
@@ -94,14 +97,14 @@ function validateImageFile(
   file: File | null,
   fieldName: "nic_front_image" | "nic_back_image",
 ): SubmitOrganizerDetailsResult | null {
-  if (!(file instanceof File)) {
+  if (!isValidImageFile(file)) {
     return {
       success: false,
       message: "Both NIC images are required.",
       fieldErrors: { [fieldName]: "This image is required." },
     };
   }
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+  if (!isAllowedImageType(file)) {
     return {
       success: false,
       message: "Only JPG, PNG, or WEBP images are allowed.",
@@ -110,7 +113,7 @@ function validateImageFile(
       },
     };
   }
-  if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
+  if (!isWithinSizeLimit(file, MAX_IMAGE_SIZE)) {
     return {
       success: false,
       message: "Each image must be smaller than 1MB.",

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
 
 import { cn } from "@/lib/ui/utils";
+import { formatDate, formatTime } from "@/lib/utils/formatting";
 
 import type { Ticket } from "@/lib/types/ticket";
 
@@ -13,23 +14,6 @@ export interface TicketCardProps {
   ticket: Ticket;
   index?: number;
 }
-
-const formatDate = (iso: string): string => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  });
-};
-
-const formatTime = (iso: string): string => {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 export const TicketCard: React.FC<TicketCardProps> = memo(
   ({ ticket, index = 0 }) => {

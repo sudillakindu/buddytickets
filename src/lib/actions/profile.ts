@@ -12,9 +12,12 @@ import type {
   ProfileImageResult,
 } from "@/lib/types/profile";
 import { logger } from "@/lib/logger";
-
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+import {
+  isValidImageFile,
+  isAllowedImageType,
+  isWithinSizeLimit,
+  MAX_IMAGE_SIZE,
+} from "@/lib/utils/file-validation";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -24,16 +27,16 @@ async function getAuthenticatedUserId(): Promise<string | null> {
 }
 
 function validateImageFile(file: File | null): ProfileImageResult | null {
-  if (!(file instanceof File)) {
+  if (!isValidImageFile(file)) {
     return { success: false, message: "Please select a valid image." };
   }
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+  if (!isAllowedImageType(file)) {
     return {
       success: false,
       message: "Only JPG, PNG, or WEBP images are allowed.",
     };
   }
-  if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
+  if (!isWithinSizeLimit(file, MAX_IMAGE_SIZE)) {
     return { success: false, message: "Image must be smaller than 1MB." };
   }
   return null;

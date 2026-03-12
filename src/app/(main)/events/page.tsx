@@ -205,53 +205,28 @@ export default function EventsPage() {
     });
   }, [events, activeTab, category, searchTerm, activeSort]);
 
-  const setFilter = (value: string) => {
+  const setParam = (key: string, value: string, defaultValue: string) => {
     const sp = new URLSearchParams(params.toString());
-    if (value === "all") {
-      sp.delete("filter");
+    if (value === defaultValue) {
+      sp.delete(key);
     } else {
-      sp.set("filter", value);
+      sp.set(key, value);
     }
     router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
       scroll: false,
     });
   };
+
+  const setFilter = (value: string) => setParam("filter", value, "all");
 
   const setSearch = (value: string) => {
-    const sp = new URLSearchParams(params.toString());
-    if (value.trim()) {
-      sp.set("q", value.trim());
-    } else {
-      sp.delete("q");
-    }
-    router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
-      scroll: false,
-    });
+    const trimmed = value.trim();
+    setParam("q", trimmed, "");
   };
 
-  const setCategory = (value: string) => {
-    const sp = new URLSearchParams(params.toString());
-    if (value === "all") {
-      sp.delete("category");
-    } else {
-      sp.set("category", value);
-    }
-    router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
-      scroll: false,
-    });
-  };
+  const setCategory = (value: string) => setParam("category", value, "all");
 
-  const setSort = (value: SortValue) => {
-    const sp = new URLSearchParams(params.toString());
-    if (value === "date-desc") {
-      sp.delete("sort");
-    } else {
-      sp.set("sort", value);
-    }
-    router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
-      scroll: false,
-    });
-  };
+  const setSort = (value: SortValue) => setParam("sort", value, "date-desc");
 
   const hasActiveDropdownFilters =
     activeTab.value !== "all" ||

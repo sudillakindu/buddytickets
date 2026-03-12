@@ -99,7 +99,8 @@ export async function getOrderPaymentStatus(orderId: string): Promise<{
 
     if (error || !data) return { success: false };
     return { success: true, status: data.payment_status };
-  } catch {
+  } catch (err) {
+    logger.error({ fn: "getOrderPaymentStatus", message: "Unexpected error", meta: err });
     return { success: false };
   }
 }
