@@ -28,46 +28,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
+import { useCountdown } from "@/lib/hooks/use-countdown";
+import { formatLKR, formatShortDateTime } from "@/lib/utils/format";
 import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
 import type { PaymentMethod, PaymentGatewayFormData, BankTransferDetails } from "@/lib/types/payment";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatLKR = (n: number) =>
-  n === 0 ? "Free" : `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-// ─── Countdown Timer ─────────────────────────────────────────────────────────
-
-function useCountdown(expiresAt: string) {
-  const calc = useCallback(
-    () => Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
-    [expiresAt]
-  );
-
-  const [secondsLeft, setSecondsLeft] = useState(calc);
-
-  useEffect(() => {
-    const id = setInterval(() => setSecondsLeft(calc()), 1000);
-    return () => clearInterval(id);
-  }, [calc]);
-
-  const mins = Math.floor(secondsLeft / 60);
-  const secs = secondsLeft % 60;
-  const isUrgent = secondsLeft < 120; // < 2 minutes
-  const isExpired = secondsLeft === 0;
-
-  return { mins, secs, isUrgent, isExpired, secondsLeft };
-}
 
 // ─── Payment Gateway Auto-Submit Form ────────────────────────────────────────
 // Renders a hidden form and auto-submits to the payment gateway checkout URL.
@@ -128,7 +92,7 @@ function BankTransferPanel({ details }: { details: BankTransferDetails }) {
           { label: "Account Holder", value: details.account_holder },
           { label: "Account Number", value: details.account_number, copyable: true },
           { label: "Reference", value: details.reference, copyable: true },
-          { label: "Amount", value: formatLKR(details.amount), copyable: true },
+          { label: "Amount", value: formatLKR(details.amount, 2), copyable: true },
         ].map(({ label, value, copyable }) => (
           <div key={label} className="flex items-center justify-between">
             <span className="font-secondary text-xs text-blue-600 w-32 shrink-0">{label}</span>
@@ -353,7 +317,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </h3>
         <div className="flex items-center gap-2 text-sm font-secondary text-gray-500">
           <Calendar className="w-4 h-4 shrink-0 text-[hsl(270,70%,50%)]" />
-          {formatDate(data.event_start_at)}
+          {formatShortDateTime(data.event_start_at)}
         </div>
         <div className="flex items-center gap-2 text-sm font-secondary text-gray-500">
           <MapPin className="w-4 h-4 shrink-0 text-[hsl(270,70%,50%)]" />
@@ -384,11 +348,11 @@ export function OrderSummary({ data }: OrderSummaryProps) {
                   </p>
                 </div>
                 <p className="font-secondary text-xs text-gray-400 mt-0.5 ml-5.5">
-                  {formatLKR(item.price_each)} × {item.quantity}
+                  {formatLKR(item.price_each, 2)} × {item.quantity}
                 </p>
               </div>
               <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] shrink-0">
-                {formatLKR(item.line_total)}
+                {formatLKR(item.line_total, 2)}
               </p>
             </div>
           ))}
@@ -398,7 +362,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
           <div className="flex justify-between text-sm font-secondary text-gray-500">
             <span>Subtotal</span>
-            <span>{formatLKR(data.subtotal)}</span>
+            <span>{formatLKR(data.subtotal, 2)}</span>
           </div>
 
           <AnimatePresence>
@@ -413,7 +377,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
                   <Tag className="w-3.5 h-3.5" />
                   Promo ({appliedPromo.code})
                 </span>
-                <span>-{formatLKR(discountAmount)}</span>
+                <span>-{formatLKR(discountAmount, 2)}</span>
               </motion.div>
             )}
           </AnimatePresence>
@@ -430,7 +394,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
                 exit={{ opacity: 0 }}
                 className="font-primary font-black text-xl text-[hsl(270,70%,50%)]"
               >
-                {formatLKR(finalTotal)}
+                {formatLKR(finalTotal, 2)}
               </motion.span>
             </AnimatePresence>
           </div>
@@ -663,7 +627,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
             ) : (
               <>
                 <CreditCard className="w-4 h-4" />
-                Pay {formatLKR(finalTotal)}
+                Pay {formatLKR(finalTotal, 2)}
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

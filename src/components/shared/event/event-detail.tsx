@@ -25,24 +25,32 @@ import { motion, AnimatePresence } from "framer-motion";
 
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
+import {
+  formatFullDate,
+  formatTime,
+  formatPrice,
+  formatSaleEndParts,
+} from "@/lib/utils/format";
+import {
+  STATUS_PILL_CONFIG,
+  FALLBACK_STATUS_PILL,
+  type StatusPillConfig,
+} from "@/lib/constants/event-status";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-interface StatusConfig {
-  label: string;
-  pillClass: string;
+interface EventStatusConfig extends StatusPillConfig {
   buttonText: string;
   buttonClass: string;
   buttonDisabled: boolean;
   isActive: boolean;
 }
 
-const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
+const STATUS_CONFIG: Record<EventStatus, EventStatusConfig> = {
   ON_SALE: {
-    label: "On Sale",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    ...STATUS_PILL_CONFIG.ON_SALE,
     buttonText: "Book Ticket",
     buttonClass:
       "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500",
@@ -50,8 +58,7 @@ const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
     isActive: true,
   },
   ONGOING: {
-    label: "Live Now",
-    pillClass: "bg-emerald-50 border-emerald-300 text-emerald-700",
+    ...STATUS_PILL_CONFIG.ONGOING,
     buttonText: "Live Now",
     buttonClass:
       "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-emerald-500 to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500",
@@ -59,40 +66,35 @@ const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
     isActive: true,
   },
   PUBLISHED: {
-    label: "Upcoming",
-    pillClass: "bg-orange-50 border-orange-200 text-orange-700",
+    ...STATUS_PILL_CONFIG.PUBLISHED,
     buttonText: "Upcoming",
     buttonClass: "bg-[#C76E00]",
     buttonDisabled: true,
     isActive: false,
   },
   SOLD_OUT: {
-    label: "Sold Out",
-    pillClass: "bg-red-50 border-red-200 text-red-700",
+    ...STATUS_PILL_CONFIG.SOLD_OUT,
     buttonText: "Sold Out",
     buttonClass: "bg-red-600",
     buttonDisabled: true,
     isActive: false,
   },
   COMPLETED: {
-    label: "Completed",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    ...STATUS_PILL_CONFIG.COMPLETED,
     buttonText: "Completed",
     buttonClass: "bg-emerald-600",
     buttonDisabled: true,
     isActive: false,
   },
   CANCELLED: {
-    label: "Cancelled",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+    ...STATUS_PILL_CONFIG.CANCELLED,
     buttonText: "Cancelled",
     buttonClass: "bg-gray-400",
     buttonDisabled: true,
     isActive: false,
   },
   DRAFT: {
-    label: "Draft",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-400",
+    ...STATUS_PILL_CONFIG.DRAFT,
     buttonText: "Draft",
     buttonClass: "bg-gray-200",
     buttonDisabled: true,
@@ -100,56 +102,12 @@ const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
   },
 };
 
-const FALLBACK_STATUS_CONFIG: StatusConfig = {
-  label: "Unknown",
-  pillClass: "bg-gray-50 border-gray-200 text-gray-500",
+const FALLBACK_STATUS_CONFIG: EventStatusConfig = {
+  ...FALLBACK_STATUS_PILL,
   buttonText: "Unavailable",
   buttonClass: "bg-gray-400",
   buttonDisabled: true,
   isActive: false,
-};
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatFullDate = (iso: string): string =>
-  iso
-    ? new Date(iso).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : "—";
-
-const formatTime = (iso: string): string =>
-  iso
-    ? new Date(iso).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "—";
-
-const formatPrice = (price: number | null): string => {
-  if (price === null) return "—";
-  if (price === 0) return "Free";
-  return `LKR ${price.toLocaleString()}`;
-};
-
-const formatSaleEndParts = (
-  saleEndAt: string | null,
-  eventEndAt: string,
-): { date: string; time: string } => {
-  const source = saleEndAt ?? eventEndAt;
-  const date = new Date(source).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  const time = new Date(source).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return { date, time };
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────

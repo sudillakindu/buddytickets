@@ -25,7 +25,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { createReservation } from "@/lib/actions/checkout";
-import type { TicketType, EventDetails, EventStatus } from "@/lib/types/event";
+import { enrichTicketType } from "@/lib/utils/ticket";
+import { formatLKR, formatSaleEnd } from "@/lib/utils/format";
+import {
+  STATUS_PILL_CONFIG,
+  FALLBACK_STATUS_PILL,
+  isBookableStatus,
+} from "@/lib/constants/event-status";
+import type { EventDetails } from "@/lib/types/event";
 import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
@@ -34,91 +41,7 @@ import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 const MAX_QTY_PER_TYPE = 10;
 const ACCENT = "hsl(270,70%,50%)";
 
-interface StatusConfig {
-  label: string;
-  pillClass: string;
-}
-
-const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
-  ON_SALE: {
-    label: "On Sale",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
-  },
-  ONGOING: {
-    label: "Live Now",
-    pillClass: "bg-emerald-50 border-emerald-300 text-emerald-700",
-  },
-  PUBLISHED: {
-    label: "Upcoming",
-    pillClass: "bg-orange-50 border-orange-200 text-orange-700",
-  },
-  SOLD_OUT: {
-    label: "Sold Out",
-    pillClass: "bg-red-50 border-red-200 text-red-700",
-  },
-  COMPLETED: {
-    label: "Completed",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
-  },
-  DRAFT: {
-    label: "Draft",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-400",
-  },
-};
-
-const FALLBACK_STATUS: StatusConfig = {
-  label: "Unknown",
-  pillClass: "bg-gray-50 border-gray-200 text-gray-500",
-};
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function enrichTicketType(
-  ticket: TicketType,
-  eventStatus: string,
-): BuyTicketItem {
-  const now = new Date();
-  const available = Math.max(0, ticket.capacity - ticket.qty_sold);
-  const is_sold_out = available <= 0;
-  const sale_not_started = ticket.sale_start_at
-    ? new Date(ticket.sale_start_at) > now
-    : false;
-  const sale_ended = ticket.sale_end_at
-    ? new Date(ticket.sale_end_at) < now
-    : false;
-  const can_purchase =
-    !is_sold_out &&
-    !sale_not_started &&
-    !sale_ended &&
-    (eventStatus === "ON_SALE" || eventStatus === "ONGOING");
-
-  return {
-    ...ticket,
-    available,
-    is_sold_out,
-    sale_not_started,
-    sale_ended,
-    can_purchase,
-  };
-}
-
-const formatLKR = (amount: number) =>
-  amount === 0 ? "Free" : `LKR ${amount.toLocaleString("en-US")}`;
-
-const formatSaleEnd = (saleEndAt: string | null, eventEndAt: string) => {
-  const src = saleEndAt ?? eventEndAt;
-  return new Date(src).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 // ─── QuantityStepper ─────────────────────────────────────────────────────────
 
@@ -408,7 +331,7 @@ interface TicketDetailsProps {
 
 export function TicketDetails({ event }: TicketDetailsProps) {
   const router = useRouter();
-  const statusCfg = STATUS_CONFIG[event.status] ?? FALLBACK_STATUS;
+  const statusCfg = STATUS_PILL_CONFIG[event.status] ?? FALLBACK_STATUS_PILL;
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -487,8 +410,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
     router.push(`/checkout/${result.primary_id}`);
   }, [cartItems, event.event_id, router]);
 
-  const eventIsBookable =
-    event.status === "ON_SALE" || event.status === "ONGOING";
+  const eventIsBookable = isBookableStatus(event.status);
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
