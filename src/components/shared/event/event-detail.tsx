@@ -412,6 +412,93 @@ const EventTicketCard = memo<EventTicketCardProps>(
 
 EventTicketCard.displayName = "EventTicketCard";
 
+// ─── Organizer Card ───────────────────────────────────────────────────────────
+
+interface OrganizerCardProps {
+  organizer: { name: string; username: string; image_url: string | null };
+  className?: string;
+}
+
+const OrganizerCard = memo<OrganizerCardProps>(({ organizer, className }) => (
+  <div
+    className={cn(
+      "items-center justify-between p-4 rounded-2xl border border-gray-100 bg-white shadow-sm",
+      className,
+    )}
+  >
+    <div className="flex items-center gap-3">
+      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
+        {organizer.image_url ? (
+          <Image
+            src={organizer.image_url}
+            alt={organizer.name}
+            fill
+            sizes="40px"
+            unoptimized
+            className="object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <User
+              className="w-5 h-5 text-[hsl(270,70%,50%)]"
+              aria-hidden="true"
+            />
+          </div>
+        )}
+      </div>
+      <p className="font-secondary text-[14px] uppercase tracking-wider text-gray-400 font-semibold">
+        Organizer
+      </p>
+    </div>
+    <div className="text-right min-w-0">
+      <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
+        {organizer.name}
+      </p>
+      <p className="font-secondary text-xs text-gray-400 truncate">
+        @{organizer.username}
+      </p>
+    </div>
+  </div>
+));
+
+OrganizerCard.displayName = "OrganizerCard";
+
+// ─── CTA Button ──────────────────────────────────────────────────────────────
+
+interface EventCTAButtonProps {
+  statusCfg: EventStatusConfig;
+  eventStatus: string;
+  onClick: () => void;
+  className?: string;
+}
+
+const EventCTAButton = memo<EventCTAButtonProps>(
+  ({ statusCfg, eventStatus, onClick, className }) => (
+    <Button
+      disabled={statusCfg.buttonDisabled}
+      onClick={onClick}
+      className={cn(
+        "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300",
+        !statusCfg.buttonDisabled && "hover:shadow-xl hover:-translate-y-0.5",
+        statusCfg.buttonClass,
+        className,
+      )}
+    >
+      <span className="flex items-center justify-center gap-2">
+        {eventStatus === "ON_SALE" && (
+          <Ticket className="w-4 h-4" aria-hidden="true" />
+        )}
+        {eventStatus === "ONGOING" && (
+          <Radio className="w-4 h-4" aria-hidden="true" />
+        )}
+        {statusCfg.buttonText}
+      </span>
+    </Button>
+  ),
+);
+
+EventCTAButton.displayName = "EventCTAButton";
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 interface EventDetailProps {
@@ -492,41 +579,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           >
             <ImageGallery images={event.images} eventName={event.name} />
 
-            {/* Organizer card — desktop only (mobile version is in right column) */}
-            <div className="hidden lg:flex items-center justify-between p-4 mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
-                  {event.organizer.image_url ? (
-                    <Image
-                      src={event.organizer.image_url}
-                      alt={event.organizer.name}
-                      fill
-                      sizes="40px"
-                      unoptimized
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <User
-                        className="w-5 h-5 text-[hsl(270,70%,50%)]"
-                        aria-hidden="true"
-                      />
-                    </div>
-                  )}
-                </div>
-                <p className="font-secondary text-[14px] uppercase tracking-wider text-gray-400 font-semibold">
-                  Organizer
-                </p>
-              </div>
-              <div className="text-right min-w-0">
-                <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
-                  {event.organizer.name}
-                </p>
-                <p className="font-secondary text-xs text-gray-400 truncate">
-                  @{event.organizer.username}
-                </p>
-              </div>
-            </div>
+            <OrganizerCard
+              organizer={event.organizer}
+              className="hidden lg:flex mt-4"
+            />
           </motion.div>
 
           {/* ── Right Column: Event Info ── */}
@@ -679,26 +735,12 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             </div>
 
             {/* CTA button */}
-            <Button
-              disabled={statusCfg.buttonDisabled}
+            <EventCTAButton
+              statusCfg={statusCfg}
+              eventStatus={event.status}
               onClick={handleCTA}
-              className={cn(
-                "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300 mt-1",
-                !statusCfg.buttonDisabled &&
-                  "hover:shadow-xl hover:-translate-y-0.5",
-                statusCfg.buttonClass,
-              )}
-            >
-              <span className="flex items-center justify-center gap-2">
-                {event.status === "ON_SALE" && (
-                  <Ticket className="w-4 h-4" aria-hidden="true" />
-                )}
-                {event.status === "ONGOING" && (
-                  <Radio className="w-4 h-4" aria-hidden="true" />
-                )}
-                {statusCfg.buttonText}
-              </span>
-            </Button>
+              className="mt-1"
+            />
 
             {/* About */}
             <div className="overflow-hidden">
@@ -728,41 +770,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             )}
 
-            {/* Organizer card — mobile only (desktop version is in left column) */}
-            <div className="flex lg:hidden items-center justify-between p-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
-                  {event.organizer.image_url ? (
-                    <Image
-                      src={event.organizer.image_url}
-                      alt={event.organizer.name}
-                      fill
-                      sizes="40px"
-                      unoptimized
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <User
-                        className="w-5 h-5 text-[hsl(270,70%,50%)]"
-                        aria-hidden="true"
-                      />
-                    </div>
-                  )}
-                </div>
-                <p className="font-secondary text-[14px] uppercase tracking-wider text-gray-400 font-semibold">
-                  Organizer
-                </p>
-              </div>
-              <div className="text-right min-w-0">
-                <p className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)] truncate">
-                  {event.organizer.name}
-                </p>
-                <p className="font-secondary text-xs text-gray-400 truncate">
-                  @{event.organizer.username}
-                </p>
-              </div>
-            </div>
+            <OrganizerCard
+              organizer={event.organizer}
+              className="flex lg:hidden"
+            />
           </motion.div>
         </div>
 
@@ -813,26 +824,11 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
 
         {/* Mobile-only Book Now CTA — below tickets */}
         <div className="mt-6 lg:hidden">
-          <Button
-            disabled={statusCfg.buttonDisabled}
+          <EventCTAButton
+            statusCfg={statusCfg}
+            eventStatus={event.status}
             onClick={handleCTA}
-            className={cn(
-              "w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white shadow-md transition-all duration-300",
-              !statusCfg.buttonDisabled &&
-                "hover:shadow-xl hover:-translate-y-0.5",
-              statusCfg.buttonClass,
-            )}
-          >
-            <span className="flex items-center justify-center gap-2">
-              {event.status === "ON_SALE" && (
-                <Ticket className="w-4 h-4" aria-hidden="true" />
-              )}
-              {event.status === "ONGOING" && (
-                <Radio className="w-4 h-4" aria-hidden="true" />
-              )}
-              {statusCfg.buttonText}
-            </span>
-          </Button>
+          />
         </div>
       </div>
     </main>

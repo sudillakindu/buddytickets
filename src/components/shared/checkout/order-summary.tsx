@@ -132,6 +132,205 @@ function BankTransferPanel({ details }: { details: BankTransferDetails }) {
   );
 }
 
+// ─── Promo Code Section ──────────────────────────────────────────────────────
+
+interface PromoCodeSectionProps {
+  appliedPromo: ValidatedPromotion | null;
+  promoCode: string;
+  promoLoading: boolean;
+  promoError: string | null;
+  promoSuccess: string | null;
+  onCodeChange: (code: string) => void;
+  onApply: () => void;
+  onRemove: () => void;
+}
+
+function PromoCodeSection({
+  appliedPromo,
+  promoCode,
+  promoLoading,
+  promoError,
+  promoSuccess,
+  onCodeChange,
+  onApply,
+  onRemove,
+}: PromoCodeSectionProps) {
+  return (
+    <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <Tag className="w-4 h-4 text-[hsl(270,70%,50%)]" />
+        <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
+          Promo Code
+        </h4>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {appliedPromo ? (
+          <motion.div
+            key="applied"
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-secondary text-sm font-bold text-emerald-800">
+                  {appliedPromo.code}
+                </p>
+                {appliedPromo.description && (
+                  <p className="font-secondary text-xs text-emerald-600">
+                    {appliedPromo.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={onRemove}
+              className="text-emerald-500 hover:text-emerald-700 transition-colors"
+              aria-label="Remove promo"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="input"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex gap-2"
+          >
+            <Input
+              value={promoCode}
+              onChange={(e) => onCodeChange(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === "Enter" && onApply()}
+              placeholder="Enter promo code"
+              className="flex-1 font-secondary uppercase tracking-wider rounded-xl border-gray-200 focus:border-[hsl(270,70%,50%)] focus:ring-[hsl(270,70%,50%)]"
+              maxLength={50}
+              disabled={promoLoading}
+            />
+            <Button
+              onClick={onApply}
+              disabled={!promoCode.trim() || promoLoading}
+              variant="outline"
+              className="rounded-xl border-[hsl(270,70%,50%)] text-[hsl(270,70%,50%)] hover:bg-[hsl(270,70%,50%)] hover:text-white font-secondary font-semibold"
+            >
+              {promoLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Apply"
+              )}
+            </Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {promoError && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-2 text-xs font-secondary text-red-600 flex items-center gap-1.5"
+          >
+            <AlertCircle className="w-3 h-3" />
+            {promoError}
+          </motion.p>
+        )}
+        {promoSuccess && !appliedPromo && (
+          <motion.p
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mt-2 text-xs font-secondary text-emerald-600"
+          >
+            {promoSuccess}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Payment Method Selector ─────────────────────────────────────────────────
+
+interface PaymentMethodSelectorProps {
+  methods: typeof PAYMENT_METHODS;
+  selected: PaymentMethod;
+  onSelect: (method: PaymentMethod) => void;
+}
+
+function PaymentMethodSelector({
+  methods,
+  selected,
+  onSelect,
+}: PaymentMethodSelectorProps) {
+  return (
+    <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="flex items-center gap-2 mb-3">
+        <CreditCard className="w-4 h-4 text-[hsl(270,70%,50%)]" />
+        <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
+          Payment Method
+        </h4>
+      </div>
+      <div className="space-y-2">
+        {methods.map((method) => (
+          <button
+            key={method.id}
+            onClick={() => onSelect(method.id)}
+            className={cn(
+              "w-full flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all duration-150",
+              selected === method.id
+                ? "border-[hsl(270,70%,50%)] bg-[hsl(270,70%,50%)]/5 ring-1 ring-[hsl(270,70%,50%)]/30"
+                : "border-gray-200 hover:border-gray-300 bg-white",
+            )}
+          >
+            <div
+              className={cn(
+                "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                selected === method.id
+                  ? "border-[hsl(270,70%,50%)]"
+                  : "border-gray-300",
+              )}
+            >
+              {selected === method.id && (
+                <div className="w-2.5 h-2.5 rounded-full bg-[hsl(270,70%,50%)]" />
+              )}
+            </div>
+            <span
+              className={cn(
+                "shrink-0 transition-colors",
+                selected === method.id
+                  ? "text-[hsl(270,70%,50%)]"
+                  : "text-gray-400",
+              )}
+            >
+              {method.icon}
+            </span>
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "font-secondary text-sm font-semibold",
+                  selected === method.id
+                    ? "text-[hsl(222.2,47.4%,11.2%)]"
+                    : "text-gray-600",
+                )}
+              >
+                {method.label}
+              </p>
+              <p className="font-secondary text-xs text-gray-400 leading-snug">
+                {method.description}
+              </p>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main OrderSummary Component ─────────────────────────────────────────────
 
 interface OrderSummaryProps {
@@ -402,167 +601,27 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       </div>
 
       {/* ── Promo Code ── */}
-      <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex items-center gap-2 mb-3">
-          <Tag className="w-4 h-4 text-[hsl(270,70%,50%)]" />
-          <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
-            Promo Code
-          </h4>
-        </div>
-
-        <AnimatePresence mode="wait">
-          {appliedPromo ? (
-            <motion.div
-              key="applied"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.97 }}
-              className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200"
-            >
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <div>
-                  <p className="font-secondary text-sm font-bold text-emerald-800">
-                    {appliedPromo.code}
-                  </p>
-                  {appliedPromo.description && (
-                    <p className="font-secondary text-xs text-emerald-600">
-                      {appliedPromo.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={handleRemovePromo}
-                className="text-emerald-500 hover:text-emerald-700 transition-colors"
-                aria-label="Remove promo"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="input"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex gap-2"
-            >
-              <Input
-                value={promoCode}
-                onChange={(e) => {
-                  setPromoCode(e.target.value.toUpperCase());
-                  setPromoError(null);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
-                placeholder="Enter promo code"
-                className="flex-1 font-secondary uppercase tracking-wider rounded-xl border-gray-200 focus:border-[hsl(270,70%,50%)] focus:ring-[hsl(270,70%,50%)]"
-                maxLength={50}
-                disabled={promoLoading}
-              />
-              <Button
-                onClick={handleApplyPromo}
-                disabled={!promoCode.trim() || promoLoading}
-                variant="outline"
-                className="rounded-xl border-[hsl(270,70%,50%)] text-[hsl(270,70%,50%)] hover:bg-[hsl(270,70%,50%)] hover:text-white font-secondary font-semibold"
-              >
-                {promoLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Apply"
-                )}
-              </Button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {promoError && (
-            <motion.p
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-2 text-xs font-secondary text-red-600 flex items-center gap-1.5"
-            >
-              <AlertCircle className="w-3 h-3" />
-              {promoError}
-            </motion.p>
-          )}
-          {promoSuccess && !appliedPromo && (
-            <motion.p
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-2 text-xs font-secondary text-emerald-600"
-            >
-              {promoSuccess}
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
+      <PromoCodeSection
+        appliedPromo={appliedPromo}
+        promoCode={promoCode}
+        promoLoading={promoLoading}
+        promoError={promoError}
+        promoSuccess={promoSuccess}
+        onCodeChange={(code) => {
+          setPromoCode(code);
+          setPromoError(null);
+        }}
+        onApply={handleApplyPromo}
+        onRemove={handleRemovePromo}
+      />
 
       {/* ── Payment Method ── */}
       {!bankDetails && !gatewayForm && (
-        <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <CreditCard className="w-4 h-4 text-[hsl(270,70%,50%)]" />
-            <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
-              Payment Method
-            </h4>
-          </div>
-          <div className="space-y-2">
-            {availableMethods.map((method) => (
-              <button
-                key={method.id}
-                onClick={() => setPaymentMethod(method.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 p-3.5 rounded-xl border text-left transition-all duration-150",
-                  paymentMethod === method.id
-                    ? "border-[hsl(270,70%,50%)] bg-[hsl(270,70%,50%)]/5 ring-1 ring-[hsl(270,70%,50%)]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white",
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
-                    paymentMethod === method.id
-                      ? "border-[hsl(270,70%,50%)]"
-                      : "border-gray-300",
-                  )}
-                >
-                  {paymentMethod === method.id && (
-                    <div className="w-2.5 h-2.5 rounded-full bg-[hsl(270,70%,50%)]" />
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    "shrink-0 transition-colors",
-                    paymentMethod === method.id
-                      ? "text-[hsl(270,70%,50%)]"
-                      : "text-gray-400",
-                  )}
-                >
-                  {method.icon}
-                </span>
-                <div className="min-w-0">
-                  <p
-                    className={cn(
-                      "font-secondary text-sm font-semibold",
-                      paymentMethod === method.id
-                        ? "text-[hsl(222.2,47.4%,11.2%)]"
-                        : "text-gray-600",
-                    )}
-                  >
-                    {method.label}
-                  </p>
-                  <p className="font-secondary text-xs text-gray-400 leading-snug">
-                    {method.description}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <PaymentMethodSelector
+          methods={availableMethods}
+          selected={paymentMethod}
+          onSelect={setPaymentMethod}
+        />
       )}
 
       {/* ── Bank Transfer Panel ── */}
