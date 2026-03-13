@@ -4,6 +4,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
+import {
+  MAX_IMAGE_SIZE,
+  ALLOWED_IMAGE_TYPES,
+} from "@/lib/utils/file-validation";
 import type {
   UserProfile,
   ProfileResult,
@@ -11,9 +15,6 @@ import type {
   ProfileImageResult,
 } from "@/lib/types/profile";
 import { logger } from "@/lib/logger";
-
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await getSession();

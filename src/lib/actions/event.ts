@@ -276,10 +276,9 @@ export async function getEventById(
       status: data.status,
       is_active: data.is_active,
       is_vip: data.is_vip,
-      allowed_payment_methods: (data as Record<string, unknown>)
-        .allowed_payment_methods as
-        | import("@/lib/types/payment").PaymentMethod[]
-        | null,
+      allowed_payment_methods:
+        (data as unknown as { allowed_payment_methods: import("@/lib/types/payment").PaymentMethod[] | null })
+          .allowed_payment_methods ?? null,
       created_at: data.created_at,
       updated_at: data.updated_at ?? null,
       category: categoryDetails.name,

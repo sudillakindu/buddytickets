@@ -3,6 +3,10 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
+import {
+  MAX_IMAGE_SIZE,
+  ALLOWED_IMAGE_TYPES,
+} from "@/lib/utils/file-validation";
 import type {
   OrganizerDetails,
   OrganizerDetailsInput,
@@ -11,9 +15,6 @@ import type {
   UserRole,
 } from "@/lib/types/organizer";
 import { logger } from "@/lib/logger";
-
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 interface UserRow {
   user_id: string;
