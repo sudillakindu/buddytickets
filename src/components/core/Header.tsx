@@ -1,4 +1,3 @@
-// components/core/Header.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef, memo } from "react";
@@ -14,12 +13,9 @@ import {
   LogOut,
   LayoutDashboard,
 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
 import { signOut } from "@/lib/actions/auth";
 
 export interface UserInfo {
@@ -95,7 +91,6 @@ BrandLogo.displayName = "BrandLogo";
 const UserAvatar = memo(
   ({ user, size = "md" }: { user: UserInfo; size?: "sm" | "md" }) => {
     const dim = size === "sm" ? "w-8 h-8 text-xs" : "w-9 h-9 text-sm";
-
     if (user.imageUrl) {
       return (
         <Image
@@ -107,7 +102,6 @@ const UserAvatar = memo(
         />
       );
     }
-
     return (
       <div
         className={cn(
@@ -126,22 +120,22 @@ UserAvatar.displayName = "UserAvatar";
 export function Header({ user }: { user: UserInfo | null }) {
   const router = useRouter();
   const pathname = usePathname();
-
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const hasDashboardAccess = user !== null && DASHBOARD_ROLES.has(user.role);
 
   const handleNavigation = useCallback(
     (sectionId: string) => {
       if (pathname !== "/") {
         router.push("/");
-        setTimeout(() => {
-          document
-            .getElementById(sectionId)
-            ?.scrollIntoView({ behavior: "smooth" });
-        }, 150);
+        setTimeout(
+          () =>
+            document
+              .getElementById(sectionId)
+              ?.scrollIntoView({ behavior: "smooth" }),
+          150,
+        );
       } else {
         const element = document.getElementById(sectionId);
         if (element) {
@@ -159,11 +153,9 @@ export function Header({ user }: { user: UserInfo | null }) {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(e.target as Node)
-      ) {
+      )
         setDropdownOpen(false);
-      }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -181,7 +173,6 @@ export function Header({ user }: { user: UserInfo | null }) {
         <nav className="relative w-full" aria-label="Main navigation">
           <div className="flex items-center justify-between px-4 sm:px-6 py-3 rounded-full border bg-white/70 border-[hsl(222.2,47.4%,11.2%)]/5 backdrop-blur-xl shadow-sm transition-all duration-500 ease-out w-full">
             <BrandLogo />
-
             <div className="hidden md:flex items-center gap-5">
               <div className="flex items-center gap-8">
                 {NAV_LINKS.map((item) => (
@@ -192,10 +183,8 @@ export function Header({ user }: { user: UserInfo | null }) {
                   />
                 ))}
               </div>
-
               <div className="flex items-center gap-3">
                 <div className="h-4 w-px bg-[hsl(222.2,47.4%,11.2%)]/10 mx-2" />
-
                 {user ? (
                   <div className="relative" ref={dropdownRef}>
                     <button
@@ -213,7 +202,6 @@ export function Header({ user }: { user: UserInfo | null }) {
                         )}
                       />
                     </button>
-
                     {dropdownOpen && (
                       <div className="absolute right-0 top-full mt-5 w-64 rounded-2xl bg-white/95 backdrop-blur-xl border border-[hsl(222.2,47.4%,11.2%)]/5 shadow-lg py-2 z-50">
                         <div className="px-4 py-3 min-w-0">
@@ -230,16 +218,14 @@ export function Header({ user }: { user: UserInfo | null }) {
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                         >
-                          <User className="w-4 h-4" />
-                          My Profile
+                          <User className="w-4 h-4" /> My Profile
                         </Link>
                         <Link
                           href="/tickets"
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                         >
-                          <Ticket className="w-4 h-4" />
-                          My Tickets
+                          <Ticket className="w-4 h-4" /> My Tickets
                         </Link>
                         {hasDashboardAccess && (
                           <Link
@@ -247,8 +233,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                             onClick={() => setDropdownOpen(false)}
                             className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                           >
-                            <LayoutDashboard className="w-4 h-4" />
-                            Dashboard
+                            <LayoutDashboard className="w-4 h-4" /> Dashboard
                           </Link>
                         )}
                         <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1 mx-3" />
@@ -256,8 +241,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                           onClick={handleSignOut}
                           className="flex items-center justify-center gap-3 px-4 py-2.5 text-sm font-secondary text-red-500 hover:bg-red-50 transition-colors w-full cursor-pointer"
                         >
-                          <LogOut className="w-4 h-4" />
-                          Sign Out
+                          <LogOut className="w-4 h-4" /> Sign Out
                         </button>
                       </div>
                     )}
@@ -280,7 +264,6 @@ export function Header({ user }: { user: UserInfo | null }) {
                 )}
               </div>
             </div>
-
             <button
               className="md:hidden p-2 rounded-full transition-colors hover:bg-[hsl(222.2,47.4%,11.2%)]/5 text-[hsl(222.2,47.4%,11.2%)]"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -294,7 +277,6 @@ export function Header({ user }: { user: UserInfo | null }) {
               )}
             </button>
           </div>
-
           {mobileMenuOpen && (
             <div className="md:hidden absolute top-full left-0 right-0 mt-2 mx-4 rounded-2xl border border-[hsl(222.2,47.4%,11.2%)]/5 bg-white/95 backdrop-blur-xl shadow-lg py-4 px-5 flex flex-col gap-3">
               {user && (
@@ -313,7 +295,6 @@ export function Header({ user }: { user: UserInfo | null }) {
                   <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1" />
                 </>
               )}
-
               {NAV_LINKS.map((item) => (
                 <button
                   key={item.name}
@@ -326,9 +307,7 @@ export function Header({ user }: { user: UserInfo | null }) {
                   {item.name}
                 </button>
               ))}
-
               <div className="h-px bg-[hsl(222.2,47.4%,11.2%)]/10 my-1" />
-
               {user ? (
                 <>
                   <Link
@@ -336,16 +315,14 @@ export function Header({ user }: { user: UserInfo | null }) {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                   >
-                    <User className="w-4 h-4" />
-                    My Profile
+                    <User className="w-4 h-4" /> My Profile
                   </Link>
                   <Link
                     href="/tickets"
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                   >
-                    <Ticket className="w-4 h-4" />
-                    My Tickets
+                    <Ticket className="w-4 h-4" /> My Tickets
                   </Link>
                   {hasDashboardAccess && (
                     <Link
@@ -353,16 +330,14 @@ export function Header({ user }: { user: UserInfo | null }) {
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                     >
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
+                      <LayoutDashboard className="w-4 h-4" /> Dashboard
                     </Link>
                   )}
                   <button
                     onClick={handleSignOut}
                     className="flex items-center justify-center gap-2.5 font-secondary text-sm py-1.5 text-red-500 hover:text-red-600 transition-colors cursor-pointer w-full"
                   >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
+                    <LogOut className="w-4 h-4" /> Sign Out
                   </button>
                 </>
               ) : (

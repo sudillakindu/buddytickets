@@ -1,4 +1,3 @@
-// components/shared/ticket/ticket-skeleton.tsx
 "use client";
 
 import React, { memo } from "react";

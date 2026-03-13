@@ -1,4 +1,3 @@
-// components/core/Footer.tsx
 "use client";
 
 import { memo } from "react";
@@ -16,9 +15,7 @@ import {
   ArrowRight,
   LucideIcon,
 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface SocialLink {
@@ -197,12 +194,10 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
                 BuddyTickets
               </span>
             </Link>
-
             <p className="font-secondary text-sm leading-relaxed text-[hsl(215.4,16.3%,46.9%)]">
               Your premier platform for discovering, creating, and managing
               events in Sri Lanka. Connect with experiences that matter.
             </p>
-
             <div
               className="flex space-x-3 pt-1 justify-start w-full"
               role="list"
@@ -226,10 +221,8 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
               ))}
             </div>
           </motion.div>
-
           <FooterNavGroup title="Quick Links" links={QUICK_LINKS} delay={0.1} />
           <FooterNavGroup title="Legal" links={LEGAL_LINKS} delay={0.2} />
-
           <motion.div
             className="space-y-4 flex flex-col items-start text-left w-full"
             initial={{ opacity: 0, y: 20 }}
@@ -258,7 +251,6 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
             </ul>
           </motion.div>
         </div>
-
         <motion.div
           className="border-t border-gray-200/60 pt-4 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 w-full"
           initial={{ opacity: 0 }}

@@ -1,4 +1,3 @@
-// components/shared/buy-ticket/ticket-details.tsx
 "use client";
 
 import React, { useState, useCallback, useMemo, memo } from "react";
@@ -21,15 +20,12 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { toast } from "sonner";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { createReservation } from "@/lib/actions/checkout";
 import type { TicketType, EventDetails, EventStatus } from "@/lib/types/event";
 import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const MAX_QTY_PER_TYPE = 10;
 const ACCENT = "hsl(270,70%,50%)";
@@ -75,8 +71,6 @@ const FALLBACK_STATUS: StatusConfig = {
   pillClass: "bg-gray-50 border-gray-200 text-gray-500",
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function enrichTicketType(
   ticket: TicketType,
   eventStatus: string,
@@ -108,7 +102,6 @@ function enrichTicketType(
 
 const formatLKR = (amount: number) =>
   amount === 0 ? "Free" : `LKR ${amount.toLocaleString("en-US")}`;
-
 const formatSaleEnd = (saleEndAt: string | null, eventEndAt: string) => {
   const src = saleEndAt ?? eventEndAt;
   return new Date(src).toLocaleDateString("en-US", {
@@ -119,8 +112,6 @@ const formatSaleEnd = (saleEndAt: string | null, eventEndAt: string) => {
     minute: "2-digit",
   });
 };
-
-// ─── QuantityStepper ─────────────────────────────────────────────────────────
 
 interface StepperProps {
   value: number;
@@ -151,18 +142,14 @@ const QuantityStepper = memo<StepperProps>(
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
-
         <span
           className={cn(
             "w-6 text-center font-primary font-bold text-sm",
-            value > 0
-              ? "text-[hsl(222.2,47.4%,11.2%)]"
-              : "text-gray-400",
+            value > 0 ? "text-[hsl(222.2,47.4%,11.2%)]" : "text-gray-400",
           )}
         >
           {value}
         </span>
-
         <button
           onClick={onIncrement}
           disabled={atMax || !canPurchase}
@@ -182,8 +169,6 @@ const QuantityStepper = memo<StepperProps>(
 );
 
 QuantityStepper.displayName = "QuantityStepper";
-
-// ─── TicketTypeCard ───────────────────────────────────────────────────────────
 
 interface TicketTypeCardProps {
   ticket: BuyTicketItem;
@@ -206,12 +191,10 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
         : soldPct >= 60
           ? "bg-amber-400"
           : "bg-emerald-500";
-
     const inclusions = Array.isArray(ticket.inclusions)
       ? ticket.inclusions
       : [];
     const maxQty = Math.min(MAX_QTY_PER_TYPE, ticket.available);
-
     const statusBadge = ticket.is_sold_out
       ? { label: "Sold Out", cls: "bg-red-100 text-red-600" }
       : ticket.sale_ended
@@ -232,19 +215,16 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
             : "opacity-70",
         )}
       >
-        {/* Accent bar */}
         <div
           className="w-full sm:w-2 h-2 sm:h-auto shrink-0"
           style={{ background: accentColor }}
         />
-
         <div
           className={cn(
             "flex-1 flex flex-col sm:flex-row",
             ticket.can_purchase ? "bg-white" : "bg-gray-50",
           )}
         >
-          {/* Left: Details */}
           <div className="flex-1 min-w-0 px-5 pt-5 pb-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -275,13 +255,11 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
                 </span>
               )}
             </div>
-
             {ticket.description && (
               <p className="font-secondary text-xs text-gray-500 line-clamp-2 leading-relaxed">
                 {ticket.description}
               </p>
             )}
-
             {inclusions.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {inclusions.map((item, i) => (
@@ -294,17 +272,12 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
                       borderColor: `${accentColor}45`,
                     }}
                   >
-                    <CheckCircle2
-                      className="w-3 h-3 shrink-0"
-                      aria-hidden
-                    />
+                    <CheckCircle2 className="w-3 h-3 shrink-0" aria-hidden />
                     {item}
                   </span>
                 ))}
               </div>
             )}
-
-            {/* Capacity bar */}
             <div className="mt-auto space-y-1.5">
               {ticket.available <= 20 && ticket.available > 0 && (
                 <p className="text-[10px] font-secondary font-semibold text-amber-600">
@@ -330,8 +303,6 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
               </div>
             </div>
           </div>
-
-          {/* Divider notch */}
           <div className="relative flex sm:flex-col items-center justify-center">
             <span
               className="absolute rounded-full w-4 h-4 border border-gray-200 z-10 left-0 sm:left-auto sm:top-0 -translate-x-1/2 sm:translate-x-0 sm:-translate-y-1/2"
@@ -351,8 +322,6 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
             />
             <div className="w-full sm:w-px h-px sm:h-full border-t-2 sm:border-t-0 sm:border-l-2 border-dashed border-gray-200 mx-2 sm:mx-0 my-0 sm:my-2" />
           </div>
-
-          {/* Right: Price + Stepper */}
           <div
             className={cn(
               "w-full sm:w-48 shrink-0 px-5 py-4 flex sm:flex-col justify-between items-start gap-3",
@@ -382,7 +351,6 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
                 </div>
               )}
             </div>
-
             <QuantityStepper
               value={quantity}
               maxQty={maxQty}
@@ -399,8 +367,6 @@ const TicketTypeCard = memo<TicketTypeCardProps>(
 );
 
 TicketTypeCard.displayName = "TicketTypeCard";
-
-// ─── Main TicketDetails Component ────────────────────────────────────────────
 
 interface TicketDetailsProps {
   event: EventDetails;
@@ -447,13 +413,14 @@ export function TicketDetails({ event }: TicketDetailsProps) {
         .map(([ticket_type_id, quantity]) => ({ ticket_type_id, quantity })),
     [quantities],
   );
-
-  const subtotal = useMemo(() => {
-    return enrichedTickets.reduce((sum, t) => {
-      return sum + t.price * (quantities[t.ticket_type_id] ?? 0);
-    }, 0);
-  }, [enrichedTickets, quantities]);
-
+  const subtotal = useMemo(
+    () =>
+      enrichedTickets.reduce(
+        (sum, t) => sum + t.price * (quantities[t.ticket_type_id] ?? 0),
+        0,
+      ),
+    [enrichedTickets, quantities],
+  );
   const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
 
   const handleProceedToCheckout = useCallback(async () => {
@@ -461,29 +428,22 @@ export function TicketDetails({ event }: TicketDetailsProps) {
       setError("Please select at least one ticket.");
       return;
     }
-
     setIsLoading(true);
     setError(null);
 
     const result = await createReservation(event.event_id, cartItems);
-
     if (!result.success) {
       if (result.message === "UNAUTHENTICATED") {
-        // Redirect to sign-in, preserving the event URL for post-login redirect
         toast.info("Please sign in to continue", {
           description: "You'll be redirected back here after signing in.",
         });
-        router.push(
-          `/sign-in?redirect=/events/${event.event_id}/buy-tickets`,
-        );
+        router.push(`/sign-in?redirect=/events/${event.event_id}/buy-tickets`);
         return;
       }
       setError(result.message ?? "Failed to reserve tickets.");
       setIsLoading(false);
       return;
     }
-
-    // Reservation created — redirect to checkout
     router.push(`/checkout/${result.primary_id}`);
   }, [cartItems, event.event_id, router]);
 
@@ -492,7 +452,6 @@ export function TicketDetails({ event }: TicketDetailsProps) {
 
   return (
     <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
-      {/* ── Banner ── */}
       <div className="relative w-full h-48 sm:h-56 lg:h-64 overflow-hidden bg-[hsl(222.2,47.4%,11.2%)]">
         {event.banner_image || event.thumbnail_image ? (
           <>
@@ -521,8 +480,6 @@ export function TicketDetails({ event }: TicketDetailsProps) {
             />
           </div>
         )}
-
-        {/* Banner overlay content — bottom left */}
         <div className="absolute inset-0 flex flex-col justify-end pb-5">
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
             <Button
@@ -535,8 +492,6 @@ export function TicketDetails({ event }: TicketDetailsProps) {
                 Back to Event
               </Link>
             </Button>
-
-            {/* Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
               {event.is_vip && (
                 <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-2.5 py-0.5 rounded-full border border-yellow-300 text-[11px] font-bold uppercase tracking-wide">
@@ -566,7 +521,6 @@ export function TicketDetails({ event }: TicketDetailsProps) {
                 )}
               </span>
             </div>
-
             <h1 className="font-primary font-black text-white text-xl sm:text-2xl lg:text-3xl uppercase leading-tight drop-shadow-lg">
               {event.name}
             </h1>
@@ -578,133 +532,120 @@ export function TicketDetails({ event }: TicketDetailsProps) {
           </div>
         </div>
       </div>
-
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-      {/* ── Section Header ── */}
-      <div className="flex items-center gap-3 mb-6">
-        <ShoppingCart
-          className="w-7 h-7 text-[hsl(270,70%,50%)]"
-          aria-hidden
-        />
-        <h2 className="font-primary text-xl sm:text-2xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
-            Select Tickets
-          </span>
-        </h2>
-        <div className="flex-1 h-px bg-gray-100" />
-      </div>
-
-      {!eventIsBookable && (
-        <div className="mb-6 flex items-center gap-3 p-4 rounded-2xl border border-amber-200 bg-amber-50">
-          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-          <p className="font-secondary text-sm text-amber-800">
-            Ticket sales are not currently open for this event.
-          </p>
+        <div className="flex items-center gap-3 mb-6">
+          <ShoppingCart
+            className="w-7 h-7 text-[hsl(270,70%,50%)]"
+            aria-hidden
+          />
+          <h2 className="font-primary text-xl sm:text-2xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]">
+              Select Tickets
+            </span>
+          </h2>
+          <div className="flex-1 h-px bg-gray-100" />
         </div>
-      )}
-
-      {/* ── Ticket Type Cards ── */}
-      {enrichedTickets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Ticket className="w-12 h-12 text-gray-300 mb-3" />
-          <p className="font-secondary text-gray-400">
-            No tickets available.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
-          {enrichedTickets.map((ticket) => (
-            <TicketTypeCard
-              key={ticket.ticket_type_id}
-              ticket={ticket}
-              quantity={quantities[ticket.ticket_type_id] ?? 0}
-              onDecrement={handleDecrement}
-              onIncrement={handleIncrement}
-              eventEndAt={event.end_at}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ── Error Banner ── */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="mt-5 flex items-start gap-3 p-4 rounded-2xl border border-red-200 bg-red-50"
-          >
-            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="font-secondary text-sm text-red-800">{error}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Cart Summary + CTA ── */}
-      <motion.div
-        layout
-        className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white shadow-sm border border-gray-100"
-      >
-        {/* Subtotal */}
-        <div>
-          <p className="font-secondary text-xs uppercase tracking-widest text-gray-400 mb-0.5">
-            {totalQty > 0
-              ? `${totalQty} ticket${totalQty > 1 ? "s" : ""} selected`
-              : "No tickets selected"}
-          </p>
-          <AnimatePresence mode="wait">
-            <motion.p
-              key={subtotal}
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="font-primary font-black text-2xl text-[hsl(222.2,47.4%,11.2%)]"
-            >
-              {formatLKR(subtotal)}
-            </motion.p>
-          </AnimatePresence>
-          {subtotal > 0 && (
-            <p className="font-secondary text-[11px] text-gray-400 mt-0.5">
-              Exclusive of any applicable promo discounts
+        {!eventIsBookable && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-2xl border border-amber-200 bg-amber-50">
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+            <p className="font-secondary text-sm text-amber-800">
+              Ticket sales are not currently open for this event.
             </p>
+          </div>
+        )}
+        {enrichedTickets.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Ticket className="w-12 h-12 text-gray-300 mb-3" />
+            <p className="font-secondary text-gray-400">
+              No tickets available.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+            {enrichedTickets.map((ticket) => (
+              <TicketTypeCard
+                key={ticket.ticket_type_id}
+                ticket={ticket}
+                quantity={quantities[ticket.ticket_type_id] ?? 0}
+                onDecrement={handleDecrement}
+                onIncrement={handleIncrement}
+                eventEndAt={event.end_at}
+              />
+            ))}
+          </div>
+        )}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="mt-5 flex items-start gap-3 p-4 rounded-2xl border border-red-200 bg-red-50"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <p className="font-secondary text-sm text-red-800">{error}</p>
+            </motion.div>
           )}
-        </div>
-
-        {/* CTA Button */}
-        <Button
-          onClick={handleProceedToCheckout}
-          disabled={!eventIsBookable || isLoading || totalQty === 0}
-          className={cn(
-            "font-primary font-bold text-sm py-3 px-8 h-auto rounded-xl text-white shadow-md transition-all duration-300 min-w-[220px]",
-            totalQty > 0 && eventIsBookable
-              ? "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] hover:shadow-xl hover:-translate-y-0.5"
-              : "bg-gray-300 cursor-not-allowed",
-          )}
+        </AnimatePresence>
+        <motion.div
+          layout
+          className="mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white shadow-sm border border-gray-100"
         >
-          <span className="flex items-center gap-2">
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Reserving...
-              </>
-            ) : (
-              <>
-                <Lock className="w-4 h-4" />
-                Proceed to Checkout
-                <ArrowRight className="w-4 h-4" />
-              </>
+          <div>
+            <p className="font-secondary text-xs uppercase tracking-widest text-gray-400 mb-0.5">
+              {totalQty > 0
+                ? `${totalQty} ticket${totalQty > 1 ? "s" : ""} selected`
+                : "No tickets selected"}
+            </p>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={subtotal}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="font-primary font-black text-2xl text-[hsl(222.2,47.4%,11.2%)]"
+              >
+                {formatLKR(subtotal)}
+              </motion.p>
+            </AnimatePresence>
+            {subtotal > 0 && (
+              <p className="font-secondary text-[11px] text-gray-400 mt-0.5">
+                Exclusive of any applicable promo discounts
+              </p>
             )}
-          </span>
-        </Button>
-      </motion.div>
-
-      {totalQty > 0 && (
-        <p className="mt-3 text-center font-secondary text-xs text-gray-400">
-          <Lock className="inline-block w-3 h-3 mr-1 text-gray-400" />
-          Tickets are held for 10 minutes once you proceed to checkout.
-        </p>
-      )}
+          </div>
+          <Button
+            onClick={handleProceedToCheckout}
+            disabled={!eventIsBookable || isLoading || totalQty === 0}
+            className={cn(
+              "font-primary font-bold text-sm py-3 px-8 h-auto rounded-xl text-white shadow-md transition-all duration-300 min-w-[220px]",
+              totalQty > 0 && eventIsBookable
+                ? "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] hover:shadow-xl hover:-translate-y-0.5"
+                : "bg-gray-300 cursor-not-allowed",
+            )}
+          >
+            <span className="flex items-center gap-2">
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Reserving...
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  Proceed to Checkout
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </span>
+          </Button>
+        </motion.div>
+        {totalQty > 0 && (
+          <p className="mt-3 text-center font-secondary text-xs text-gray-400">
+            <Lock className="inline-block w-3 h-3 mr-1 text-gray-400" />
+            Tickets are held for 10 minutes once you proceed to checkout.
+          </p>
+        )}
       </div>
     </main>
   );

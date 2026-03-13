@@ -1,4 +1,3 @@
-// components/ui/toast.tsx
 "use client";
 
 import React, { memo } from "react";
@@ -12,7 +11,6 @@ import {
   X,
   LucideIcon,
 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "./button";
 
