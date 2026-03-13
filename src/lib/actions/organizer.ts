@@ -3,6 +3,10 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
+import {
+  isAllowedImageType,
+  isWithinImageSizeLimit,
+} from "@/lib/utils/file-validation";
 import type {
   OrganizerDetails,
   OrganizerDetailsInput,
@@ -11,9 +15,6 @@ import type {
   UserRole,
 } from "@/lib/types/organizer";
 import { logger } from "@/lib/logger";
-
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 interface UserRow {
   user_id: string;
@@ -90,7 +91,7 @@ function validateImageFile(
       fieldErrors: { [fieldName]: "This image is required." },
     };
   }
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+  if (!isAllowedImageType(file.type)) {
     return {
       success: false,
       message: "Only JPG, PNG, or WEBP images are allowed.",
@@ -99,7 +100,7 @@ function validateImageFile(
       },
     };
   }
-  if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
+  if (!isWithinImageSizeLimit(file.size)) {
     return {
       success: false,
       message: "Each image must be smaller than 1MB.",

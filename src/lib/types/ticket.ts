@@ -1,11 +1,5 @@
-export type EventStatus =
-  | "DRAFT"
-  | "PUBLISHED"
-  | "ON_SALE"
-  | "SOLD_OUT"
-  | "ONGOING"
-  | "COMPLETED"
-  | "CANCELLED";
+import type { EventStatus } from "./event";
+
 export type TicketStatus = "ACTIVE" | "PENDING" | "USED" | "CANCELLED";
 
 export interface Ticket {

@@ -4,6 +4,10 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
+import {
+  isAllowedImageType,
+  isWithinImageSizeLimit,
+} from "@/lib/utils/file-validation";
 import type {
   UserProfile,
   ProfileResult,
@@ -11,9 +15,6 @@ import type {
   ProfileImageResult,
 } from "@/lib/types/profile";
 import { logger } from "@/lib/logger";
-
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await getSession();
@@ -24,13 +25,13 @@ function validateImageFile(file: File | null): ProfileImageResult | null {
   if (!(file instanceof File)) {
     return { success: false, message: "Please select a valid image." };
   }
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+  if (!isAllowedImageType(file.type)) {
     return {
       success: false,
       message: "Only JPG, PNG, or WEBP images are allowed.",
     };
   }
-  if (file.size <= 0 || file.size > MAX_IMAGE_SIZE) {
+  if (!isWithinImageSizeLimit(file.size)) {
     return { success: false, message: "Image must be smaller than 1MB." };
   }
   return null;

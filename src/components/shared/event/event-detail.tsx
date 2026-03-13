@@ -23,6 +23,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
+import {
+  EVENT_STATUS_PILLS,
+  FALLBACK_STATUS_PILL,
+} from "@/lib/constants/event-status";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
@@ -35,10 +39,8 @@ interface StatusConfig {
   isActive: boolean;
 }
 
-const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
+const BUTTON_OVERRIDES: Record<EventStatus, Omit<StatusConfig, "label" | "pillClass">> = {
   ON_SALE: {
-    label: "On Sale",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
     buttonText: "Book Ticket",
     buttonClass:
       "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500",
@@ -46,8 +48,6 @@ const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
     isActive: true,
   },
   ONGOING: {
-    label: "Live Now",
-    pillClass: "bg-emerald-50 border-emerald-300 text-emerald-700",
     buttonText: "Live Now",
     buttonClass:
       "bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-emerald-500 to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-[background-position] duration-500",
@@ -55,40 +55,30 @@ const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
     isActive: true,
   },
   PUBLISHED: {
-    label: "Upcoming",
-    pillClass: "bg-orange-50 border-orange-200 text-orange-700",
     buttonText: "Upcoming",
     buttonClass: "bg-[#C76E00]",
     buttonDisabled: true,
     isActive: false,
   },
   SOLD_OUT: {
-    label: "Sold Out",
-    pillClass: "bg-red-50 border-red-200 text-red-700",
     buttonText: "Sold Out",
     buttonClass: "bg-red-600",
     buttonDisabled: true,
     isActive: false,
   },
   COMPLETED: {
-    label: "Completed",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
     buttonText: "Completed",
     buttonClass: "bg-emerald-600",
     buttonDisabled: true,
     isActive: false,
   },
   CANCELLED: {
-    label: "Cancelled",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
     buttonText: "Cancelled",
     buttonClass: "bg-gray-400",
     buttonDisabled: true,
     isActive: false,
   },
   DRAFT: {
-    label: "Draft",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-400",
     buttonText: "Draft",
     buttonClass: "bg-gray-200",
     buttonDisabled: true,
@@ -96,14 +86,16 @@ const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
   },
 };
 
-const FALLBACK_STATUS_CONFIG: StatusConfig = {
-  label: "Unknown",
-  pillClass: "bg-gray-50 border-gray-200 text-gray-500",
-  buttonText: "Unavailable",
-  buttonClass: "bg-gray-400",
-  buttonDisabled: true,
-  isActive: false,
-};
+function getStatusConfig(status: EventStatus): StatusConfig {
+  const pill = EVENT_STATUS_PILLS[status] ?? FALLBACK_STATUS_PILL;
+  const button = BUTTON_OVERRIDES[status] ?? {
+    buttonText: "Unavailable",
+    buttonClass: "bg-gray-400",
+    buttonDisabled: true,
+    isActive: false,
+  };
+  return { ...pill, ...button };
+}
 
 const formatFullDate = (iso: string): string =>
   iso
@@ -430,7 +422,7 @@ interface EventDetailProps {
 export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
   const router = useRouter();
   const buyTicketHref = `/events/${event.event_id}/buy-tickets`;
-  const statusCfg = STATUS_CONFIG[event.status] ?? FALLBACK_STATUS_CONFIG;
+  const statusCfg = getStatusConfig(event.status);
 
   const handleShare = useCallback(async () => {
     const shareUrl =

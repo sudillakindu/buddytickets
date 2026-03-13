@@ -23,53 +23,16 @@ import { toast } from "sonner";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { createReservation } from "@/lib/actions/checkout";
+import {
+  EVENT_STATUS_PILLS,
+  FALLBACK_STATUS_PILL,
+} from "@/lib/constants/event-status";
 import type { TicketType, EventDetails, EventStatus } from "@/lib/types/event";
 import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 const MAX_QTY_PER_TYPE = 10;
 const ACCENT = "hsl(270,70%,50%)";
-
-interface StatusConfig {
-  label: string;
-  pillClass: string;
-}
-
-const STATUS_CONFIG: Record<EventStatus, StatusConfig> = {
-  ON_SALE: {
-    label: "On Sale",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
-  },
-  ONGOING: {
-    label: "Live Now",
-    pillClass: "bg-emerald-50 border-emerald-300 text-emerald-700",
-  },
-  PUBLISHED: {
-    label: "Upcoming",
-    pillClass: "bg-orange-50 border-orange-200 text-orange-700",
-  },
-  SOLD_OUT: {
-    label: "Sold Out",
-    pillClass: "bg-red-50 border-red-200 text-red-700",
-  },
-  COMPLETED: {
-    label: "Completed",
-    pillClass: "bg-emerald-50 border-emerald-200 text-emerald-700",
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-500",
-  },
-  DRAFT: {
-    label: "Draft",
-    pillClass: "bg-gray-50 border-gray-200 text-gray-400",
-  },
-};
-
-const FALLBACK_STATUS: StatusConfig = {
-  label: "Unknown",
-  pillClass: "bg-gray-50 border-gray-200 text-gray-500",
-};
 
 function enrichTicketType(
   ticket: TicketType,
@@ -374,7 +337,7 @@ interface TicketDetailsProps {
 
 export function TicketDetails({ event }: TicketDetailsProps) {
   const router = useRouter();
-  const statusCfg = STATUS_CONFIG[event.status] ?? FALLBACK_STATUS;
+  const statusCfg = EVENT_STATUS_PILLS[event.status] ?? FALLBACK_STATUS_PILL;
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
