@@ -1,6 +1,5 @@
 export type PaymentSource = "PAYMENT_GATEWAY" | "ONGATE" | "BANK_TRANSFER";
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "REFUNDED";
-export type GatewayType = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
 export type PaymentMethod = "PAYMENT_GATEWAY" | "BANK_TRANSFER" | "ONGATE";
 
 export const ALL_PAYMENT_METHODS: PaymentMethod[] = [

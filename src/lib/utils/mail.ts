@@ -22,20 +22,37 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "";
 const WHATSAPP_NUMBER = process.env.WHATSAPP_NUMBER ?? "";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%2C%20I%20received%20a%20notification%20that%20my%20BuddyTickets%20account%20password%20was%20changed.%20I%20did%20not%20make%20this%20change%20and%20need%20immediate%20assistance.`;
 
-function getMailerCredentials(): { user: string; pass: string } {
+let cachedTransporter: nodemailer.Transporter | null = null;
+let cachedSender: string | null = null;
+
+function getTransporterAndSender(): {
+  transporter: nodemailer.Transporter;
+  sender: string;
+} {
+  if (cachedTransporter && cachedSender)
+    return { transporter: cachedTransporter, sender: cachedSender };
+
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass)
     throw new Error("Missing Gmail credentials in environment variables.");
-  return { user, pass };
+
+  cachedTransporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+  cachedSender = `"BuddyTickets" <${user}>`;
+
+  return { transporter: cachedTransporter, sender: cachedSender };
 }
 
-function getTransporter() {
-  const credentials = getMailerCredentials();
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: credentials.user, pass: credentials.pass },
-  });
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+): Promise<void> {
+  const { transporter, sender } = getTransporterAndSender();
+  await transporter.sendMail({ from: sender, to, subject, html });
 }
 
 function buildEmailTemplate(
@@ -95,97 +112,86 @@ export async function sendSignUpOtpEmail(
   to: string,
   otp: string,
 ): Promise<void> {
-  const credentials = getMailerCredentials();
-  const transporter = getTransporter();
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">You&rsquo;re almost there! Enter the verification code below to confirm your email address and activate your <strong style="color:#1e293b;">BuddyTickets</strong> account.</p>
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
     <div style="background:linear-gradient(135deg,#f8fafc 0%,#ede9fe 100%);border:2px solid #7c3aed;border-radius:14px;padding:28px 24px;text-align:center;margin:0 0 32px;">
       <p style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">Your Verification Code</p>
-      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${otp}</span>
+      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${escapeHtml(otp)}</span>
       <p style="color:#64748b;font-size:12px;margin:12px 0 0;">⏱ This code expires in <strong>10 minutes</strong></p>
     </div>
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Didn&rsquo;t create an account? You can safely ignore this email.</p>`;
 
-  await transporter.sendMail({
-    from: `"BuddyTickets" <${credentials.user}>`,
+  await sendEmail(
     to,
-    subject: "Verify Your Email - BuddyTickets",
-    html: buildEmailTemplate(
+    "Verify Your Email - BuddyTickets",
+    buildEmailTemplate(
       "Verify Your Email",
       "One Step to Go! 🎉",
       "Verify your email to activate your account",
       content,
     ),
-  });
+  );
 }
 
 export async function sendSignInOtpEmail(
   to: string,
   otp: string,
 ): Promise<void> {
-  const credentials = getMailerCredentials();
-  const transporter = getTransporter();
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">We noticed a sign-in attempt to your <strong style="color:#1e293b;">BuddyTickets</strong> account. Use the code below to verify your identity and complete sign-in.</p>
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
     <div style="background:linear-gradient(135deg,#f8fafc 0%,#ede9fe 100%);border:2px solid #7c3aed;border-radius:14px;padding:28px 24px;text-align:center;margin:0 0 32px;">
       <p style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">Your Verification Code</p>
-      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${otp}</span>
+      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${escapeHtml(otp)}</span>
       <p style="color:#64748b;font-size:12px;margin:12px 0 0;">⏱ This code expires in <strong>10 minutes</strong></p>
     </div>
     <p style="color:#ea580c;font-size:14px;font-weight:600;margin:0 0 6px;line-height:1.6;">If you didn&rsquo;t try to sign in, your account may be at risk.</p>
     <p style="color:#64748b;font-size:14px;margin:0;line-height:1.6;"><a href="${FORGOT_PASSWORD_URL}" style="color:#7c3aed;font-weight:600;text-decoration:none;">Reset your password now &rarr;</a></p>`;
 
-  await transporter.sendMail({
-    from: `"BuddyTickets" <${credentials.user}>`,
+  await sendEmail(
     to,
-    subject: "Sign-In Verification Code - BuddyTickets",
-    html: buildEmailTemplate(
+    "Sign-In Verification Code - BuddyTickets",
+    buildEmailTemplate(
       "Sign-In Verification",
       "Sign-In Verification 🔐",
       "Confirm your identity to continue",
       content,
     ),
-  });
+  );
 }
 
 export async function sendForgotPasswordOtpEmail(
   to: string,
   otp: string,
 ): Promise<void> {
-  const credentials = getMailerCredentials();
-  const transporter = getTransporter();
   const content = `
     <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 16px;">We received a password reset request for your <strong style="color:#1e293b;">BuddyTickets</strong> account. Use the code below to verify your identity before setting a new password.</p>
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
     <div style="background:linear-gradient(135deg,#f8fafc 0%,#ede9fe 100%);border:2px solid #7c3aed;border-radius:14px;padding:28px 24px;text-align:center;margin:0 0 32px;">
       <p style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">Your Verification Code</p>
-      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${otp}</span>
+      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${escapeHtml(otp)}</span>
       <p style="color:#64748b;font-size:12px;margin:12px 0 0;">⏱ This code expires in <strong>10 minutes</strong></p>
     </div>
     <p style="color:#94a3b8;font-size:13px;margin:0 0 6px;text-align:center;line-height:1.6;">Didn&rsquo;t request this? Your password is safe, no changes were made.</p>
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Questions? <a href="mailto:${SUPPORT_EMAIL}" style="color:#7c3aed;text-decoration:none;">Contact support</a>.</p>`;
 
-  await transporter.sendMail({
-    from: `"BuddyTickets" <${credentials.user}>`,
+  await sendEmail(
     to,
-    subject: "Password Reset Code - BuddyTickets",
-    html: buildEmailTemplate(
+    "Password Reset Code - BuddyTickets",
+    buildEmailTemplate(
       "Password Reset",
       "Password Reset 🔑",
       "Reset your account password",
       content,
     ),
-  });
+  );
 }
 
 export async function sendWelcomeEmail(
   to: string,
   name: string,
 ): Promise<void> {
-  const credentials = getMailerCredentials();
-  const transporter = getTransporter();
   const firstName = escapeHtml(name.split(" ")[0]);
   const content = `
     <p style="color:#475569;font-size:16px;line-height:1.7;margin:0 0 16px;">Hey <strong style="color:#1e293b;">${firstName}</strong>! 👋</p>
@@ -230,25 +236,22 @@ export async function sendWelcomeEmail(
     </div>
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Need help getting started? <a href="mailto:${SUPPORT_EMAIL}" style="color:#7c3aed;text-decoration:none;">Contact our support team</a>.</p>`;
 
-  await transporter.sendMail({
-    from: `"BuddyTickets" <${credentials.user}>`,
+  await sendEmail(
     to,
-    subject: `Welcome to BuddyTickets, ${firstName}! 🎉`,
-    html: buildEmailTemplate(
+    `Welcome to BuddyTickets, ${firstName}! 🎉`,
+    buildEmailTemplate(
       "Welcome to BuddyTickets",
       "Welcome Aboard! 🎉",
       "Your account is ready. Let&rsquo;s explore events",
       content,
     ),
-  });
+  );
 }
 
 export async function sendPasswordChangedEmail(
   to: string,
   name: string,
 ): Promise<void> {
-  const credentials = getMailerCredentials();
-  const transporter = getTransporter();
   const firstName = escapeHtml(name.split(" ")[0]);
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-US", {
@@ -319,15 +322,14 @@ export async function sendPasswordChangedEmail(
     </div>
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">This notification was sent to protect your <a href="${BASE_URL}" style="color:#7c3aed;text-decoration:none;">BuddyTickets</a> account.</p>`;
 
-  await transporter.sendMail({
-    from: `"BuddyTickets" <${credentials.user}>`,
+  await sendEmail(
     to,
-    subject: "Your Password Was Changed - BuddyTickets",
-    html: buildEmailTemplate(
+    "Your Password Was Changed - BuddyTickets",
+    buildEmailTemplate(
       "Password Updated",
       "Password Updated ✅",
       "Your account password has been changed",
       content,
     ),
-  });
+  );
 }

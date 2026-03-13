@@ -73,7 +73,12 @@ export async function getOrderPaymentStatus(
 
     if (error || !data) return { success: false };
     return { success: true, status: data.payment_status };
-  } catch {
+  } catch (err) {
+    logger.error({
+      fn: "getOrderPaymentStatus",
+      message: "Error polling payment status",
+      meta: err,
+    });
     return { success: false };
   }
 }
