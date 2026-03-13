@@ -1,7 +1,6 @@
-// app/(main)/dashboard/page.tsx
+import React from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/utils/session";
-
 import { SystemDashboard } from "./(system)/view";
 import { OrganizerDashboard } from "./(organizer)/view";
 import { StaffDashboard } from "./(staff)/view";

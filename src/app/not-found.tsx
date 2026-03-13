@@ -1,4 +1,3 @@
-// app/not-found.tsx
 "use client";
 
 import React, { useCallback, memo } from "react";
@@ -12,7 +11,6 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-
 import { Button } from "@/components/ui/button";
 
 interface Particle {
@@ -35,14 +33,13 @@ const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
 
 const SPRING_CONFIG = { stiffness: 100, damping: 30 } as const;
 
-const AnimatedBackground = memo(
-  ({
-    springX,
-    springY,
-  }: {
-    springX: MotionValue<number>;
-    springY: MotionValue<number>;
-  }) => {
+interface AnimatedBackgroundProps {
+  springX: MotionValue<number>;
+  springY: MotionValue<number>;
+}
+
+const AnimatedBackground: React.FC<AnimatedBackgroundProps> = memo(
+  ({ springX, springY }) => {
     return (
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"

@@ -1,4 +1,4 @@
-// app/(main)/events/[eventId]/buy-tickets/not-found.tsx
+import React from "react";
 import Link from "next/link";
 import { TicketX } from "lucide-react";
 

@@ -1,21 +1,16 @@
-// app/(auth)/reset-password/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import React, { useState, useEffect, useCallback, memo, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
 import {
   resetPassword as resetPasswordAction,
   validateResetToken,
@@ -34,7 +29,7 @@ interface AuthInputProps {
   rightElement?: React.ReactNode;
 }
 
-const AuthInput = memo(
+const AuthInput: React.FC<AuthInputProps> = memo(
   ({
     icon: Icon,
     type = "text",
@@ -46,7 +41,7 @@ const AuthInput = memo(
     onBlur,
     autoComplete,
     rightElement,
-  }: AuthInputProps) => (
+  }) => (
     <div className="relative w-full">
       <Icon
         className={cn(
@@ -81,7 +76,7 @@ const AuthInput = memo(
 
 AuthInput.displayName = "AuthInput";
 
-export default function ResetPasswordPage() {
+const ResetPasswordForm: React.FC = memo(() => {
   const router = useRouter();
 
   const [token, setToken] = useState("");
@@ -281,7 +276,6 @@ export default function ResetPasswordPage() {
               </Button>
             }
           />
-
           <AuthInput
             icon={Lock}
             type={showPassword.confirm ? "text" : "password"}
@@ -338,5 +332,21 @@ export default function ResetPasswordPage() {
         </p>
       </div>
     </section>
+  );
+});
+
+ResetPasswordForm.displayName = "ResetPasswordForm";
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full min-h-[100dvh] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

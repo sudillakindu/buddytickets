@@ -1,4 +1,4 @@
-// app/(main)/dashboard/_components/StaffDashboard.tsx
+import React from "react";
 import type { SessionUser } from "@/lib/utils/session";
 
 export function StaffDashboard({ user }: { user: SessionUser }) {

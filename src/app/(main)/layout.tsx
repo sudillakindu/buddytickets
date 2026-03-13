@@ -1,6 +1,4 @@
-// app/(main)/layout.tsx
-import type { ReactNode } from "react";
-
+import React, { type ReactNode } from "react";
 import { getSession } from "@/lib/utils/session";
 import MainShell from "./main-shell";
 

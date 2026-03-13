@@ -1,10 +1,9 @@
-// app/(auth)/layout.tsx
 "use client";
 
-import type { ReactNode } from "react";
+import React, { memo, type ReactNode } from "react";
 import { motion } from "framer-motion";
 
-function AuthBackground() {
+const AuthBackground: React.FC = memo(() => {
   return (
     <div
       className="fixed inset-0 overflow-hidden pointer-events-none z-0"
@@ -30,7 +29,9 @@ function AuthBackground() {
       />
     </div>
   );
-}
+});
+
+AuthBackground.displayName = "AuthBackground";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (

@@ -1,14 +1,6 @@
-// app/(main)/checkout/success/page.tsx
-// Order confirmation success page.
-// Payment gateway redirects here after payment: /checkout/success?order_id=<uuid>
-//
-// IMPORTANT: The gateway's return_url fires BEFORE the webhook in most cases.
-// The page polls the order payment_status until it transitions from PENDING → PAID.
-// This gives a good UX even if the webhook fires slightly after the redirect.
-
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, memo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,13 +15,13 @@ import {
   Share2,
   AlertCircle,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
-import { getOrderSuccessData, getOrderPaymentStatus } from "@/lib/actions/order";
+import {
+  getOrderSuccessData,
+  getOrderPaymentStatus,
+} from "@/lib/actions/order";
 import { cn } from "@/lib/ui/utils";
 import type { OrderSuccessData } from "@/lib/types/payment";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const formatLKR = (n: number) =>
   `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
@@ -52,43 +44,46 @@ const formatTime = (iso: string) =>
       })
     : "—";
 
-// ─── Status States ────────────────────────────────────────────────────────────
+type PageState =
+  | "loading"
+  | "confirming"
+  | "confirmed"
+  | "bank_pending"
+  | "error";
 
-type PageState = "loading" | "confirming" | "confirmed" | "bank_pending" | "error";
+const MAX_POLLS = 12;
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export default function CheckoutSuccessPage() {
+const CheckoutSuccessContent: React.FC = memo(() => {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
 
   const [state, setState] = useState<PageState>("loading");
   const [orderData, setOrderData] = useState<OrderSuccessData | null>(null);
   const [pollCount, setPollCount] = useState(0);
-  const MAX_POLLS = 12; // 12 × 5s = 60s max
 
-  // ── Fetch initial order data ────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       if (!orderId) {
         setState("error");
         return;
       }
+
       const result = await getOrderSuccessData(orderId);
+
       if (!result.success || !result.data) {
         setState("error");
         return;
       }
+
       setOrderData(result.data);
 
       if (result.data.payment_status === "PAID") {
         setState("confirmed");
       } else if (result.data.payment_status === "PENDING") {
-        // Check if this was a bank transfer (ticket_count = 0 and PENDING)
         if (result.data.ticket_count === 0) {
-          setState("confirming"); // polling
+          setState("confirming");
         } else {
-          setState("bank_pending"); // bank transfer
+          setState("bank_pending");
         }
       } else {
         setState("error");
@@ -98,7 +93,6 @@ export default function CheckoutSuccessPage() {
     fetchData();
   }, [orderId]);
 
-  // ── Poll payment status ────────────────────────────────────────────────────
   const poll = useCallback(async () => {
     if (!orderId || state !== "confirming") return;
 
@@ -109,14 +103,12 @@ export default function CheckoutSuccessPage() {
     setPollCount(newCount);
 
     if (result.status === "PAID") {
-      // Refresh order data with ticket count
       const fullResult = await getOrderSuccessData(orderId);
       if (fullResult.success && fullResult.data) {
         setOrderData(fullResult.data);
       }
       setState("confirmed");
     } else if (newCount >= MAX_POLLS) {
-      // Timed out — probably bank transfer or webhook delay
       setState("bank_pending");
     }
   }, [orderId, state, pollCount]);
@@ -127,8 +119,7 @@ export default function CheckoutSuccessPage() {
     return () => clearInterval(id);
   }, [state, poll]);
 
-  // ── Share handler ───────────────────────────────────────────────────────────
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     try {
       if (navigator.share) {
         await navigator.share({
@@ -137,19 +128,22 @@ export default function CheckoutSuccessPage() {
           url: window.location.origin + "/events",
         });
       }
-    } catch { /* silent fail */ }
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // RENDER STATES
-  // ─────────────────────────────────────────────────────────────────────────
+    } catch {
+      // Intentionally ignoring share failure
+    }
+  }, [orderData]);
 
   if (state === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]" />
-          <p className="font-secondary text-sm text-gray-500">Loading your order...</p>
+          <Loader2
+            className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]"
+            aria-hidden="true"
+          />
+          <p className="font-secondary text-sm text-gray-500">
+            Loading your order...
+          </p>
         </div>
       </div>
     );
@@ -164,9 +158,15 @@ export default function CheckoutSuccessPage() {
           className="flex flex-col items-center gap-5 text-center max-w-sm"
         >
           <div className="relative w-20 h-20">
-            <div className="absolute inset-0 rounded-full bg-[hsl(270,70%,50%)]/10 animate-ping" />
+            <div
+              className="absolute inset-0 rounded-full bg-[hsl(270,70%,50%)]/10 animate-ping"
+              aria-hidden="true"
+            />
             <div className="relative w-20 h-20 rounded-full bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+              <Loader2
+                className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]"
+                aria-hidden="true"
+              />
             </div>
           </div>
           <div>
@@ -174,11 +174,11 @@ export default function CheckoutSuccessPage() {
               Confirming Payment
             </h2>
             <p className="font-secondary text-sm text-gray-500 leading-relaxed">
-              We&apos;re waiting for payment confirmation. This usually takes a few seconds.
-              Please don&apos;t close this window.
+              We&apos;re waiting for payment confirmation. This usually takes a
+              few seconds. Please don&apos;t close this window.
             </p>
           </div>
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-1 mt-2" aria-hidden="true">
             {Array.from({ length: MAX_POLLS }).map((_, i) => (
               <div
                 key={i}
@@ -202,13 +202,13 @@ export default function CheckoutSuccessPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center gap-4 text-center max-w-sm"
         >
-          <AlertCircle className="w-16 h-16 text-red-400" />
+          <AlertCircle className="w-16 h-16 text-red-400" aria-hidden="true" />
           <h2 className="font-primary font-black text-xl text-[hsl(222.2,47.4%,11.2%)]">
             Something Went Wrong
           </h2>
           <p className="font-secondary text-sm text-gray-500">
-            We couldn&apos;t load your order details. If you made a payment, please check
-            your email or contact support.
+            We couldn&apos;t load your order details. If you made a payment,
+            please check your email or contact support.
           </p>
           <Button asChild className="rounded-xl">
             <Link href="/events">Browse Events</Link>
@@ -218,13 +218,11 @@ export default function CheckoutSuccessPage() {
     );
   }
 
-  // ── Confirmed (PAID) or Bank Transfer Pending ─────────────────────────────
   const isPaid = state === "confirmed";
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pt-24 pb-16 px-4">
       <div className="max-w-lg mx-auto">
-        {/* ── Success Icon ── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -240,14 +238,16 @@ export default function CheckoutSuccessPage() {
             )}
           >
             {isPaid ? (
-              <CheckCircle2 className="w-12 h-12 text-white" />
+              <CheckCircle2
+                className="w-12 h-12 text-white"
+                aria-hidden="true"
+              />
             ) : (
-              <Clock className="w-12 h-12 text-white" />
+              <Clock className="w-12 h-12 text-white" aria-hidden="true" />
             )}
           </div>
         </motion.div>
 
-        {/* ── Status Heading ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -264,7 +264,6 @@ export default function CheckoutSuccessPage() {
           </p>
         </motion.div>
 
-        {/* ── Order Details Card ── */}
         {orderData && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -275,27 +274,39 @@ export default function CheckoutSuccessPage() {
             <h2 className="font-primary font-black text-base uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)] mb-4">
               {orderData.event_name}
             </h2>
-
             <div className="space-y-3 mb-5">
               <div className="flex items-center gap-3 text-sm font-secondary text-gray-600">
-                <Calendar className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0" />
+                <Calendar
+                  className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0"
+                  aria-hidden="true"
+                />
                 {formatDate(orderData.event_start_at)}
               </div>
               <div className="flex items-center gap-3 text-sm font-secondary text-gray-600">
-                <Clock className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0" />
+                <Clock
+                  className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0"
+                  aria-hidden="true"
+                />
                 {formatTime(orderData.event_start_at)}
               </div>
               <div className="flex items-center gap-3 text-sm font-secondary text-gray-600">
-                <MapPin className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0" />
+                <MapPin
+                  className="w-4 h-4 text-[hsl(270,70%,50%)] shrink-0"
+                  aria-hidden="true"
+                />
                 {orderData.event_location}
               </div>
             </div>
-
             <div className="pt-4 border-t border-gray-100 flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-1.5">
-                  <Ticket className="w-4 h-4 text-[hsl(270,70%,50%)]" />
-                  <span className="font-secondary text-sm text-gray-500">Tickets</span>
+                  <Ticket
+                    className="w-4 h-4 text-[hsl(270,70%,50%)]"
+                    aria-hidden="true"
+                  />
+                  <span className="font-secondary text-sm text-gray-500">
+                    Tickets
+                  </span>
                 </div>
                 <span className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)]">
                   {isPaid
@@ -304,13 +315,17 @@ export default function CheckoutSuccessPage() {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-secondary text-sm text-gray-500">Amount Paid</span>
+                <span className="font-secondary text-sm text-gray-500">
+                  Amount Paid
+                </span>
                 <span className="font-primary font-black text-base text-[hsl(270,70%,50%)]">
                   {formatLKR(orderData.final_amount)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="font-secondary text-xs text-gray-400">Order ID</span>
+                <span className="font-secondary text-xs text-gray-400">
+                  Order ID
+                </span>
                 <span className="font-secondary text-xs text-gray-500 font-mono">
                   {orderData.order_id.split("-")[0].toUpperCase()}
                 </span>
@@ -319,24 +334,27 @@ export default function CheckoutSuccessPage() {
           </motion.div>
         )}
 
-        {/* ── Bank Transfer Pending Instructions ── */}
         <AnimatePresence>
           {state === "bank_pending" && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
               className="p-5 rounded-2xl border border-amber-200 bg-amber-50 mb-6"
             >
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <AlertCircle
+                  className="w-5 h-5 text-amber-500 shrink-0 mt-0.5"
+                  aria-hidden="true"
+                />
                 <div>
                   <p className="font-secondary text-sm font-semibold text-amber-800 mb-1">
                     Awaiting Payment Confirmation
                   </p>
                   <p className="font-secondary text-xs text-amber-700 leading-relaxed">
-                    Once your bank transfer is confirmed by our team, your tickets will
-                    automatically appear in your wallet. This typically takes 1–2 business
-                    days.
+                    Once your bank transfer is confirmed by our team, your
+                    tickets will automatically appear in your wallet. This
+                    typically takes 1–2 business days.
                   </p>
                 </div>
               </div>
@@ -344,7 +362,6 @@ export default function CheckoutSuccessPage() {
           )}
         </AnimatePresence>
 
-        {/* ── CTAs ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -357,20 +374,19 @@ export default function CheckoutSuccessPage() {
               className="w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5"
             >
               <Link href="/tickets">
-                <Ticket className="w-4 h-4" />
+                <Ticket className="w-4 h-4" aria-hidden="true" />
                 View My Tickets
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             </Button>
           )}
-
           <div className="flex gap-3">
             <Button
               variant="outline"
               onClick={handleShare}
               className="flex-1 rounded-xl font-secondary text-sm"
             >
-              <Share2 className="w-4 h-4" />
+              <Share2 className="w-4 h-4" aria-hidden="true" />
               Share
             </Button>
             <Button
@@ -383,7 +399,6 @@ export default function CheckoutSuccessPage() {
           </div>
         </motion.div>
 
-        {/* ── Support note ── */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -400,5 +415,24 @@ export default function CheckoutSuccessPage() {
         </motion.p>
       </div>
     </main>
+  );
+});
+
+CheckoutSuccessContent.displayName = "CheckoutSuccessContent";
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]">
+          <Loader2
+            className="w-10 h-10 animate-spin text-[hsl(270,70%,50%)]"
+            aria-hidden="true"
+          />
+        </div>
+      }
+    >
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 }

@@ -1,27 +1,19 @@
-// app/(main)/checkout/cancel/page.tsx
-// Shown when user cancels the payment gateway flow.
-// The gateway redirects here via the cancel_url parameter.
-// The order remains PENDING (not FAILED) until it either:
-//   - Times out (reservation expires → cron marks EXPIRED)
-//   - User retries
-//   - Gateway sends a failure webhook
-
 "use client";
 
+import React, { Suspense, memo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { XCircle, RotateCcw, Home, ArrowRight } from "lucide-react";
+import { XCircle, RotateCcw, Home, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function CheckoutCancelPage() {
+const CancelContent: React.FC = memo(() => {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("order_id");
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] flex items-center justify-center px-4 pt-16 pb-16">
       <div className="max-w-md mx-auto text-center">
-        {/* ── Cancel Icon ── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.5 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -29,11 +21,10 @@ export default function CheckoutCancelPage() {
           className="flex justify-center mb-8"
         >
           <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center shadow-lg">
-            <XCircle className="w-12 h-12 text-white" />
+            <XCircle className="w-12 h-12 text-white" aria-hidden="true" />
           </div>
         </motion.div>
 
-        {/* ── Message ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -44,8 +35,8 @@ export default function CheckoutCancelPage() {
             Payment Cancelled
           </h1>
           <p className="font-secondary text-base text-gray-500 leading-relaxed">
-            Your payment was cancelled and no charge was made.
-            Your ticket reservation may still be active — you can try again.
+            Your payment was cancelled and no charge was made. Your ticket
+            reservation may still be active — you can try again.
           </p>
 
           {orderId && (
@@ -58,7 +49,6 @@ export default function CheckoutCancelPage() {
           )}
         </motion.div>
 
-        {/* ── Info card ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -75,15 +65,20 @@ export default function CheckoutCancelPage() {
               "Your ticket reservation may still be active (held for 10 min).",
               "You can return and retry the payment at any time.",
             ].map((item, i) => (
-              <li key={i} className="flex items-start gap-2 font-secondary text-sm text-gray-600">
-                <span className="mt-1 w-1.5 h-1.5 rounded-full bg-[hsl(270,70%,50%)] shrink-0" />
+              <li
+                key={i}
+                className="flex items-start gap-2 font-secondary text-sm text-gray-600"
+              >
+                <span
+                  className="mt-1 w-1.5 h-1.5 rounded-full bg-[hsl(270,70%,50%)] shrink-0"
+                  aria-hidden="true"
+                />
                 {item}
               </li>
             ))}
           </ul>
         </motion.div>
 
-        {/* ── CTAs ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -95,9 +90,9 @@ export default function CheckoutCancelPage() {
             className="w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] hover:bg-[position:100%_0] transition-all shadow-md hover:shadow-xl hover:-translate-y-0.5"
           >
             <Link href="/events">
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
               Browse Events & Try Again
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           </Button>
 
@@ -107,13 +102,12 @@ export default function CheckoutCancelPage() {
             className="w-full rounded-xl font-secondary text-sm"
           >
             <Link href="/">
-              <Home className="w-4 h-4" />
+              <Home className="w-4 h-4" aria-hidden="true" />
               Return to Home
             </Link>
           </Button>
         </motion.div>
 
-        {/* ── Support ── */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -131,5 +125,21 @@ export default function CheckoutCancelPage() {
         </motion.p>
       </div>
     </main>
+  );
+});
+
+CancelContent.displayName = "CancelContent";
+
+export default function CheckoutCancelPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+        </div>
+      }
+    >
+      <CancelContent />
+    </Suspense>
   );
 }

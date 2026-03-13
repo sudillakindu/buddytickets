@@ -1,4 +1,4 @@
-// app/(main)/events/[eventId]/not-found.tsx
+import React from "react";
 import Link from "next/link";
 import { CalendarX } from "lucide-react";
 
