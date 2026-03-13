@@ -6,6 +6,12 @@ export const ALLOWED_IMAGE_TYPES = new Set([
   "image/webp",
 ]);
 
+export const MIME_TO_EXTENSION: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 export function isAllowedImageType(type: string): boolean {
   return ALLOWED_IMAGE_TYPES.has(type);
 }

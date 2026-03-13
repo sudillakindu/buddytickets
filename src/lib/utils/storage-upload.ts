@@ -1,13 +1,10 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
+import { MIME_TO_EXTENSION } from "@/lib/utils/file-validation";
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
+// Storage upload limit is higher than client-side form validation (1MB)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
 
 export function getBucketName(): string {
   if (!BUCKET_NAME)
@@ -18,7 +15,7 @@ export function getBucketName(): string {
 }
 
 export function extensionFromMime(file: File): string | null {
-  return ALLOWED_MIME_TYPES[file.type] ?? null;
+  return MIME_TO_EXTENSION[file.type] ?? null;
 }
 
 export interface StorageUploadResult {
