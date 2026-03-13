@@ -1,4 +1,3 @@
-// lib/utils/organizer-doc-upload.ts
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 
@@ -44,21 +43,23 @@ async function uploadSingleImage(
 }> {
   try {
     const ext = extensionFromMime(file);
-    if (!ext) {
-      return { success: false, message: `Invalid file type for NIC ${side} image. Only JPEG, PNG, and WebP are allowed.` };
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return { success: false, message: `NIC ${side} image exceeds 5 MB limit.` };
-    }
+    if (!ext)
+      return {
+        success: false,
+        message: `Invalid file type for NIC ${side} image. Only JPEG, PNG, and WebP are allowed.`,
+      };
+    if (file.size > MAX_FILE_SIZE)
+      return {
+        success: false,
+        message: `NIC ${side} image exceeds 5 MB limit.`,
+      };
 
     const bucket = getBucketName();
     const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${side}-${crypto.randomUUID()}.${ext}`;
-
     const body = new Uint8Array(await file.arrayBuffer());
 
-    const { error: uploadError } = await getSupabaseAdmin().storage
-      .from(bucket)
+    const { error: uploadError } = await getSupabaseAdmin()
+      .storage.from(bucket)
       .upload(objectPath, body, {
         contentType: file.type,
         cacheControl: "3600",
@@ -69,18 +70,14 @@ async function uploadSingleImage(
       logger.error({
         fn: "uploadSingleImage",
         message: "Supabase storage upload error",
-        meta: {
-          side,
-          error: uploadError.message,
-        },
+        meta: { side, error: uploadError.message },
       });
       return { success: false, message: `Failed to upload NIC ${side} image.` };
     }
 
-    const { data } = getSupabaseAdmin().storage
-      .from(bucket)
+    const { data } = getSupabaseAdmin()
+      .storage.from(bucket)
       .getPublicUrl(objectPath);
-
     return {
       success: true,
       message: "Uploaded.",
@@ -100,7 +97,7 @@ async function uploadSingleImage(
   }
 }
 
-// Uploads both NIC images in parallel and rolls back on partial failure
+// Uploads both NIC images in parallel and rolls back entirely on partial failure
 export async function uploadOrganizerNicImages(
   frontFile: File,
   backFile: File,
@@ -124,12 +121,8 @@ export async function uploadOrganizerNicImages(
     logger.error({
       fn: "uploadOrganizerNicImages",
       message: "One or both NIC uploads failed — rolled back",
-      meta: {
-        frontSuccess: front.success,
-        backSuccess: back.success,
-      },
+      meta: { frontSuccess: front.success, backSuccess: back.success },
     });
-
     return {
       success: false,
       message: !front.success ? front.message : back.message,

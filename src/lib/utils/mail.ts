@@ -1,7 +1,6 @@
-// lib/utils/mail.ts
 import nodemailer from "nodemailer";
 
-/** Escape HTML special characters to prevent injection in email templates. */
+// Prevents HTML injection in generated email templates
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")
@@ -26,11 +25,8 @@ const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=Hi%2C%20I%20received
 function getMailerCredentials(): { user: string; pass: string } {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
-
-  if (!user || !pass) {
+  if (!user || !pass)
     throw new Error("Missing Gmail credentials in environment variables.");
-  }
-
   return { user, pass };
 }
 

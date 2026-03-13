@@ -1,4 +1,3 @@
-// components/shared/event/event-detail.tsx
 "use client";
 
 import React, { useState, memo, useCallback } from "react";
@@ -22,13 +21,10 @@ import {
   Radio,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 interface StatusConfig {
   label: string;
@@ -109,8 +105,6 @@ const FALLBACK_STATUS_CONFIG: StatusConfig = {
   isActive: false,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const formatFullDate = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleDateString("en-US", {
@@ -120,7 +114,6 @@ const formatFullDate = (iso: string): string =>
         day: "numeric",
       })
     : "—";
-
 const formatTime = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleTimeString("en-US", {
@@ -128,7 +121,6 @@ const formatTime = (iso: string): string =>
         minute: "2-digit",
       })
     : "—";
-
 const formatPrice = (price: number | null): string => {
   if (price === null) return "—";
   if (price === 0) return "Free";
@@ -152,8 +144,6 @@ const formatSaleEndParts = (
   return { date, time };
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 interface ImageGalleryProps {
   images: { image_url: string; priority_order: number }[];
   eventName: string;
@@ -167,14 +157,12 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
     (idx: number) => setImgErrors((prev) => ({ ...prev, [idx]: true })),
     [],
   );
-
   const handlePrev = useCallback(
     () =>
       images.length > 1 &&
       setActiveIndex((p) => (p - 1 + images.length) % images.length),
     [images.length],
   );
-
   const handleNext = useCallback(
     () => images.length > 1 && setActiveIndex((p) => (p + 1) % images.length),
     [images.length],
@@ -184,7 +172,6 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
 
   return (
     <div className="flex flex-col gap-3 max-w-[90%] mx-auto lg:max-w-none">
-      {/* Main image */}
       <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm">
         <AnimatePresence mode="wait">
           <motion.div
@@ -216,7 +203,6 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
             )}
           </motion.div>
         </AnimatePresence>
-
         {images.length > 1 && (
           <>
             <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs font-secondary px-2.5 py-1 rounded-full backdrop-blur-sm">
@@ -242,10 +228,7 @@ const ImageGallery = memo<ImageGalleryProps>(({ images, eventName }) => {
     </div>
   );
 });
-
 ImageGallery.displayName = "ImageGallery";
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface EventTicketCardProps {
   ticket: TicketType;
@@ -278,14 +261,12 @@ const EventTicketCard = memo<EventTicketCardProps>(
       ? ticket.inclusions
       : [];
     const accentColor = canBook ? "hsl(262 83% 58%)" : "hsl(220 9% 70%)";
-
     const barColor =
       soldPct >= 90
         ? "bg-red-500"
         : soldPct >= 60
           ? "bg-amber-400"
           : "bg-emerald-500";
-
     const statusBadge = isTicketSoldOut
       ? { label: "Sold Out", cls: "bg-red-100 text-red-600" }
       : isExpired
@@ -301,19 +282,16 @@ const EventTicketCard = memo<EventTicketCardProps>(
           canBook ? "hover:shadow-[0_6px_28px_rgba(0,0,0,0.14)]" : "opacity-80",
         )}
       >
-        {/* Accent bar */}
         <div
           className="w-full sm:w-2 h-2 sm:h-auto shrink-0"
           style={{ background: accentColor }}
         />
-
         <div
           className={cn(
             "flex-1 flex flex-col sm:flex-row",
             canBook ? "bg-white" : "bg-gray-50",
           )}
         >
-          {/* Left: Details */}
           <div className="flex-1 min-w-0 px-5 pt-5 pb-4 flex flex-col gap-3">
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -342,13 +320,11 @@ const EventTicketCard = memo<EventTicketCardProps>(
                 </span>
               )}
             </div>
-
             {ticket.description && (
               <p className="font-secondary text-xs text-gray-500 line-clamp-2 leading-relaxed">
                 {ticket.description}
               </p>
             )}
-
             {inclusions.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {inclusions.map((item, i) => (
@@ -370,8 +346,6 @@ const EventTicketCard = memo<EventTicketCardProps>(
                 ))}
               </div>
             )}
-
-            {/* Capacity bar */}
             <div className="mt-auto space-y-1.5">
               <div className="flex justify-between text-[10px] font-secondary text-gray-400">
                 <span>{ticket.qty_sold.toLocaleString()} sold</span>
@@ -392,8 +366,6 @@ const EventTicketCard = memo<EventTicketCardProps>(
               </div>
             </div>
           </div>
-
-          {/* Divider with notches */}
           <div className="relative flex sm:flex-col items-center justify-center">
             <span
               className="absolute rounded-full w-4 h-4 border border-gray-200 z-10 left-0 sm:left-auto sm:top-0 -translate-x-1/2 sm:translate-x-0 sm:-translate-y-1/2"
@@ -409,8 +381,6 @@ const EventTicketCard = memo<EventTicketCardProps>(
             />
             <div className="w-full sm:w-px h-px sm:h-full border-t-2 sm:border-t-0 sm:border-l-2 border-dashed border-gray-200 mx-2 sm:mx-0 my-0 sm:my-2" />
           </div>
-
-          {/* Right: Price & sale end */}
           <div
             className={cn(
               "w-full sm:w-40 shrink-0 px-5 py-4 flex sm:flex-col justify-between gap-3",
@@ -451,10 +421,7 @@ const EventTicketCard = memo<EventTicketCardProps>(
     );
   },
 );
-
 EventTicketCard.displayName = "EventTicketCard";
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 interface EventDetailProps {
   event: EventDetails;
@@ -480,9 +447,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
         return;
       }
       await navigator.clipboard.writeText(shareUrl);
-    } catch {
-      // Share / clipboard not available — fail silently
-    }
+    } catch {}
   }, [event.event_id, event.name, event.subtitle, event.description]);
 
   const handleCTA = useCallback(() => {
@@ -490,8 +455,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
   }, [statusCfg.isActive, buyTicketHref, router]);
 
   return (
-    <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)]  pb-12">
-      {/* ── Banner ── */}
+    <main className="w-full min-h-screen bg-gradient-to-b from-white to-[hsl(210,40%,96.1%)] pb-12">
       <div className="relative w-full h-64 sm:h-64 lg:h-80 overflow-hidden bg-gray-200">
         {event.banner_image ? (
           <>
@@ -504,7 +468,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               className="object-cover object-center"
               priority
             />
-            {/* Main soft overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.4))]" />
@@ -525,7 +488,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-14">
-          {/* ── Left Column: Gallery + Organizer ── */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -533,8 +495,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             className="relative z-20 -mt-40 sm:-mt-40 lg:-mt-56"
           >
             <ImageGallery images={event.images} eventName={event.name} />
-
-            {/* Organizer card — desktop only (mobile version is in right column) */}
             <div className="hidden lg:flex items-center justify-between p-4 mt-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
@@ -571,16 +531,13 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             </div>
           </motion.div>
 
-          {/* ── Right Column: Event Info ── */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="flex flex-col gap-3"
           >
-            {/* Badges + actions — mobile: 2 rows, desktop: single row */}
             <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-center">
-              {/* Nav buttons — mobile: top row spread apart, desktop: pushed right */}
               <div className="flex items-center justify-between lg:ml-auto lg:gap-2">
                 <Button
                   asChild
@@ -588,7 +545,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   className="h-8 px-3 rounded-full text-xs font-secondary"
                 >
                   <Link href="/events">
-                    <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />
+                    <ChevronLeft className="w-3.5 h-3.5" aria-hidden="true" />{" "}
                     Back to Events
                   </Link>
                 </Button>
@@ -598,17 +555,13 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   className="h-8 px-3 rounded-full text-xs font-secondary"
                   aria-label="Share this event"
                 >
-                  <Share2 className="w-3 h-3" aria-hidden="true" />
-                  Share
+                  <Share2 className="w-3 h-3" aria-hidden="true" /> Share
                 </Button>
               </div>
-
-              {/* Badges — mobile: second row, desktop: first via order */}
               <div className="flex flex-wrap items-center gap-2 lg:order-first">
                 {event.is_vip && (
                   <span className="inline-flex items-center gap-1 bg-yellow-400/90 text-yellow-900 px-3 py-1 rounded-full border border-yellow-300 text-xs font-bold uppercase tracking-wide">
-                    <Crown className="w-3.5 h-3.5" aria-hidden="true" />
-                    VIP
+                    <Crown className="w-3.5 h-3.5" aria-hidden="true" /> VIP
                   </span>
                 )}
                 <span className="px-3 py-1 text-xs font-primary font-bold bg-white rounded-full text-[hsl(222.2,47.4%,11.2%)] border border-gray-200 uppercase tracking-wide shadow-sm">
@@ -635,7 +588,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             </div>
 
-            {/* Title */}
             <div>
               <h1 className="font-primary font-black text-2xl sm:text-3xl lg:text-4xl uppercase leading-tight text-[hsl(222.2,47.4%,11.2%)] mb-1">
                 {event.name}
@@ -648,7 +600,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               <div className="h-1 w-16 rounded-full mt-2 mb-2 bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]" />
             </div>
 
-            {/* Date / Time / Location info */}
             <div className="flex flex-col rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden divide-y divide-gray-50 pt-2 pb-2">
               <div className="flex items-center gap-4 px-5 py-3">
                 <div className="shrink-0 w-9 h-9 rounded-xl bg-[hsl(270,70%,50%)]/10 flex items-center justify-center">
@@ -680,8 +631,8 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                   <p className="font-secondary text-sm font-semibold text-[hsl(222.2,47.4%,11.2%)]">
                     <time dateTime={event.start_at}>
                       {formatTime(event.start_at)}
-                    </time>
-                    {" — "}
+                    </time>{" "}
+                    {" — "}{" "}
                     <time dateTime={event.end_at}>
                       {formatTime(event.end_at)}
                     </time>
@@ -711,7 +662,7 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
                         className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-[hsl(270,70%,50%)] bg-[hsl(270,70%,97%)] text-[11px] font-secondary text-[hsl(270,70%,50%)] hover:bg-[hsl(270,70%,92%)] hover:underline transition-colors"
                         aria-label="Open location on map"
                       >
-                        <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                        <ExternalLink className="w-3 h-3" aria-hidden="true" />{" "}
                         Map
                       </a>
                     )}
@@ -720,7 +671,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             </div>
 
-            {/* CTA button */}
             <Button
               disabled={statusCfg.buttonDisabled}
               onClick={handleCTA}
@@ -742,7 +692,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </span>
             </Button>
 
-            {/* About */}
             <div className="overflow-hidden">
               <h2 className="font-primary font-bold text-xl uppercase tracking-wider text-[hsl(222.2,47.4%,11.2%)] mb-1 mt-2">
                 About
@@ -752,7 +701,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </p>
             </div>
 
-            {/* Requirements */}
             {event.requirements && (
               <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-4 flex gap-3 overflow-hidden">
                 <AlertCircle
@@ -770,7 +718,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </div>
             )}
 
-            {/* Organizer card — mobile only (desktop version is in left column) */}
             <div className="flex lg:hidden items-center justify-between p-4 rounded-2xl border border-gray-100 bg-white shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 rounded-full overflow-hidden bg-[hsl(270,70%,50%)]/10 shrink-0">
@@ -808,7 +755,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           </motion.div>
         </div>
 
-        {/* ── Tickets Section ── */}
         <motion.section
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -853,7 +799,6 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
           )}
         </motion.section>
 
-        {/* Mobile-only Book Now CTA — below tickets */}
         <div className="mt-6 lg:hidden">
           <Button
             disabled={statusCfg.buttonDisabled}

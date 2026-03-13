@@ -1,22 +1,16 @@
-// app/(auth)/sign-up/page.tsx
 "use client";
 
-import { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useCallback, useMemo, memo, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { Lock, Mail, User, Phone, Eye, EyeOff, Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
 import { signUp } from "@/lib/actions/auth";
 
 interface AuthInputProps {
@@ -34,7 +28,7 @@ interface AuthInputProps {
   rightElement?: React.ReactNode;
 }
 
-const AuthInput = memo(
+const AuthInput: React.FC<AuthInputProps> = memo(
   ({
     icon: Icon,
     prefix,
@@ -48,7 +42,7 @@ const AuthInput = memo(
     autoComplete,
     maxLength,
     rightElement,
-  }: AuthInputProps) => (
+  }) => (
     <div className="relative w-full">
       {prefix ? (
         <span
@@ -101,7 +95,7 @@ const AuthInput = memo(
 
 AuthInput.displayName = "AuthInput";
 
-function SignUpForm() {
+const SignUpForm: React.FC = memo(() => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") ?? "";
@@ -162,7 +156,6 @@ function SignUpForm() {
         : "/sign-in",
     [redirectParam],
   );
-
   const isFocused = (field: string) => focusedField === field;
 
   return (
@@ -199,7 +192,6 @@ function SignUpForm() {
             onFocus={() => setFocusedField("name")}
             onBlur={() => setFocusedField(null)}
           />
-
           <AuthInput
             prefix="@"
             placeholder="username"
@@ -215,7 +207,6 @@ function SignUpForm() {
             onFocus={() => setFocusedField("username")}
             onBlur={() => setFocusedField(null)}
           />
-
           <AuthInput
             icon={Mail}
             type="email"
@@ -227,7 +218,6 @@ function SignUpForm() {
             onFocus={() => setFocusedField("email")}
             onBlur={() => setFocusedField(null)}
           />
-
           <AuthInput
             icon={Phone}
             type="tel"
@@ -240,7 +230,6 @@ function SignUpForm() {
             onFocus={() => setFocusedField("mobile")}
             onBlur={() => setFocusedField(null)}
           />
-
           <AuthInput
             icon={Lock}
             type={showPassword ? "text" : "password"}
@@ -268,7 +257,6 @@ function SignUpForm() {
               </Button>
             }
           />
-
           <Button
             type="submit"
             disabled={loading}
@@ -294,7 +282,9 @@ function SignUpForm() {
       </div>
     </section>
   );
-}
+});
+
+SignUpForm.displayName = "SignUpForm";
 
 export default function SignUpPage() {
   return (

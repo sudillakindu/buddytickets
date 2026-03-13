@@ -2,30 +2,28 @@ import { type NextRequest, NextResponse } from "next/server";
 import { jwtVerify, type JWTPayload } from "jose";
 import { logger } from "@/lib/logger";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 const COOKIE_NAME = "bt_session";
 
-const PROTECTED_PAGES = new Set(["/profile", "/tickets", "/become-an-organizer"]);
+const PROTECTED_PAGES = new Set([
+  "/profile",
+  "/tickets",
+  "/become-an-organizer",
+]);
 const PROTECTED_PREFIXES = ["/checkout"];
 const AUTH_ONLY_PAGES = new Set(["/sign-in", "/sign-up", "/forget-password"]);
 const FLOW_PAGES = new Set(["/verify-email", "/reset-password"]);
-
 const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
 let cachedSecret: Uint8Array | null = null;
 
-// ─── Internal Helpers ────────────────────────────────────────────────────────
-
 function getJwtSecret(): Uint8Array {
   if (!cachedSecret) {
     const secret = process.env.SESSION_SECRET;
-    if (!secret)
+    if (!secret) {
       throw new Error("Missing SESSION_SECRET environment variable.");
-
+    }
     cachedSecret = new TextEncoder().encode(secret);
   }
-
   return cachedSecret;
 }
 
@@ -52,15 +50,12 @@ async function getSessionPayload(
   }
 }
 
-// ─── Proxy Middleware ────────────────────────────────────────────────────────
-
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const url = request.nextUrl.clone();
   const { pathname, searchParams } = url;
-
   const isMaintenance = process.env.MAINTENANCE_MODE === "true";
 
-  // Handle global maintenance mode redirects
+  // Handle maintenance mode redirects
   if (isMaintenance && pathname !== "/maintenance") {
     url.pathname = "/maintenance";
     return NextResponse.redirect(url);
@@ -71,24 +66,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(url);
   }
 
-  // Validate flow pages require a valid token parameter
+  // Validate flow pages (e.g., reset password, verify email) require a token
   if (FLOW_PAGES.has(pathname)) {
     const flowToken = searchParams.get("token");
-
     if (!flowToken) {
       url.pathname = "/sign-in";
       url.search = "";
       return NextResponse.redirect(url);
     }
-
     return NextResponse.next();
   }
 
   const session = await getSessionPayload(request);
   const authenticated = session !== null;
 
-  // ─── Dashboard Protection ─────────────────────────────────────────────────
-
+  // Protect Dashboard routes
   if (pathname.startsWith("/dashboard")) {
     if (!authenticated) {
       url.pathname = "/sign-in";
@@ -97,7 +89,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     const role = session.role ?? "";
-
     if (!DASHBOARD_ROLES.has(role)) {
       url.pathname = "/";
       url.search = "";
@@ -105,9 +96,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // ─── Standard Protected Pages ─────────────────────────────────────────────
-
-  // Redirect unauthenticated users from protected routes to sign-in
+  // Protect standard user routes
   const isProtected =
     PROTECTED_PAGES.has(pathname) ||
     PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -118,10 +107,14 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(url);
   }
 
-  // Bounce authenticated users away from auth-only routes
+  // Redirect authenticated users away from auth-only routes (e.g., sign-in)
   if (AUTH_ONLY_PAGES.has(pathname) && authenticated) {
     const redirectParam = searchParams.get("redirect");
-    if (redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")) {
+    if (
+      redirectParam &&
+      redirectParam.startsWith("/") &&
+      !redirectParam.startsWith("//")
+    ) {
       url.pathname = redirectParam;
       url.search = "";
     } else {
@@ -133,8 +126,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   return NextResponse.next();
 }
-
-// ─── Configuration ───────────────────────────────────────────────────────────
 
 export const config = {
   matcher: [

@@ -1,34 +1,11 @@
-// lib/utils/payhere.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// PAYMENT_GATEWAY implementation — PayHere (Sri Lanka)
-//
-// This file is the current concrete implementation of the PAYMENT_GATEWAY
-// payment method. The gateway can be swapped to Stripe, Dialog Pay, HNB Pay,
-// FriMi, or any other payment gateway in the future by replacing this file
-// and updating only the import in the payment action (src/lib/actions/payment.ts).
-// No other files need to change to swap gateways.
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// PayHere Sri Lankan payment gateway integration utilities.
-//
-// PayHere Checkout Hash Formula:
-//   STEP 1: secret_hash = MD5(PAYHERE_MERCHANT_SECRET).toUpperCase()
-//   STEP 2: hash = MD5(merchant_id + order_id + amount + currency + secret_hash).toUpperCase()
-//
-// PayHere Webhook Verification Formula:
-//   STEP 1: secret_hash = MD5(PAYHERE_MERCHANT_SECRET).toUpperCase()
-//   STEP 2: local_sig = MD5(merchant_id + order_id + amount + currency + status_code + secret_hash).toUpperCase()
-//   STEP 3: Compare local_sig with md5sig from webhook body
-
 import crypto from "crypto";
-import type { PaymentGatewayFormData, PaymentGatewayWebhookPayload } from "@/lib/types/payment";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
+import type {
+  PaymentGatewayFormData,
+  PaymentGatewayWebhookPayload,
+} from "@/lib/types/payment";
 
 const PAYHERE_SANDBOX_URL = "https://sandbox.payhere.lk/pay/checkout";
 const PAYHERE_LIVE_URL = "https://www.payhere.lk/pay/checkout";
-
-// ─── Env validation ───────────────────────────────────────────────────────────
 
 function getPayHereConfig(): {
   merchantId: string;
@@ -52,16 +29,11 @@ function getPayHereConfig(): {
   };
 }
 
-// ─── Hash Utilities ───────────────────────────────────────────────────────────
-
 function md5(input: string): string {
   return crypto.createHash("md5").update(input).digest("hex");
 }
 
-/**
- * Generate the PayHere checkout form hash (STEP 2 of PayHere formula).
- * Called server-side when building the payment form.
- */
+// Generate the PayHere checkout form hash (MD5 formula step 2)
 export function generatePayHereCheckoutHash(
   orderId: string,
   amount: string,
@@ -73,13 +45,7 @@ export function generatePayHereCheckoutHash(
   return md5(hashInput).toUpperCase();
 }
 
-/**
- * Verify a PayHere webhook notification signature.
- * Returns true if the webhook is authentic.
- *
- * Called in /api/webhooks/payhere route handler BEFORE processing any payment.
- * NEVER skip this verification — it prevents fake payment injections.
- */
+// Authenticates incoming webhooks to prevent fake payment injections
 export function verifyPayHereWebhookSignature(
   payload: PaymentGatewayWebhookPayload,
 ): boolean {
@@ -95,19 +61,12 @@ export function verifyPayHereWebhookSignature(
   }
 }
 
-/**
- * Format a numeric amount to the 2-decimal-place string PayHere requires.
- * e.g. 1500 → "1500.00", 1500.5 → "1500.50"
- */
+// Format numeric amount to the 2-decimal-place string required by PayHere
 export function formatPayHereAmount(amount: number): string {
   return amount.toFixed(2);
 }
 
-/**
- * Build the complete PayHere form data object.
- * Called server-side when user clicks "Pay with PayHere".
- * The client auto-submits this as a POST form to checkout_url.
- */
+// Builds the form object mapped to PayHere API endpoints
 export function buildPayHereFormData(params: {
   orderId: string;
   amount: number;
@@ -142,14 +101,6 @@ export function buildPayHereFormData(params: {
   };
 }
 
-/**
- * PayHere status_code meanings:
- *   2  = Success (payment confirmed)
- *   0  = Pending
- *  -1  = Cancelled
- *  -2  = Failed
- *  -3  = Chargedback
- */
 export function isPayHereSuccess(statusCode: string): boolean {
   return statusCode === "2";
 }

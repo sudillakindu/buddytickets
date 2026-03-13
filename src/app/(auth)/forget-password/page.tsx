@@ -1,21 +1,16 @@
-// app/(auth)/forget-password/page.tsx
 "use client";
 
-import { useState, useCallback, memo } from "react";
+import React, { useState, useCallback, memo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Mail, Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
 import { forgotPassword as forgotPasswordAction } from "@/lib/actions/auth";
 
 interface AuthInputProps {
@@ -30,7 +25,7 @@ interface AuthInputProps {
   autoComplete?: string;
 }
 
-const AuthInput = memo(
+const AuthInput: React.FC<AuthInputProps> = memo(
   ({
     icon: Icon,
     type = "text",
@@ -41,7 +36,7 @@ const AuthInput = memo(
     onFocus,
     onBlur,
     autoComplete,
-  }: AuthInputProps) => (
+  }) => (
     <div className="relative w-full">
       <Icon
         className={cn(

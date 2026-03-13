@@ -1,4 +1,4 @@
-// app/(main)/dashboard/_components/OrganizerDashboard.tsx
+import React from "react";
 import type { SessionUser } from "@/lib/utils/session";
 
 export function OrganizerDashboard({ user }: { user: SessionUser }) {

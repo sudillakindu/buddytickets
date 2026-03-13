@@ -1,4 +1,3 @@
-// lib/types/event.ts
 export type EventStatus =
   | "DRAFT"
   | "PUBLISHED"
@@ -23,11 +22,9 @@ export interface Event {
   status: EventStatus;
   is_active: boolean;
   is_vip: boolean;
-  /** Per-event payment method control. null = all methods allowed. */
   allowed_payment_methods: import("./payment").PaymentMethod[] | null;
   created_at: string;
   updated_at: string | null;
-  // Derived / joined fields
   category: string;
   thumbnail_image: string | null;
   start_ticket_price: number | null;

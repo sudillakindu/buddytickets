@@ -1,4 +1,3 @@
-// lib/utils/session.ts
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
 import { logger } from "@/lib/logger";

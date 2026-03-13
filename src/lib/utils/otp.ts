@@ -1,11 +1,9 @@
-// lib/utils/otp.ts
 import { createHmac } from "crypto";
 import { hash, compare } from "bcryptjs";
 
 const SALT_ROUNDS = 12;
 const EXPIRY_MINUTES = 10;
 const RESEND_DELAYS = [60, 120, 300, 900, 3600, 86400];
-
 export const MAX_ATTEMPTS = 5;
 
 let OTP_SECRET: string | null = null;

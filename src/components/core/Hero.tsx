@@ -1,5 +1,4 @@
-﻿// components/core/Hero.tsx
-"use client";
+﻿"use client";
 
 import React, { useRef, memo } from "react";
 import Link from "next/link";
@@ -20,7 +19,6 @@ import {
   ZapIcon,
   LucideIcon,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { TargetCursor } from "@/components/shared/target-cursor";
 
@@ -93,9 +91,7 @@ const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => {
         animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
-
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
-
       <div
         className="absolute inset-0"
         style={{
@@ -104,7 +100,6 @@ const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => {
           backgroundSize: "24px 24px",
         }}
       />
-
       {PARTICLES.map((p) => (
         <motion.div
           key={p.id}
@@ -154,7 +149,6 @@ export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-
   const springX = useSpring(
     useTransform(mouseX, (v) => v * 0.05),
     SPRING_CONFIG,
@@ -187,9 +181,7 @@ export default function Hero() {
           containerRef={sectionRef}
         />
       </div>
-
       <HeroBackground springX={springX} springY={springY} />
-
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col justify-center items-center gap-6">
         <motion.div
           className="max-w-4xl mx-auto text-center w-full"
@@ -207,17 +199,16 @@ export default function Hero() {
             <SparklesIcon
               className="w-3.5 h-3.5 animate-pulse text-yellow-400"
               aria-hidden="true"
-            />
+            />{" "}
             Discover Amazing Events
           </motion.span>
-
           <motion.h1
             className="font-special text-[36px] sm:text-[48px] lg:text-[60px] leading-tight mb-5 px-2 sm:px-6 text-[hsl(222.2,47.4%,11.2%)]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
-            Connect, Create and Celebrate <br className="hidden sm:block" />
+            Connect, Create and Celebrate <br className="hidden sm:block" />{" "}
             with{" "}
             <span className="relative inline-block mt-2">
               <span
@@ -241,7 +232,6 @@ export default function Hero() {
               />
             </span>
           </motion.h1>
-
           <motion.p
             className="font-secondary text-[14px] sm:text-[15px] mb-6 max-w-2xl mx-auto leading-relaxed px-2 sm:px-4 text-[hsl(215.4,16.3%,46.9%)]"
             initial={{ opacity: 0, y: 20 }}
@@ -252,7 +242,6 @@ export default function Hero() {
             unforgettable experiences, and connecting with like-minded
             individuals.
           </motion.p>
-
           <motion.div
             className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center w-full mb-0 px-4"
             initial={{ opacity: 0, y: 20 }}
@@ -267,7 +256,6 @@ export default function Hero() {
                 <span className="relative z-10">Explore Events</span>
               </Link>
             </Button>
-
             <Button
               asChild
               variant="outline"
@@ -283,7 +271,6 @@ export default function Hero() {
             </Button>
           </motion.div>
         </motion.div>
-
         <motion.div
           className="flex flex-wrap justify-center gap-2 sm:gap-3 items-center px-4 max-w-3xl"
           initial={{ opacity: 0, y: 20 }}
@@ -299,7 +286,6 @@ export default function Hero() {
           ))}
         </motion.div>
       </div>
-
       <motion.div
         className="hidden sm:block absolute top-1/4 left-8 w-2.5 h-2.5 rounded-full bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] to-[hsl(270,70%,50%)]"
         animate={{ y: [0, 20, 0], scale: [1, 1.2, 1] }}

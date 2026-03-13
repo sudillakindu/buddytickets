@@ -1,4 +1,3 @@
-// lib/types/auth.ts
 export interface AuthResult {
   success: boolean;
   message: string;

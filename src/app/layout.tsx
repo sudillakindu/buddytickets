@@ -1,11 +1,8 @@
-// app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-
-import "./globals.css";
-
 import { cn } from "@/lib/ui/utils";
 import { Toaster } from "@/components/ui/toast";
+import "./globals.css";
 
 const primaryFont = localFont({
   src: "./assets/fonts/momo-trust-display-regular.ttf",

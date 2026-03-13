@@ -1,27 +1,29 @@
-// app/(auth)/verify-email/page.tsx
 "use client";
 
-import { useState, useRef, useCallback, useEffect, Suspense } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  Suspense,
+  memo,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
 import {
   verifyOtp as verifyOtpAction,
   resendOtp as resendOtpAction,
   getVerifyEmailData,
 } from "@/lib/actions/auth";
 
-function formatCountdown(seconds: number): string {
+const formatCountdown = (seconds: number): string => {
   if (seconds <= 0) return "0s";
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
@@ -31,63 +33,63 @@ function formatCountdown(seconds: number): string {
   if (h > 0) return `${h}h ${m}m`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
-}
+};
 
-function PageSpinner() {
-  return (
-    <div className="w-full min-h-[100dvh] flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
-    </div>
-  );
-}
+const PageSpinner: React.FC = memo(() => (
+  <div className="w-full min-h-[100dvh] flex items-center justify-center">
+    <Loader2 className="w-8 h-8 animate-spin text-[hsl(270,70%,50%)]" />
+  </div>
+));
+
+PageSpinner.displayName = "PageSpinner";
 
 interface ErrorCardProps {
   message: string;
   onRetry: () => void;
 }
 
-function ErrorCard({ message, onRetry }: ErrorCardProps) {
-  return (
-    <div className="min-h-[100dvh] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center py-10">
-      <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
-        <div className="flex items-center justify-center mb-6">
-          <Link href="/" aria-label="Go to Home">
-            <Image
-              src={LogoSrc}
-              alt="BuddyTickets Logo"
-              width={48}
-              height={48}
-              className="w-12 h-12 object-contain drop-shadow-sm hover:opacity-80 transition-opacity duration-200"
-              priority
-            />
-          </Link>
-        </div>
-        <h1 className="font-primary text-2xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
-          Verification Failed
-        </h1>
-        <p className="font-secondary text-sm mb-6 text-center text-[hsl(215.4,16.3%,46.9%)]">
-          {message}
-        </p>
-        <div className="flex flex-col gap-3 w-full">
-          <Button
-            onClick={onRetry}
-            className="w-full h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
-          >
-            Try Again
-          </Button>
-          <Link
-            href="/sign-in"
-            className="text-center text-sm font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
-          >
-            Back to Sign In
-          </Link>
-        </div>
+const ErrorCard: React.FC<ErrorCardProps> = memo(({ message, onRetry }) => (
+  <div className="min-h-[100dvh] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center py-10">
+    <div className="relative z-10 w-full max-w-md rounded-3xl p-8 sm:p-10 flex flex-col items-center bg-white/85 backdrop-blur-xl shadow-[0_25px_50px_-12px_hsl(222.2_47.4%_11.2%_/_0.15),0_0_0_1px_hsl(222.2_47.4%_11.2%_/_0.05)]">
+      <div className="flex items-center justify-center mb-6">
+        <Link href="/" aria-label="Go to Home">
+          <Image
+            src={LogoSrc}
+            alt="BuddyTickets Logo"
+            width={48}
+            height={48}
+            className="w-12 h-12 object-contain drop-shadow-sm hover:opacity-80 transition-opacity duration-200"
+            priority
+          />
+        </Link>
+      </div>
+      <h1 className="font-primary text-2xl font-semibold mb-2 text-center text-[hsl(222.2,47.4%,11.2%)]">
+        Verification Failed
+      </h1>
+      <p className="font-secondary text-sm mb-6 text-center text-[hsl(215.4,16.3%,46.9%)]">
+        {message}
+      </p>
+      <div className="flex flex-col gap-3 w-full">
+        <Button
+          onClick={onRetry}
+          className="w-full h-auto py-3 rounded-xl font-primary font-medium text-sm text-white shadow-lg hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0]"
+        >
+          Try Again
+        </Button>
+        <Link
+          href="/sign-in"
+          className="text-center text-sm font-primary font-medium text-[hsl(270,70%,50%)] hover:opacity-80 transition-opacity duration-200"
+        >
+          Back to Sign In
+        </Link>
       </div>
     </div>
-  );
-}
+  </div>
+));
 
-function VerifyEmailForm() {
+ErrorCard.displayName = "ErrorCard";
+
+const VerifyEmailForm: React.FC = memo(() => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -236,8 +238,11 @@ function VerifyEmailForm() {
           return;
         }
 
-        const isSafeRedirect = redirectParam.startsWith("/") && !redirectParam.startsWith("//");
-        window.location.href = isSafeRedirect ? redirectParam : (result.redirectTo || "/");
+        const isSafeRedirect =
+          redirectParam.startsWith("/") && !redirectParam.startsWith("//");
+        window.location.href = isSafeRedirect
+          ? redirectParam
+          : result.redirectTo || "/";
       } catch (error) {
         logger.error({
           fn: "VerifyEmailPage.handleSubmit",
@@ -392,7 +397,9 @@ function VerifyEmailForm() {
       </div>
     </div>
   );
-}
+});
+
+VerifyEmailForm.displayName = "VerifyEmailForm";
 
 export default function VerifyEmailPage() {
   return (

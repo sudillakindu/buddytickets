@@ -1,4 +1,3 @@
-// lib/actions/ticket.ts
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -11,8 +10,6 @@ export interface TicketsResult {
   message: string;
   tickets?: Ticket[];
 }
-
-// ─── Internal Helpers ────────────────────────────────────────────────────────
 
 interface TicketTypeJoin {
   ticket_type_id: string;
@@ -36,22 +33,21 @@ interface TicketRow {
   status: Ticket["status"];
   price_purchased: string;
   created_at: string;
-  // PostgREST returns single objects for many-to-one FK joins
   ticket_types?: TicketTypeJoin | TicketTypeJoin[] | null;
   events?: EventJoin | EventJoin[] | null;
 }
 
+// Map raw Supabase row to standardized Ticket object
 function mapToTicket(row: TicketRow): Ticket {
-  // Supabase PostgREST returns many-to-one FK joins as single objects,
-  // but type declarations may vary — safely handle both forms
   const ticketType: TicketTypeJoin | null = Array.isArray(row.ticket_types)
-    ? row.ticket_types[0] ?? null
-    : row.ticket_types ?? null;
+    ? (row.ticket_types[0] ?? null)
+    : (row.ticket_types ?? null);
+
   const event: EventJoin | null = Array.isArray(row.events)
-    ? row.events[0] ?? null
-    : row.events ?? null;
-  const images: { priority_order: number; image_url: string }[] =
-    event?.event_images ?? [];
+    ? (row.events[0] ?? null)
+    : (row.events ?? null);
+
+  const images = event?.event_images ?? [];
   images.sort((a, b) => a.priority_order - b.priority_order);
 
   return {
@@ -77,8 +73,6 @@ function mapToTicket(row: TicketRow): Ticket {
   };
 }
 
-// ─── Queries (GET) ───────────────────────────────────────────────────────────
-
 export async function getUserTickets(): Promise<TicketsResult> {
   try {
     const session = await getSession();
@@ -87,14 +81,9 @@ export async function getUserTickets(): Promise<TicketsResult> {
     const { data, error } = await getSupabaseAdmin()
       .from("tickets")
       .select(
-        `
-        ticket_id, qr_hash, status, price_purchased, created_at,
+        `ticket_id, qr_hash, status, price_purchased, created_at,
         ticket_types ( ticket_type_id, name, description ),
-        events (
-          event_id, name, location, start_at, end_at, status,
-          event_images ( priority_order, image_url )
-        )
-      `,
+        events ( event_id, name, location, start_at, end_at, status, event_images ( priority_order, image_url ) )`,
       )
       .eq("owner_user_id", session.sub)
       .order("created_at", { ascending: false });
@@ -120,11 +109,9 @@ export async function getUserTickets(): Promise<TicketsResult> {
   }
 }
 
-export async function getTicketById(ticketId: string): Promise<{
-  success: boolean;
-  message: string;
-  ticket?: Ticket;
-}> {
+export async function getTicketById(
+  ticketId: string,
+): Promise<{ success: boolean; message: string; ticket?: Ticket }> {
   try {
     const session = await getSession();
     if (!session) return { success: false, message: "Unauthorized." };
@@ -132,14 +119,9 @@ export async function getTicketById(ticketId: string): Promise<{
     const { data, error } = await getSupabaseAdmin()
       .from("tickets")
       .select(
-        `
-        ticket_id, qr_hash, status, price_purchased, created_at,
+        `ticket_id, qr_hash, status, price_purchased, created_at,
         ticket_types ( ticket_type_id, name, description ),
-        events (
-          event_id, name, location, start_at, end_at, status,
-          event_images ( priority_order, image_url )
-        )
-      `,
+        events ( event_id, name, location, start_at, end_at, status, event_images ( priority_order, image_url ) )`,
       )
       .eq("ticket_id", ticketId)
       .eq("owner_user_id", session.sub)
@@ -153,6 +135,7 @@ export async function getTicketById(ticketId: string): Promise<{
       });
       return { success: false, message: "Failed to load ticket." };
     }
+
     if (!data) return { success: false, message: "Ticket not found." };
 
     return {

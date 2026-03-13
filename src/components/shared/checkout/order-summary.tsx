@@ -1,7 +1,6 @@
-// components/shared/checkout/order-summary.tsx
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, memo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,22 +21,26 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
 import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
-import type { PaymentMethod, PaymentGatewayFormData, BankTransferDetails } from "@/lib/types/payment";
+import type {
+  PaymentMethod,
+  PaymentGatewayFormData,
+  BankTransferDetails,
+} from "@/lib/types/payment";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const formatLKR = (n: number) => {
+  return n === 0
+    ? "Free"
+    : `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+};
 
-const formatLKR = (n: number) =>
-  n === 0 ? "Free" : `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", {
+const formatDate = (iso: string) => {
+  return new Date(iso).toLocaleDateString("en-US", {
     weekday: "short",
     month: "long",
     day: "numeric",
@@ -45,15 +48,17 @@ const formatDate = (iso: string) =>
     hour: "2-digit",
     minute: "2-digit",
   });
-
-// ─── Countdown Timer ─────────────────────────────────────────────────────────
+};
 
 function useCountdown(expiresAt: string) {
   const calc = useCallback(
-    () => Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000)),
-    [expiresAt]
+    () =>
+      Math.max(
+        0,
+        Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000),
+      ),
+    [expiresAt],
   );
-
   const [secondsLeft, setSecondsLeft] = useState(calc);
 
   useEffect(() => {
@@ -63,116 +68,149 @@ function useCountdown(expiresAt: string) {
 
   const mins = Math.floor(secondsLeft / 60);
   const secs = secondsLeft % 60;
-  const isUrgent = secondsLeft < 120; // < 2 minutes
+  const isUrgent = secondsLeft < 120;
   const isExpired = secondsLeft === 0;
 
   return { mins, secs, isUrgent, isExpired, secondsLeft };
 }
 
-// ─── Payment Gateway Auto-Submit Form ────────────────────────────────────────
-// Renders a hidden form and auto-submits to the payment gateway checkout URL.
-// Currently configured for gateway can be swapped without changing this component.
-
-function PaymentGatewayAutoForm({ formData }: { formData: PaymentGatewayFormData }) {
-  const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    // Auto-submit on mount
-    const t = setTimeout(() => formRef.current?.submit(), 500);
-    return () => clearTimeout(t);
-  }, []);
-
-  const fields = [
-    "merchant_id", "return_url", "cancel_url", "notify_url",
-    "order_id", "items", "currency", "amount",
-    "first_name", "last_name", "email", "phone",
-    "address", "city", "country", "hash",
-  ] as const;
-
-  return (
-    <form ref={formRef} method="POST" action={formData.checkout_url} className="hidden">
-      {fields.map((field) => (
-        <input key={field} type="hidden" name={field} value={formData[field]} />
-      ))}
-    </form>
-  );
+interface PaymentGatewayAutoFormProps {
+  formData: PaymentGatewayFormData;
 }
 
-// ─── Bank Transfer Instructions ──────────────────────────────────────────────
+const PaymentGatewayAutoForm: React.FC<PaymentGatewayAutoFormProps> = memo(
+  ({ formData }) => {
+    const formRef = useRef<HTMLFormElement>(null);
 
-function BankTransferPanel({ details }: { details: BankTransferDetails }) {
-  const [copied, setCopied] = useState<string | null>(null);
+    useEffect(() => {
+      const t = setTimeout(() => formRef.current?.submit(), 500);
+      return () => clearTimeout(t);
+    }, []);
 
-  const copy = async (val: string, key: string) => {
-    await navigator.clipboard.writeText(val);
-    setCopied(key);
-    setTimeout(() => setCopied(null), 2000);
-  };
+    const fields = [
+      "merchant_id",
+      "return_url",
+      "cancel_url",
+      "notify_url",
+      "order_id",
+      "items",
+      "currency",
+      "amount",
+      "first_name",
+      "last_name",
+      "email",
+      "phone",
+      "address",
+      "city",
+      "country",
+      "hash",
+    ] as const;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-4 p-5 rounded-2xl border border-blue-100 bg-blue-50/60 space-y-4"
-    >
-      <div className="flex items-center gap-2">
-        <Building2 className="w-5 h-5 text-blue-600" />
-        <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-blue-900">
-          Bank Transfer Details
-        </h4>
-      </div>
-
-      <div className="space-y-2">
-        {[
-          { label: "Bank", value: details.bank_name },
-          { label: "Account Holder", value: details.account_holder },
-          { label: "Account Number", value: details.account_number, copyable: true },
-          { label: "Reference", value: details.reference, copyable: true },
-          { label: "Amount", value: formatLKR(details.amount), copyable: true },
-        ].map(({ label, value, copyable }) => (
-          <div key={label} className="flex items-center justify-between">
-            <span className="font-secondary text-xs text-blue-600 w-32 shrink-0">{label}</span>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-secondary text-sm font-semibold text-blue-900 truncate">
-                {value}
-              </span>
-              {copyable && (
-                <button
-                  onClick={() => copy(value, label)}
-                  className="text-blue-500 hover:text-blue-700 shrink-0"
-                  aria-label={`Copy ${label}`}
-                >
-                  {copied === label ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
+    return (
+      <form
+        ref={formRef}
+        method="POST"
+        action={formData.checkout_url}
+        className="hidden"
+      >
+        {fields.map((field) => (
+          <input
+            key={field}
+            type="hidden"
+            name={field}
+            value={formData[field]}
+          />
         ))}
-      </div>
+      </form>
+    );
+  },
+);
 
-      <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-100/70">
-        <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-        <p className="font-secondary text-xs text-blue-800 leading-relaxed">
-          {details.instructions}
+PaymentGatewayAutoForm.displayName = "PaymentGatewayAutoForm";
+
+interface BankTransferPanelProps {
+  details: BankTransferDetails;
+}
+
+const BankTransferPanel: React.FC<BankTransferPanelProps> = memo(
+  ({ details }) => {
+    const [copied, setCopied] = useState<string | null>(null);
+
+    const copy = async (val: string, key: string) => {
+      await navigator.clipboard.writeText(val);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    };
+
+    const infoRows = [
+      { label: "Bank", value: details.bank_name },
+      { label: "Account Holder", value: details.account_holder },
+      {
+        label: "Account Number",
+        value: details.account_number,
+        copyable: true,
+      },
+      { label: "Reference", value: details.reference, copyable: true },
+      { label: "Amount", value: formatLKR(details.amount), copyable: true },
+    ];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mt-4 p-5 rounded-2xl border border-blue-100 bg-blue-50/60 space-y-4"
+      >
+        <div className="flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-blue-600" />
+          <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-blue-900">
+            Bank Transfer Details
+          </h4>
+        </div>
+
+        <div className="space-y-2">
+          {infoRows.map(({ label, value, copyable }) => (
+            <div key={label} className="flex items-center justify-between">
+              <span className="font-secondary text-xs text-blue-600 w-32 shrink-0">
+                {label}
+              </span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-secondary text-sm font-semibold text-blue-900 truncate">
+                  {value}
+                </span>
+                {copyable && (
+                  <button
+                    onClick={() => copy(value, label)}
+                    className="text-blue-500 hover:text-blue-700 shrink-0"
+                    aria-label={`Copy ${label}`}
+                  >
+                    {copied === label ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-100/70">
+          <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+          <p className="font-secondary text-xs text-blue-800 leading-relaxed">
+            {details.instructions}
+          </p>
+        </div>
+
+        <p className="font-secondary text-xs text-blue-600 font-semibold">
+          Order ID: {details.order_id}
         </p>
-      </div>
+      </motion.div>
+    );
+  },
+);
 
-      <p className="font-secondary text-xs text-blue-600 font-semibold">
-        Order ID: {details.order_id}
-      </p>
-    </motion.div>
-  );
-}
-
-// ─── Main OrderSummary Component ─────────────────────────────────────────────
-
-interface OrderSummaryProps {
-  data: CheckoutData;
-}
+BankTransferPanel.displayName = "BankTransferPanel";
 
 const PAYMENT_METHODS: {
   id: PaymentMethod;
@@ -200,17 +238,21 @@ const PAYMENT_METHODS: {
   },
 ];
 
-export function OrderSummary({ data }: OrderSummaryProps) {
+export interface OrderSummaryProps {
+  data: CheckoutData;
+}
+
+export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
   const router = useRouter();
   const { mins, secs, isUrgent, isExpired } = useCountdown(data.expires_at);
-
-  // Filter payment methods to only those allowed for this event
   const availableMethods = PAYMENT_METHODS.filter((m) =>
     data.allowed_payment_methods.includes(m.id),
   );
 
   const [promoCode, setPromoCode] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<ValidatedPromotion | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<ValidatedPromotion | null>(
+    null,
+  );
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
@@ -220,17 +262,17 @@ export function OrderSummary({ data }: OrderSummaryProps) {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  // Payment gateway form state
-  const [gatewayForm, setGatewayForm] = useState<PaymentGatewayFormData | null>(null);
-  const [bankDetails, setBankDetails] = useState<BankTransferDetails | null>(null);
+  const [gatewayForm, setGatewayForm] = useState<PaymentGatewayFormData | null>(
+    null,
+  );
+  const [bankDetails, setBankDetails] = useState<BankTransferDetails | null>(
+    null,
+  );
   const [orderCreated, setOrderCreated] = useState<string | null>(null);
 
-  // Pricing
   const discountAmount = appliedPromo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, data.subtotal - discountAmount);
 
-  // Auto-redirect if expired
   useEffect(() => {
     if (isExpired) {
       toast.error("Your reservation has expired", {
@@ -240,10 +282,9 @@ export function OrderSummary({ data }: OrderSummaryProps) {
     }
   }, [isExpired, router, data.event_id]);
 
-  // ── Promo handlers ──────────────────────────────────────────────────────────
-
   const handleApplyPromo = useCallback(async () => {
     if (!promoCode.trim()) return;
+
     setPromoLoading(true);
     setPromoError(null);
     setPromoSuccess(null);
@@ -263,6 +304,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       setAppliedPromo(null);
       return;
     }
+
     setAppliedPromo(result.promo!);
     setPromoSuccess(result.message);
     setPromoCode("");
@@ -273,8 +315,6 @@ export function OrderSummary({ data }: OrderSummaryProps) {
     setPromoSuccess(null);
     setPromoError(null);
   }, []);
-
-  // ── Payment submission ──────────────────────────────────────────────────────
 
   const handlePayNow = useCallback(async () => {
     if (isExpired) {
@@ -304,9 +344,7 @@ export function OrderSummary({ data }: OrderSummaryProps) {
     setOrderCreated(result.order!.order_id);
 
     if (result.gateway_form) {
-      // Payment gateway: render hidden form and auto-submit
       setGatewayForm(result.gateway_form);
-      // Keep isSubmitting=true — user is being redirected
       return;
     }
 
@@ -316,16 +354,21 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       return;
     }
 
-    // ONGATE or unknown
     router.push(`/checkout/success?order_id=${result.order!.order_id}`);
-  }, [isExpired, data, appliedPromo, discountAmount, finalTotal, paymentMethod, router]);
+  }, [
+    isExpired,
+    data,
+    appliedPromo,
+    discountAmount,
+    finalTotal,
+    paymentMethod,
+    router,
+  ]);
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-5">
-      {/* ── Payment gateway auto-submit form (rendered invisible, auto-submits) ── */}
       {gatewayForm && <PaymentGatewayAutoForm formData={gatewayForm} />}
 
-      {/* ── Countdown Timer ── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -338,15 +381,13 @@ export function OrderSummary({ data }: OrderSummaryProps) {
       >
         <Clock className="w-4 h-4 shrink-0" />
         <p className="font-secondary text-sm font-semibold">
-          {isUrgent ? "⚡ Hurry! " : ""}
-          Reservation expires in{" "}
+          {isUrgent ? "⚡ Hurry! " : ""}Reservation expires in{" "}
           <span className="font-primary font-black tabular-nums">
             {mins}:{secs.toString().padStart(2, "0")}
           </span>
         </p>
       </motion.div>
 
-      {/* ── Event Info ── */}
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm space-y-3">
         <h3 className="font-primary font-black text-base uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
           {data.event_name}
@@ -361,7 +402,6 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </div>
       </div>
 
-      {/* ── Order Items ── */}
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <ShoppingBag className="w-4 h-4 text-[hsl(270,70%,50%)]" />
@@ -394,7 +434,6 @@ export function OrderSummary({ data }: OrderSummaryProps) {
           ))}
         </div>
 
-        {/* Pricing breakdown */}
         <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
           <div className="flex justify-between text-sm font-secondary text-gray-500">
             <span>Subtotal</span>
@@ -437,7 +476,6 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </div>
       </div>
 
-      {/* ── Promo Code ── */}
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center gap-2 mb-3">
           <Tag className="w-4 h-4 text-[hsl(270,70%,50%)]" />
@@ -537,7 +575,6 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </AnimatePresence>
       </div>
 
-      {/* ── Payment Method ── */}
       {!bankDetails && !gatewayForm && (
         <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -601,12 +638,10 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         </div>
       )}
 
-      {/* ── Bank Transfer Panel ── */}
       <AnimatePresence>
         {bankDetails && <BankTransferPanel details={bankDetails} />}
       </AnimatePresence>
 
-      {/* ── Payment Gateway Redirecting State ── */}
       <AnimatePresence>
         {gatewayForm && !bankDetails && (
           <motion.div
@@ -622,7 +657,6 @@ export function OrderSummary({ data }: OrderSummaryProps) {
         )}
       </AnimatePresence>
 
-      {/* ── Submit Error ── */}
       <AnimatePresence>
         {submitError && (
           <motion.div
@@ -636,13 +670,14 @@ export function OrderSummary({ data }: OrderSummaryProps) {
               <p className="font-secondary text-sm font-semibold text-red-800">
                 Payment Failed
               </p>
-              <p className="font-secondary text-sm text-red-700 mt-0.5">{submitError}</p>
+              <p className="font-secondary text-sm text-red-700 mt-0.5">
+                {submitError}
+              </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Pay Now CTA ── */}
       {!bankDetails && !gatewayForm && (
         <Button
           onClick={handlePayNow}
@@ -673,21 +708,24 @@ export function OrderSummary({ data }: OrderSummaryProps) {
 
       {bankDetails && (
         <Button
-          onClick={() => router.push(`/checkout/success?order_id=${orderCreated}`)}
+          onClick={() =>
+            router.push(`/checkout/success?order_id=${orderCreated}`)
+          }
           className="w-full font-primary font-bold text-sm py-4 h-auto rounded-xl text-white bg-[hsl(222.2,47.4%,11.2%)] hover:bg-[hsl(222.2,47.4%,20%)] shadow-md"
         >
-          I&apos;ve Made the Transfer
-          <ArrowRight className="w-4 h-4" />
+          I&apos;ve Made the Transfer <ArrowRight className="w-4 h-4" />
         </Button>
       )}
 
-      {/* ── Security badge ── */}
       {!bankDetails && !gatewayForm && (
         <p className="text-center font-secondary text-xs text-gray-400 flex items-center justify-center gap-1.5">
           <span className="text-emerald-500">🔒</span>
-          Secured by 256-bit SSL encryption. Your payment details are never stored.
+          Secured by 256-bit SSL encryption. Your payment details are never
+          stored.
         </p>
       )}
     </div>
   );
-}
+});
+
+OrderSummary.displayName = "OrderSummary";

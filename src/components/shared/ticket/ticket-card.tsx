@@ -1,12 +1,9 @@
-// components/shared/ticket/ticket-card.tsx
 "use client";
 
 import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
-
 import type { Ticket } from "@/lib/types/ticket";
 
 export interface TicketCardProps {
@@ -98,7 +95,6 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
                 {ticket.ticket_type.name}
               </p>
             </div>
-
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium shrink-0",
@@ -125,7 +121,6 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
                 {formatDate(ticket.event.start_at)}
               </span>
             </div>
-
             <div className="flex items-center gap-2">
               <Clock
                 className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0"
@@ -135,7 +130,6 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
                 {formatTime(ticket.event.start_at)}
               </span>
             </div>
-
             <div className="flex items-center gap-2 col-span-2">
               <MapPin
                 className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0"
@@ -159,7 +153,6 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
                 {qrShort}
               </span>
             </div>
-
             <div className="flex items-center gap-1.5 shrink-0">
               <Tag
                 className="w-3.5 h-3.5 text-[hsl(270,70%,50%)]"

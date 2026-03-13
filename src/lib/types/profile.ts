@@ -1,4 +1,3 @@
-// lib/types/profile.ts
 export interface UserProfile {
   user_id: string;
   name: string;

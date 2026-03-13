@@ -1,22 +1,16 @@
-// app/(auth)/sign-in/page.tsx
 "use client";
 
-import { useState, useCallback, useMemo, memo } from "react";
+import React, { useState, useCallback, useMemo, memo, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
-
 import { signIn } from "@/lib/actions/auth";
 
 interface AuthInputProps {
@@ -32,7 +26,7 @@ interface AuthInputProps {
   rightElement?: React.ReactNode;
 }
 
-const AuthInput = memo(
+const AuthInput: React.FC<AuthInputProps> = memo(
   ({
     icon: Icon,
     type = "text",
@@ -44,7 +38,7 @@ const AuthInput = memo(
     onBlur,
     autoComplete,
     rightElement,
-  }: AuthInputProps) => (
+  }) => (
     <div className="relative w-full">
       <Icon
         className={cn(
@@ -79,7 +73,7 @@ const AuthInput = memo(
 
 AuthInput.displayName = "AuthInput";
 
-function SignInForm() {
+const SignInForm: React.FC = memo(() => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect") ?? "";
@@ -106,8 +100,11 @@ function SignInForm() {
 
         if (result.success) {
           Toast("Success", result.message, "success");
-          const isSafeRedirect = redirectParam.startsWith("/") && !redirectParam.startsWith("//");
-          const redirectTo = isSafeRedirect ? redirectParam : (result.redirectTo || "/");
+          const isSafeRedirect =
+            redirectParam.startsWith("/") && !redirectParam.startsWith("//");
+          const redirectTo = isSafeRedirect
+            ? redirectParam
+            : result.redirectTo || "/";
           window.location.href = redirectTo;
           return;
         }
@@ -143,7 +140,6 @@ function SignInForm() {
         : "/sign-up",
     [redirectParam],
   );
-
   const isFocused = (field: string) => focusedField === field;
 
   return (
@@ -181,7 +177,6 @@ function SignInForm() {
             onFocus={() => setFocusedField("email")}
             onBlur={() => setFocusedField(null)}
           />
-
           <AuthInput
             icon={Lock}
             type={showPassword ? "text" : "password"}
@@ -240,7 +235,9 @@ function SignInForm() {
       </div>
     </section>
   );
-}
+});
+
+SignInForm.displayName = "SignInForm";
 
 export default function SignInPage() {
   return (

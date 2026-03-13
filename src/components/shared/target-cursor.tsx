@@ -1,4 +1,3 @@
-// components/shared/target-cursor.tsx
 "use client";
 
 import React, { useEffect, useRef, useCallback, useMemo, memo } from "react";

@@ -1,4 +1,3 @@
-// lib/actions/event.ts
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -15,8 +14,6 @@ import type {
   GetEventByIdResult,
 } from "@/lib/types/event";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
 
@@ -29,7 +26,6 @@ const STATUS_PRIORITY: Record<string, number> = {
   CANCELLED: 6,
 };
 
-// Matches all columns used in EVENT_CARD_SELECT against the DB schema
 const EVENT_CARD_SELECT = `
   event_id, organizer_id, category_id, name, subtitle, description, requirements,
   location, map_link, start_at, end_at, status, is_active, is_vip,
@@ -40,10 +36,7 @@ const EVENT_CARD_SELECT = `
   vip_events ( priority_order )
 ` as const;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-// Maps a raw Supabase row from EVENT_CARD_SELECT to a typed Event object
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// Map raw Supabase row to standardized Event object
 function mapRowToEvent(row: any): Event {
   const images = (row.event_images ?? []) as {
     image_url: string;
@@ -53,7 +46,6 @@ function mapRowToEvent(row: any): Event {
     price: number;
     is_active: boolean;
   }[];
-  // vip_events PK is event_id — array always has at most 1 row per event
   const vipRows = (row.vip_events ?? []) as { priority_order: number }[];
 
   const sortedImages = [...images].sort(
@@ -95,11 +87,9 @@ function mapRowToEvent(row: any): Event {
   };
 }
 
-// Sort: VIP first (by priority_order), then by date, then by status priority
 function sortEvents(a: Event, b: Event): number {
-  if (a.is_vip && b.is_vip) {
+  if (a.is_vip && b.is_vip)
     return (a.vip_priority_order ?? 9999) - (b.vip_priority_order ?? 9999);
-  }
   if (a.is_vip) return -1;
   if (b.is_vip) return 1;
 
@@ -109,8 +99,6 @@ function sortEvents(a: Event, b: Event): number {
 
   return (STATUS_PRIORITY[a.status] ?? 7) - (STATUS_PRIORITY[b.status] ?? 7);
 }
-
-// ─── Actions ─────────────────────────────────────────────────────────────────
 
 export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
   try {
@@ -190,11 +178,7 @@ export async function getEventById(
         is_active, is_vip, allowed_payment_methods, created_at, updated_at,
         categories ( category_id, name, description ),
         event_images ( event_id, priority_order, image_url, created_at ),
-        ticket_types (
-          ticket_type_id, event_id, name, description, inclusions,
-          price, capacity, qty_sold, sale_start_at, sale_end_at,
-          is_active, version, created_at, updated_at
-        ),
+        ticket_types ( ticket_type_id, event_id, name, description, inclusions, price, capacity, qty_sold, sale_start_at, sale_end_at, is_active, version, created_at, updated_at ),
         users!events_organizer_id_fkey ( user_id, name, image_url, email, username ),
         vip_events ( priority_order )
       `,
@@ -207,7 +191,6 @@ export async function getEventById(
     if (error) throw error;
     if (!data) return { success: false, message: "Event not found." };
 
-    // Sort images by priority_order ascending (priority_order=1 is thumbnail, 2 is banner)
     const sortedImages = ((data.event_images as EventImage[]) ?? []).sort(
       (a, b) => a.priority_order - b.priority_order,
     );
@@ -232,9 +215,7 @@ export async function getEventById(
         version: t.version ?? 1,
       }));
 
-    // Supabase types FK joins as arrays — safely unwrap the first element
     const rawUser = Array.isArray(data.users) ? data.users[0] : data.users;
-
     const organizer: Organizer = {
       user_id: rawUser?.user_id ?? "",
       name: rawUser?.name ?? "Unknown Organizer",
@@ -246,7 +227,6 @@ export async function getEventById(
     const rawCategory = Array.isArray(data.categories)
       ? data.categories[0]
       : data.categories;
-
     const categoryDetails: CategoryDetails = {
       category_id: rawCategory?.category_id ?? data.category_id,
       name: rawCategory?.name ?? "General",
@@ -257,7 +237,6 @@ export async function getEventById(
     const startTicketPrice =
       activeTicketPrices.length > 0 ? Math.min(...activeTicketPrices) : null;
 
-    // Build EventDetails without leaking raw Supabase join fields
     const event: EventDetails = {
       event_id: data.event_id,
       organizer_id: data.organizer_id,
@@ -273,7 +252,10 @@ export async function getEventById(
       status: data.status,
       is_active: data.is_active,
       is_vip: data.is_vip,
-      allowed_payment_methods: (data as Record<string, unknown>).allowed_payment_methods as import("@/lib/types/payment").PaymentMethod[] | null,
+      allowed_payment_methods: (data as Record<string, unknown>)
+        .allowed_payment_methods as
+        | import("@/lib/types/payment").PaymentMethod[]
+        | null,
       created_at: data.created_at,
       updated_at: data.updated_at ?? null,
       category: categoryDetails.name,

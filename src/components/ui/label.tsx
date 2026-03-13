@@ -1,8 +1,6 @@
-// components/ui/label.tsx
 "use client";
 
 import * as React from "react";
-
 import { cn } from "@/lib/ui/utils";
 
 export type LabelProps = React.LabelHTMLAttributes<HTMLLabelElement>;

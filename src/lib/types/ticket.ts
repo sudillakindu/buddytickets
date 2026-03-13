@@ -1,4 +1,3 @@
-// lib/types/ticket.ts
 export type EventStatus =
   | "DRAFT"
   | "PUBLISHED"
@@ -7,7 +6,6 @@ export type EventStatus =
   | "ONGOING"
   | "COMPLETED"
   | "CANCELLED";
-
 export type TicketStatus = "ACTIVE" | "PENDING" | "USED" | "CANCELLED";
 
 export interface Ticket {

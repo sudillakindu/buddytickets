@@ -1,4 +1,3 @@
-// app/maintenance/page.tsx
 "use client";
 
 import React, { useCallback, memo } from "react";
@@ -11,7 +10,6 @@ import {
   useTransform,
 } from "framer-motion";
 import { Settings, Clock, RefreshCw, Home } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 
 interface Particle {
@@ -34,14 +32,13 @@ const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
 
 const SPRING_CONFIG = { stiffness: 100, damping: 30 } as const;
 
-const AnimatedBackground = memo(
-  ({
-    springX,
-    springY,
-  }: {
-    springX: MotionValue<number>;
-    springY: MotionValue<number>;
-  }) => {
+interface AnimatedBackgroundProps {
+  springX: MotionValue<number>;
+  springY: MotionValue<number>;
+}
+
+const AnimatedBackground: React.FC<AnimatedBackgroundProps> = memo(
+  ({ springX, springY }) => {
     return (
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
@@ -110,6 +107,7 @@ AnimatedBackground.displayName = "AnimatedBackground";
 export default function MaintenancePage() {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+
   const springX = useSpring(
     useTransform(mouseX, (v: number) => v * 0.05),
     SPRING_CONFIG,

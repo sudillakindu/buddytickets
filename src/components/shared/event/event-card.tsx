@@ -1,4 +1,3 @@
-// components/shared/event/event-card.tsx
 "use client";
 
 import React, { useState, memo, useCallback } from "react";
@@ -15,12 +14,9 @@ import {
   Crown,
   Radio,
 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import type { Event, EventStatus } from "@/lib/types/event";
-
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 interface StatusUI {
   text: string;
@@ -83,8 +79,6 @@ const FALLBACK_STATUS_UI: StatusUI = {
   isActive: false,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const formatDate = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleDateString("en-US", {
@@ -93,7 +87,6 @@ const formatDate = (iso: string): string =>
         day: "2-digit",
       })
     : "—";
-
 const formatTime = (iso: string): string =>
   iso
     ? new Date(iso).toLocaleTimeString("en-US", {
@@ -101,14 +94,11 @@ const formatTime = (iso: string): string =>
         minute: "2-digit",
       })
     : "—";
-
 const formatPrice = (price: number | null): string => {
   if (price === null) return "—";
   if (price === 0) return "Free";
   return `LKR ${price.toLocaleString()}`;
 };
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 interface EventCardProps {
   event: Event;
@@ -137,7 +127,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
 
     const handleImgError = useCallback(() => setImgError(true), []);
 
-    // Don't render DRAFT or inactive events
     if (event.status === "DRAFT" || !event.is_active) return null;
 
     return (
@@ -152,7 +141,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
           transition={{ duration: 0.4, delay: index * 0.06 }}
           className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 relative w-full cursor-pointer"
         >
-          {/* ── Thumbnail ── */}
           <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
             {imgError || !event.thumbnail_image ? (
               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 bg-gray-50">
@@ -173,7 +161,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
               />
             )}
 
-            {/* VIP badge — shown instead of Live badge if both could apply */}
             {event.is_vip && (
               <div className="absolute top-3 left-3">
                 <span className="bg-yellow-400/90 text-yellow-900 px-2 py-1 rounded-lg backdrop-blur-md shadow-sm border border-yellow-300 flex items-center gap-1">
@@ -185,7 +172,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
               </div>
             )}
 
-            {/* Live badge — only shown when not VIP to avoid overlap */}
             {!event.is_vip && event.status === "ONGOING" && (
               <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-black/70 text-emerald-400 px-2 py-1 rounded-lg backdrop-blur-md">
                 <span className="relative flex h-2 w-2">
@@ -199,7 +185,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
               </div>
             )}
 
-            {/* Category badge */}
             <div className="absolute top-3 right-3">
               <span className="px-2.5 py-1 text-[10px] font-primary font-bold bg-white/90 backdrop-blur-md rounded-lg text-[hsl(222.2,47.4%,11.2%)] shadow-sm uppercase tracking-wider">
                 {event.category}
@@ -207,9 +192,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
             </div>
           </div>
 
-          {/* ── Card Body ── */}
           <div className="p-4 flex flex-col flex-grow gap-2.5">
-            {/* Date & time row */}
             <div className="flex items-center justify-between w-full font-secondary text-[hsl(270,70%,50%)] text-[11px] font-medium tracking-tight">
               <div className="flex items-center gap-1 shrink-0">
                 <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -225,7 +208,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
               </div>
             </div>
 
-            {/* Name & location */}
             <div className="flex flex-col gap-1">
               <h3 className="font-primary text-base font-black text-[hsl(222.2,47.4%,11.2%)] uppercase leading-tight line-clamp-2">
                 {event.name}
@@ -239,7 +221,6 @@ export const EventCard: React.FC<EventCardProps> = memo(
               </div>
             </div>
 
-            {/* Price & CTA */}
             <div className="flex items-end justify-between mt-auto pt-3 border-t-2 border-gray-100">
               <div>
                 <p className="font-secondary text-[9px] uppercase tracking-wide text-gray-400 font-semibold mb-0.5">

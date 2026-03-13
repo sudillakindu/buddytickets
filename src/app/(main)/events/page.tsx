@@ -1,7 +1,6 @@
-// app/(main)/events/page.tsx
 "use client";
 
-import { useEffect, useState, useMemo, memo } from "react";
+import React, { useEffect, useState, useMemo, memo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -11,7 +10,6 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-
 import { EventCard } from "@/components/shared/event/event-card";
 import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton";
 import { getAllEvents } from "@/lib/actions/event";
@@ -19,8 +17,6 @@ import { Toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { logger } from "@/lib/logger";
 import type { Event, EventStatus } from "@/lib/types/event";
-
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 interface FilterTab {
   label: string;
@@ -56,9 +52,7 @@ const SORT_OPTIONS: { label: string; value: SortValue }[] = [
   { label: "Price: High to Low", value: "price-desc" },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-const EmptyState = memo(() => (
+const EmptyState: React.FC = memo(() => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -80,8 +74,6 @@ const EmptyState = memo(() => (
 
 EmptyState.displayName = "EmptyState";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function EventsPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -95,7 +87,6 @@ export default function EventsPage() {
     () => FILTER_TABS.find((t) => t.value === filter) ?? FILTER_TABS[0],
     [filter],
   );
-
   const activeSort = useMemo(
     () =>
       SORT_OPTIONS.find((option) => option.value === sort)?.value ??
@@ -172,12 +163,10 @@ export default function EventsPage() {
       .filter((e) => category === "all" || e.category === category)
       .filter((e) => {
         if (!normalizedSearch) return true;
-
         const haystack = [e.name, e.subtitle, e.location, e.category]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
-
         return haystack.includes(normalizedSearch);
       });
 
@@ -201,52 +190,21 @@ export default function EventsPage() {
       if (aPrice === null && bPrice === null) return 0;
       if (aPrice === null) return 1;
       if (bPrice === null) return -1;
-      return bPrice - aPrice;
+      return (bPrice ?? 0) - (aPrice ?? 0);
     });
   }, [events, activeTab, category, searchTerm, activeSort]);
 
-  const setFilter = (value: string) => {
+  const updateQueryParams = (key: string, value: string | null) => {
     const sp = new URLSearchParams(params.toString());
-    if (value === "all") {
-      sp.delete("filter");
+    if (
+      value === null ||
+      value === "all" ||
+      value === "date-desc" ||
+      value.trim() === ""
+    ) {
+      sp.delete(key);
     } else {
-      sp.set("filter", value);
-    }
-    router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
-      scroll: false,
-    });
-  };
-
-  const setSearch = (value: string) => {
-    const sp = new URLSearchParams(params.toString());
-    if (value.trim()) {
-      sp.set("q", value.trim());
-    } else {
-      sp.delete("q");
-    }
-    router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
-      scroll: false,
-    });
-  };
-
-  const setCategory = (value: string) => {
-    const sp = new URLSearchParams(params.toString());
-    if (value === "all") {
-      sp.delete("category");
-    } else {
-      sp.set("category", value);
-    }
-    router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
-      scroll: false,
-    });
-  };
-
-  const setSort = (value: SortValue) => {
-    const sp = new URLSearchParams(params.toString());
-    if (value === "date-desc") {
-      sp.delete("sort");
-    } else {
-      sp.set("sort", value);
+      sp.set(key, value.trim());
     }
     router.push(sp.toString() ? `${pathname}?${sp.toString()}` : pathname, {
       scroll: false,
@@ -288,7 +246,7 @@ export default function EventsPage() {
                 className="relative"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  setSearch(searchTerm);
+                  updateQueryParams("q", searchTerm);
                 }}
               >
                 <Search
@@ -305,14 +263,16 @@ export default function EventsPage() {
               </form>
 
               <div className="mt-2.5 flex gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 lg:grid-cols-12 sm:mt-2.5 sm:pb-0 w-full">
-                <label className="sr-only" htmlFor="event-filter">
-                  Filter events
-                </label>
                 <div className="relative min-w-[150px] flex-none sm:min-w-0 lg:col-span-4">
+                  <label className="sr-only" htmlFor="event-filter">
+                    Filter events
+                  </label>
                   <select
                     id="event-filter"
                     value={activeTab.value}
-                    onChange={(e) => setFilter(e.target.value)}
+                    onChange={(e) =>
+                      updateQueryParams("filter", e.target.value)
+                    }
                     className="appearance-none w-full font-secondary py-2.5 h-auto rounded-xl border-2 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] border-[hsl(214.3,31.8%,91.4%)] px-3 pr-9 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                     aria-label="Filter events"
                   >
@@ -328,14 +288,16 @@ export default function EventsPage() {
                   />
                 </div>
 
-                <label className="sr-only" htmlFor="event-category-filter">
-                  Filter by category
-                </label>
                 <div className="relative min-w-[170px] flex-none sm:min-w-0 lg:col-span-4">
+                  <label className="sr-only" htmlFor="event-category-filter">
+                    Filter by category
+                  </label>
                   <select
                     id="event-category-filter"
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) =>
+                      updateQueryParams("category", e.target.value)
+                    }
                     className="appearance-none w-full font-secondary py-2.5 h-auto rounded-xl border-2 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] border-[hsl(214.3,31.8%,91.4%)] px-3 pr-9 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                     aria-label="Filter by category"
                   >
@@ -352,14 +314,16 @@ export default function EventsPage() {
                   />
                 </div>
 
-                <label className="sr-only" htmlFor="event-sort-filter">
-                  Sort events
-                </label>
                 <div className="relative min-w-[170px] flex-none sm:min-w-0 lg:col-span-3">
+                  <label className="sr-only" htmlFor="event-sort-filter">
+                    Sort events
+                  </label>
                   <select
                     id="event-sort-filter"
                     value={activeSort}
-                    onChange={(e) => setSort(e.target.value as SortValue)}
+                    onChange={(e) =>
+                      updateQueryParams("sort", e.target.value as SortValue)
+                    }
                     className="appearance-none w-full font-secondary py-2.5 h-auto rounded-xl border-2 bg-[hsl(210,40%,98%)] text-[hsl(222.2,47.4%,11.2%)] border-[hsl(214.3,31.8%,91.4%)] px-3 pr-9 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-0 focus-visible:border-[hsl(270,70%,50%)]"
                     aria-label="Sort events"
                   >

@@ -1,4 +1,4 @@
-// app/(main)/dashboard/layout.tsx
+import React from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/utils/session";
 

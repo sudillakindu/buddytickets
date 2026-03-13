@@ -1,7 +1,6 @@
-// app/(main)/become-an-organizer/page.tsx
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, memo } from "react";
+import React, { useCallback, useEffect, useMemo, useState, memo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -15,26 +14,20 @@ import {
   UserCheck,
   XCircle,
 } from "lucide-react";
-
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
-
 import {
   getOrganizerOnboardingState,
   submitOrganizerDetails,
 } from "@/lib/actions/organizer";
-
 import type {
   OrganizerDetails,
   OrganizerDetailsFieldErrors,
   OrganizerOnboardingUser,
 } from "@/lib/types/organizer";
-
-// ─── Internal Types & Helpers ────────────────────────────────────────────────
 
 interface OrganizerFormState {
   nic_number: string;
@@ -122,22 +115,16 @@ function validateForm(
   return null;
 }
 
-// ─── Components ──────────────────────────────────────────────────────────────
+interface StepItemProps {
+  step: number;
+  title: string;
+  description: string;
+  completed: boolean;
+  active: boolean;
+}
 
-const StepItem = memo(
-  ({
-    step,
-    title,
-    description,
-    completed,
-    active,
-  }: {
-    step: number;
-    title: string;
-    description: string;
-    completed: boolean;
-    active: boolean;
-  }) => (
+const StepItem: React.FC<StepItemProps> = memo(
+  ({ step, title, description, completed, active }) => (
     <div
       className={cn(
         "rounded-2xl border p-4 sm:p-5 bg-white/90 backdrop-blur-sm transition-colors",
@@ -180,18 +167,14 @@ const StepItem = memo(
 
 StepItem.displayName = "StepItem";
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
-
 export default function BecomeAnOrganizerPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-
   const [user, setUser] = useState<OrganizerOnboardingUser | null>(null);
   const [organizerDetails, setOrganizerDetails] =
     useState<OrganizerDetails | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState("");
-
   const [form, setForm] = useState<OrganizerFormState>(INITIAL_FORM_STATE);
   const [fieldErrors, setFieldErrors] = useState<OrganizerDetailsFieldErrors>(
     {},
@@ -238,11 +221,9 @@ export default function BecomeAnOrganizerPage() {
   const isSignedIn = Boolean(user);
   const isOrganizer = user?.role === "ORGANIZER";
   const detailsStatus = organizerDetails?.status ?? null;
-
   const isStep3Complete =
     organizerDetails?.is_submitted === true && detailsStatus !== "REJECTED";
   const isStep4Complete = detailsStatus === "APPROVED";
-
   const shouldShowSubmitButton =
     isOrganizer &&
     (organizerDetails === null ||
@@ -266,7 +247,6 @@ export default function BecomeAnOrganizerPage() {
 
   const openDetailsModal = useCallback(() => {
     if (!isOrganizer) return;
-
     setFieldErrors({});
     setForm({
       nic_number: organizerDetails?.nic_number ?? "",
@@ -363,7 +343,10 @@ export default function BecomeAnOrganizerPage() {
 
         {loading ? (
           <div className="py-24 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-[hsl(270,70%,50%)]" />
+            <Loader2
+              className="w-6 h-6 animate-spin text-[hsl(270,70%,50%)]"
+              aria-hidden="true"
+            />
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -618,7 +601,6 @@ export default function BecomeAnOrganizerPage() {
             onClick={closeDetailsModal}
             aria-label="Close organizer details dialog"
           />
-
           <div className="relative w-full max-w-2xl rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
             <div className="mb-5">
               <h3 className="font-primary text-xl font-semibold text-[hsl(222.2,47.4%,11.2%)]">
@@ -746,7 +728,6 @@ export default function BecomeAnOrganizerPage() {
                     </p>
                   )}
                 </div>
-
                 <div>
                   <Input
                     type="file"
@@ -786,7 +767,10 @@ export default function BecomeAnOrganizerPage() {
                   className="h-auto min-w-[130px] py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                 >
                   {submitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2
+                      className="w-4 h-4 animate-spin"
+                      aria-hidden="true"
+                    />
                   ) : (
                     "Submit Details"
                   )}

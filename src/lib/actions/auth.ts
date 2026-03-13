@@ -1,4 +1,3 @@
-// lib/actions/auth.ts
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -32,8 +31,6 @@ import type {
   OtpStatus,
   DataFetchResult,
 } from "@/lib/types/auth";
-
-// ─── Internal Helpers ────────────────────────────────────────────────────────
 
 const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 
@@ -81,19 +78,18 @@ async function createOtpSession(
   const token = newToken();
 
   const [{ error: otpErr }, { error: tokenErr }] = await Promise.all([
-    getSupabaseAdmin().from("otp_records").insert({
-      user_id: userId,
-      email,
-      otp_hash: otpHash,
-      purpose,
-      expires_at: expiresAt(),
-    }),
-    getSupabaseAdmin().from("auth_flow_tokens").insert({
-      email,
-      purpose,
-      token,
-      expires_at: flowExpiry(),
-    }),
+    getSupabaseAdmin()
+      .from("otp_records")
+      .insert({
+        user_id: userId,
+        email,
+        otp_hash: otpHash,
+        purpose,
+        expires_at: expiresAt(),
+      }),
+    getSupabaseAdmin()
+      .from("auth_flow_tokens")
+      .insert({ email, purpose, token, expires_at: flowExpiry() }),
   ]);
 
   if (otpErr || tokenErr) {
@@ -119,7 +115,6 @@ async function createOtpSession(
       meta: err,
     }),
   );
-
   return token;
 }
 
@@ -142,13 +137,12 @@ async function autoLogin(userId: string): Promise<string | null> {
     .single();
 
   if (error || !user) {
-    if (error) {
+    if (error)
       logger.error({
         fn: "autoLogin",
         message: "User fetch error",
         meta: error.message,
       });
-    }
     return null;
   }
 
@@ -160,8 +154,6 @@ async function autoLogin(userId: string): Promise<string | null> {
 
   return user.role as string;
 }
-
-// ─── Queries (GET) ───────────────────────────────────────────────────────────
 
 export async function getVerifyEmailData(
   token: string,
@@ -186,7 +178,6 @@ export async function getVerifyEmailData(
         message: "Failed to validate session. Please try again.",
       };
     }
-
     if (!ft)
       return { success: false, message: "Session expired. Please start over." };
 
@@ -258,7 +249,6 @@ export async function validateResetToken(
         success: false,
         message: "Reset link is invalid or has expired.",
       };
-
     return { success: true, message: "Valid reset token.", data };
   } catch (err) {
     logger.error({
@@ -284,8 +274,6 @@ export async function getSessionUser(): Promise<DataFetchResult<SessionUser>> {
     return { success: false, message: "Failed to load session." };
   }
 }
-
-// ─── Mutations (POST/PUT/DELETE) ─────────────────────────────────────────────
 
 export async function signUp(data: {
   name: string;
@@ -359,13 +347,12 @@ export async function signUp(data: {
       .single();
 
     if (insertErr || !user) {
-      if (insertErr) {
+      if (insertErr)
         logger.error({
           fn: "signUp",
           message: "User insert error",
           meta: insertErr.message,
         });
-      }
       return {
         success: false,
         message: "Failed to create account. Please try again.",
@@ -373,7 +360,6 @@ export async function signUp(data: {
     }
 
     const token = await createOtpSession(user.user_id, email, "signup");
-
     sendWelcomeEmail(email, name.trim()).catch((err) =>
       logger.error({
         fn: "signUp",
@@ -399,7 +385,6 @@ export async function signIn(data: {
 }): Promise<AuthResult> {
   try {
     const email = data.email.toLowerCase().trim();
-
     if (!email || !data.password)
       return { success: false, message: "Email and password are required." };
 
@@ -413,7 +398,6 @@ export async function signIn(data: {
 
     if (error)
       logger.error({ fn: "signIn", message: "DB error", meta: error.message });
-
     if (!user || !user.password_hash)
       return { success: false, message: "Invalid email or password." };
     if (!user.is_active)
@@ -445,14 +429,8 @@ export async function signIn(data: {
       .update({ last_login_at: new Date().toISOString() })
       .eq("user_id", user.user_id);
 
-    const dashboardRoles = DASHBOARD_ROLES;
-    const redirectTo = dashboardRoles.has(user.role) ? "/dashboard" : "/";
-
-    return {
-      success: true,
-      message: "Signed in successfully.",
-      redirectTo,
-    };
+    const redirectTo = DASHBOARD_ROLES.has(user.role) ? "/dashboard" : "/";
+    return { success: true, message: "Signed in successfully.", redirectTo };
   } catch (err) {
     logger.error({ fn: "signIn", message: "Unexpected error", meta: err });
     return { success: false, message: "An unexpected error occurred." };
@@ -464,7 +442,6 @@ export async function forgotPassword(data: {
 }): Promise<AuthResult> {
   try {
     const email = data.email.toLowerCase().trim();
-
     if (!email)
       return { success: false, message: "Email address is required." };
 
@@ -486,11 +463,11 @@ export async function forgotPassword(data: {
       };
     }
 
-    // Return same message whether user exists or not to prevent user enumeration
     if (!user)
       return {
         success: true,
-        message: "If an account exists with this email, a verification code has been sent.",
+        message:
+          "If an account exists with this email, a verification code has been sent.",
       };
 
     const token = await createOtpSession(
@@ -498,10 +475,10 @@ export async function forgotPassword(data: {
       email,
       "forgot-password",
     );
-
     return {
       success: true,
-      message: "If an account exists with this email, a verification code has been sent.",
+      message:
+        "If an account exists with this email, a verification code has been sent.",
       token,
     };
   } catch (err) {
@@ -598,12 +575,7 @@ export async function verifyOtp(
           .update({ is_email_verified: true })
           .eq("user_id", rec.user_id);
         const role = await autoLogin(rec.user_id);
-        if (role) {
-          const dashboardRoles = DASHBOARD_ROLES;
-          if (dashboardRoles.has(role)) {
-            redirectTo = "/dashboard";
-          }
-        }
+        if (role && DASHBOARD_ROLES.has(role)) redirectTo = "/dashboard";
       }
       return {
         success: true,
@@ -615,12 +587,14 @@ export async function verifyOtp(
 
     if (ft.purpose === "forgot-password") {
       const resetToken = newToken();
-      await getSupabaseAdmin().from("auth_flow_tokens").insert({
-        email: ft.email,
-        purpose: "reset-password",
-        token: resetToken,
-        expires_at: resetExpiry(),
-      });
+      await getSupabaseAdmin()
+        .from("auth_flow_tokens")
+        .insert({
+          email: ft.email,
+          purpose: "reset-password",
+          token: resetToken,
+          expires_at: resetExpiry(),
+        });
       return {
         success: true,
         message: "Code verified. Please set your new password.",
@@ -746,7 +720,6 @@ export async function resetPassword(
         message: "Reset link has expired. Please request a new one.",
       };
 
-    // Mark token as used FIRST to prevent race condition (concurrent reuse)
     const { data: markedToken, error: markErr } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .update({ is_used: true })
@@ -790,8 +763,7 @@ export async function resetPassword(
       .select("name")
       .eq("email", ft.email)
       .single();
-
-    if (u?.name) {
+    if (u?.name)
       sendPasswordChangedEmail(ft.email, u.name).catch((err) =>
         logger.error({
           fn: "resetPassword",
@@ -799,7 +771,6 @@ export async function resetPassword(
           meta: err,
         }),
       );
-    }
 
     return {
       success: true,
