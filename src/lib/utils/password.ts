@@ -1,4 +1,3 @@
-// lib/utils/password.ts
 import { createHmac } from "crypto";
 import { hash, compare } from "bcryptjs";
 

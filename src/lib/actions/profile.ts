@@ -1,4 +1,3 @@
-// lib/actions/profile.ts
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -15,8 +14,6 @@ import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getAuthenticatedUserId(): Promise<string | null> {
   const session = await getSession();
@@ -38,8 +35,6 @@ function validateImageFile(file: File | null): ProfileImageResult | null {
   }
   return null;
 }
-
-// ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function getUserProfile(): Promise<ProfileFetchResult> {
   try {
@@ -79,8 +74,6 @@ export async function getUserProfile(): Promise<ProfileFetchResult> {
   }
 }
 
-// ─── Mutations ───────────────────────────────────────────────────────────────
-
 export async function uploadProfileImage(
   formData: FormData,
 ): Promise<ProfileImageResult> {
@@ -95,12 +88,11 @@ export async function uploadProfileImage(
     if (imageError) return imageError;
 
     const upload = await uploadProfileImageToStorage(imageFile!, userId);
-
     if (!upload.success || !upload.imageUrl) {
       return { success: false, message: upload.message };
     }
 
-    // Fetch the current image_url so we can clean up the old file
+    // Fetch existing image for cleanup
     const { data: currentUser } = await getSupabaseAdmin()
       .from("users")
       .select("image_url")
@@ -118,19 +110,18 @@ export async function uploadProfileImage(
         message: "DB update error",
         meta: error.message,
       });
-
       const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
-      if (upload.objectPath) {
-        await getSupabaseAdmin().storage.from(bucket).remove([upload.objectPath]);
-      }
-
+      if (upload.objectPath)
+        await getSupabaseAdmin()
+          .storage.from(bucket)
+          .remove([upload.objectPath]);
       return {
         success: false,
         message: "Image uploaded but failed to update profile.",
       };
     }
 
-    // Delete the old profile image from Storage (best-effort, don't fail the request)
+    // Clean up old image if it exists
     if (currentUser?.image_url) {
       try {
         const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
@@ -139,15 +130,14 @@ export async function uploadProfileImage(
           const publicPrefix = `/storage/v1/object/public/${bucket}/`;
           if (url.pathname.startsWith(publicPrefix)) {
             const oldPath = url.pathname.slice(publicPrefix.length);
-            if (oldPath) {
+            if (oldPath)
               await getSupabaseAdmin().storage.from(bucket).remove([oldPath]);
-            }
           }
         }
       } catch (cleanupErr) {
         logger.warn({
           fn: "uploadProfileImage",
-          message: "Failed to delete old profile image (non-fatal)",
+          message: "Failed to delete old profile image",
           meta: cleanupErr,
         });
       }
@@ -183,18 +173,15 @@ export async function updateProfile(data: {
     const mobile = data.mobile.trim();
     const imageUrl = data.image_url?.trim() || null;
 
-    if (!name || name.length < 3) {
+    if (!name || name.length < 3)
       return { success: false, message: "Name must be at least 3 characters." };
-    }
-    if (!/^[a-z0-9_]{3,}$/.test(username)) {
+    if (!/^[a-z0-9_]{3,}$/.test(username))
       return {
         success: false,
         message: "Username must be at least 3 characters (a–z, 0–9, _).",
       };
-    }
-    if (!/^\d{10}$/.test(mobile)) {
+    if (!/^\d{10}$/.test(mobile))
       return { success: false, message: "Mobile must be 10 digits." };
-    }
 
     const { data: current, error: fetchErr } = await getSupabaseAdmin()
       .from("users")
@@ -241,10 +228,7 @@ export async function updateProfile(data: {
       mobile,
       image_url: imageUrl,
     };
-
-    if (current.mobile !== mobile) {
-      payload.is_mobile_verified = false;
-    }
+    if (current.mobile !== mobile) payload.is_mobile_verified = false;
 
     const { error: updateErr } = await getSupabaseAdmin()
       .from("users")
@@ -281,21 +265,18 @@ export async function changePassword(data: {
 
     const { currentPassword, newPassword } = data;
 
-    if (!currentPassword) {
+    if (!currentPassword)
       return { success: false, message: "Current password is required." };
-    }
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 6)
       return {
         success: false,
         message: "New password must be at least 6 characters.",
       };
-    }
-    if (newPassword === currentPassword) {
+    if (newPassword === currentPassword)
       return {
         success: false,
         message: "New password must differ from current password.",
       };
-    }
 
     const { data: user, error } = await getSupabaseAdmin()
       .from("users")

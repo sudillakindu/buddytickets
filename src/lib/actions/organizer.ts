@@ -1,4 +1,3 @@
-// lib/actions/organizer.ts
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -15,8 +14,6 @@ import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-// ─── Internal Types & Helpers ────────────────────────────────────────────────
 
 interface UserRow {
   user_id: string;
@@ -59,25 +56,18 @@ function validateDetailsPayload(
 ): SubmitOrganizerDetailsResult | null {
   const fieldErrors: Record<string, string> = {};
 
-  if (!isValidSriLankanNic(payload.nic_number)) {
+  if (!isValidSriLankanNic(payload.nic_number))
     fieldErrors.nic_number =
       "Enter a valid Sri Lankan NIC (old or new format).";
-  }
-  if (payload.address.length < 8) {
+  if (payload.address.length < 8)
     fieldErrors.address = "Address must be at least 8 characters.";
-  }
-  if (!payload.bank_name) {
-    fieldErrors.bank_name = "Bank name is required.";
-  }
-  if (!payload.bank_branch) {
+  if (!payload.bank_name) fieldErrors.bank_name = "Bank name is required.";
+  if (!payload.bank_branch)
     fieldErrors.bank_branch = "Bank branch is required.";
-  }
-  if (!payload.account_holder_name) {
+  if (!payload.account_holder_name)
     fieldErrors.account_holder_name = "Account holder name is required.";
-  }
-  if (!payload.account_number) {
+  if (!payload.account_number)
     fieldErrors.account_number = "Account number is required.";
-  }
 
   if (Object.keys(fieldErrors).length > 0) {
     return {
@@ -86,7 +76,6 @@ function validateDetailsPayload(
       fieldErrors,
     };
   }
-
   return null;
 }
 
@@ -119,8 +108,6 @@ function validateImageFile(
   }
   return null;
 }
-
-// ─── Queries ─────────────────────────────────────────────────────────────────
 
 export async function getOrganizerOnboardingState(): Promise<OrganizerStateResult> {
   try {
@@ -192,7 +179,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
   } catch (err) {
     logger.error({
       fn: "getOrganizerOnboardingState",
-      message: "Unexpected error while loading organizer onboarding state",
+      message: "Unexpected error",
       meta: err,
     });
     return {
@@ -206,16 +193,13 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
   }
 }
 
-// ─── Mutations ───────────────────────────────────────────────────────────────
-
 export async function submitOrganizerDetails(
   formData: FormData,
 ): Promise<SubmitOrganizerDetailsResult> {
   try {
     const session = await getSession();
-    if (!session?.sub) {
+    if (!session?.sub)
       return { success: false, message: "Unauthorized. Please sign in first." };
-    }
 
     const { data: user, error: userError } = await getSupabaseAdmin()
       .from("users")
@@ -267,7 +251,6 @@ export async function submitOrganizerDetails(
     const backImageError = validateImageFile(nicBackImage, "nic_back_image");
     if (backImageError) return backImageError;
 
-    // Concurrency check before uploading files
     const [{ data: nicConflict }, { data: accountConflict }] =
       await Promise.all([
         getSupabaseAdmin()
@@ -284,36 +267,31 @@ export async function submitOrganizerDetails(
           .maybeSingle(),
       ]);
 
-    if (nicConflict) {
+    if (nicConflict)
       return {
         success: false,
         message: "This NIC number is already registered by another account.",
         fieldErrors: { nic_number: "NIC number already in use." },
       };
-    }
-
-    if (accountConflict) {
+    if (accountConflict)
       return {
         success: false,
         message:
           "This bank account number is already registered by another account.",
         fieldErrors: { account_number: "Account number already in use." },
       };
-    }
 
     const uploadResult = await uploadOrganizerNicImages(
       nicFrontImage!,
       nicBackImage!,
       user.user_id,
     );
-
     if (
       !uploadResult.success ||
       !uploadResult.frontUrl ||
       !uploadResult.backUrl
-    ) {
+    )
       return { success: false, message: uploadResult.message };
-    }
 
     const { error: upsertError } = await getSupabaseAdmin()
       .from("organizer_details")
@@ -343,24 +321,19 @@ export async function submitOrganizerDetails(
         message: "Supabase upsert error",
         meta: upsertError.message,
       });
-
       const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET!;
       const toRemove = [uploadResult.frontPath, uploadResult.backPath].filter(
         Boolean,
       ) as string[];
-
-      if (toRemove.length > 0) {
+      if (toRemove.length > 0)
         await getSupabaseAdmin().storage.from(bucket).remove(toRemove);
-      }
 
-      if (upsertError.code === "23505") {
+      if (upsertError.code === "23505")
         return {
           success: false,
           message:
             "The provided NIC or bank account details are already in use.",
         };
-      }
-
       return { success: false, message: "Failed to submit organizer details." };
     }
 
@@ -372,7 +345,7 @@ export async function submitOrganizerDetails(
   } catch (err) {
     logger.error({
       fn: "submitOrganizerDetails",
-      message: "Unexpected error while submitting organizer details",
+      message: "Unexpected error",
       meta: err,
     });
     return {

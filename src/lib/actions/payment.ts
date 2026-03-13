@@ -1,18 +1,3 @@
-// lib/actions/payment.ts
-// Payment server actions — order creation and payment gateway initiation.
-//
-// PRE-PAYMENT VALIDATION (before any gateway redirect):
-//  1. Reservation still PENDING and not expired
-//  2. Ticket types still active
-//  3. Inventory still valid (qty_sold + pending <= capacity)
-//  4. Promotion still valid (if applied)
-//  5. Final price matches server recomputation
-//
-// SECURITY:
-//  - All pricing computed server-side from DB values
-//  - Client-submitted totals are IGNORED
-//  - Auth session required for every action
-
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -29,10 +14,6 @@ import type {
 } from "@/lib/types/payment";
 import type { ValidatedPromotion, ReservationRow } from "@/lib/types/checkout";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 1 · PRE-PAYMENT SERVER VALIDATION
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface PrePaymentValidationResult {
   valid: boolean;
   error?: string;
@@ -43,10 +24,7 @@ interface PrePaymentValidationResult {
   allowedPaymentMethods?: PaymentMethod[];
 }
 
-/**
- * Comprehensive server-side validation before creating an order.
- * Recomputes all pricing from scratch — never trusts client values.
- */
+// Server-side validation to recompute pricing and verify availability
 async function runPrePaymentValidation(
   primaryReservationId: string,
   userId: string,
@@ -54,7 +32,6 @@ async function runPrePaymentValidation(
 ): Promise<PrePaymentValidationResult> {
   const now = new Date().toISOString();
 
-  // 1. Fetch primary reservation to get event_id
   const { data: primary, error: primErr } = await getSupabaseAdmin()
     .from("ticket_reservations")
     .select("reservation_id, user_id, event_id, expires_at, status")
@@ -64,47 +41,49 @@ async function runPrePaymentValidation(
 
   if (primErr) throw primErr;
   if (!primary) return { valid: false, error: "Reservation not found." };
-  if (primary.status !== "PENDING") {
+  if (primary.status !== "PENDING")
     return { valid: false, error: "RESERVATION_INVALID_STATUS" };
-  }
-  if (primary.expires_at <= now) {
+  if (primary.expires_at <= now)
     return { valid: false, error: "RESERVATION_EXPIRED" };
-  }
 
   const eventId = primary.event_id;
-  if (!eventId) {
+  if (!eventId)
     return { valid: false, error: "Reservation missing event reference." };
-  }
 
-  // 2. Fetch all PENDING reservations for this user+event
   const { data: reservations, error: resErr } = await getSupabaseAdmin()
     .from("ticket_reservations")
-    .select("reservation_id, ticket_type_id, quantity, expires_at, status, order_id, user_id, event_id, reserved_at")
+    .select(
+      "reservation_id, ticket_type_id, quantity, expires_at, status, order_id, user_id, event_id, reserved_at",
+    )
     .eq("user_id", userId)
     .eq("event_id", eventId)
     .eq("status", "PENDING")
     .gt("expires_at", now);
 
   if (resErr) throw resErr;
-  if (!reservations || reservations.length === 0) {
+  if (!reservations || reservations.length === 0)
     return { valid: false, error: "RESERVATION_EXPIRED" };
-  }
 
-  const ticketTypeIds = reservations.map((r: ReservationRow) => r.ticket_type_id);
+  const ticketTypeIds = reservations.map(
+    (r: ReservationRow) => r.ticket_type_id,
+  );
 
-  // 3. Validate ticket types (still active, in-window)
   const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
     .from("ticket_types")
-    .select("ticket_type_id, price, capacity, qty_sold, is_active, sale_start_at, sale_end_at, version")
+    .select(
+      "ticket_type_id, price, capacity, qty_sold, is_active, sale_start_at, sale_end_at, version",
+    )
     .in("ticket_type_id", ticketTypeIds);
 
   if (ttErr) throw ttErr;
 
   const ttMap = new Map(
-    (ticketTypes ?? []).map((tt: Record<string, unknown>) => [tt.ticket_type_id as string, tt]),
+    (ticketTypes ?? []).map((tt: Record<string, unknown>) => [
+      tt.ticket_type_id as string,
+      tt,
+    ]),
   );
 
-  // 4. Validate event status
   const { data: event, error: evErr } = await getSupabaseAdmin()
     .from("events")
     .select("event_id, status, is_active, allowed_payment_methods")
@@ -112,12 +91,11 @@ async function runPrePaymentValidation(
     .maybeSingle();
 
   if (evErr) throw evErr;
-  if (!event || !event.is_active) return { valid: false, error: "Event not available." };
-  if (event.status !== "ON_SALE" && event.status !== "ONGOING") {
+  if (!event || !event.is_active)
+    return { valid: false, error: "Event not available." };
+  if (event.status !== "ON_SALE" && event.status !== "ONGOING")
     return { valid: false, error: "Ticket sales are closed for this event." };
-  }
 
-  // Resolve allowed payment methods — null/empty means all methods
   const rawMethods = event.allowed_payment_methods as PaymentMethod[] | null;
   const allowedPaymentMethods: PaymentMethod[] =
     rawMethods && rawMethods.length > 0 ? rawMethods : [...ALL_PAYMENT_METHODS];
@@ -125,64 +103,77 @@ async function runPrePaymentValidation(
   let computedSubtotal = 0;
 
   for (const res of reservations as ReservationRow[]) {
-    const tt = ttMap.get(res.ticket_type_id) as Record<string, unknown> | undefined;
+    const tt = ttMap.get(res.ticket_type_id) as
+      | Record<string, unknown>
+      | undefined;
     if (!tt) return { valid: false, error: "Ticket type not found." };
-    if (!tt.is_active) return { valid: false, error: "A selected ticket type is no longer available." };
+    if (!tt.is_active)
+      return {
+        valid: false,
+        error: "A selected ticket type is no longer available.",
+      };
 
     const saleStart = tt.sale_start_at as string | null;
     const saleEnd = tt.sale_end_at as string | null;
-    if (saleStart && now < saleStart) {
+    if (saleStart && now < saleStart)
       return { valid: false, error: "Ticket sales have not started yet." };
-    }
-    if (saleEnd && now > saleEnd) {
-      return { valid: false, error: "Ticket sales have ended for a selected type." };
-    }
+    if (saleEnd && now > saleEnd)
+      return {
+        valid: false,
+        error: "Ticket sales have ended for a selected type.",
+      };
 
-    // 5. Inventory sanity check (belt-and-suspenders — RPC does the real lock)
     const available = (tt.capacity as number) - (tt.qty_sold as number);
-    if (available < res.quantity) {
+    if (available < res.quantity)
       return { valid: false, error: "INVENTORY_CONFLICT" };
-    }
 
     const price = Number(tt.price);
-    if (!Number.isFinite(price) || price < 0) {
+    if (!Number.isFinite(price) || price < 0)
       return { valid: false, error: "Invalid ticket price configuration." };
-    }
 
     computedSubtotal += price * res.quantity;
   }
 
-  // 6. Revalidate promotion server-side
   let computedDiscount = 0;
   if (appliedPromo) {
     const promoRes = await getSupabaseAdmin()
       .from("promotions")
-      .select("promotion_id, is_active, start_at, end_at, usage_limit_global, current_global_usage, discount_type, discount_value, max_discount_cap, min_order_amount, scope_event_id, scope_ticket_type_id")
+      .select(
+        "promotion_id, is_active, start_at, end_at, usage_limit_global, current_global_usage, discount_type, discount_value, max_discount_cap, min_order_amount, scope_event_id, scope_ticket_type_id",
+      )
       .eq("promotion_id", appliedPromo.promotion_id)
       .maybeSingle();
 
     if (promoRes.error) throw promoRes.error;
-    if (!promoRes.data) return { valid: false, error: "Applied promo no longer exists." };
+    if (!promoRes.data)
+      return { valid: false, error: "Applied promo no longer exists." };
 
     const p = promoRes.data as Record<string, unknown>;
-    if (!p.is_active || now > (p.end_at as string) || now < (p.start_at as string)) {
-      return { valid: false, error: "The applied promo code is no longer valid." };
-    }
+    if (
+      !p.is_active ||
+      now > (p.end_at as string) ||
+      now < (p.start_at as string)
+    )
+      return {
+        valid: false,
+        error: "The applied promo code is no longer valid.",
+      };
     if (
       (p.usage_limit_global as number) > 0 &&
       (p.current_global_usage as number) >= (p.usage_limit_global as number)
-    ) {
+    )
       return { valid: false, error: "The promo code has reached its limit." };
-    }
-    if ((p.scope_event_id as string | null) && p.scope_event_id !== eventId) {
+    if ((p.scope_event_id as string | null) && p.scope_event_id !== eventId)
       return { valid: false, error: "Promo not valid for this event." };
-    }
 
-    // Recompute discount
     if (p.discount_type === "PERCENTAGE") {
-      computedDiscount = computedSubtotal * ((p.discount_value as number) / 100);
+      computedDiscount =
+        computedSubtotal * ((p.discount_value as number) / 100);
       if ((p.max_discount_cap as number | null) !== null) {
-        computedDiscount = Math.min(computedDiscount, p.max_discount_cap as number);
+        computedDiscount = Math.min(
+          computedDiscount,
+          p.max_discount_cap as number,
+        );
       }
     } else {
       computedDiscount = Math.min(p.discount_value as number, computedSubtotal);
@@ -202,32 +193,18 @@ async function runPrePaymentValidation(
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SECTION 2 · ORDER CREATION
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Creates a pending order after full server-side validation.
- * Links all PENDING reservations to the created order (ticket_reservations.order_id).
- * Returns gateway form data or bank transfer instructions based on payment method.
- *
- * Flow:
- *  1. Auth check
- *  2. Pre-payment validation (re-validate everything, recompute pricing)
- *  3. INSERT into orders (PENDING)
- *  4. UPDATE ticket_reservations SET order_id = new_order_id
- *  5. Build and return gateway data
- */
+// Creates a pending order after validation and ties reservations to it
 export async function createPendingOrder(
   input: CreateOrderInput,
 ): Promise<CreateOrderResult> {
   const session = await getSession();
-  if (!session) {
-    return { success: false, message: "Please sign in to complete your purchase." };
-  }
+  if (!session)
+    return {
+      success: false,
+      message: "Please sign in to complete your purchase.",
+    };
 
   try {
-    // ── 1. Pre-payment validation ───────────────────────────────────────────
     const validation = await runPrePaymentValidation(
       input.reservation_id,
       session.sub,
@@ -239,13 +216,20 @@ export async function createPendingOrder(
         : null,
     );
 
-    if (!validation.valid) {
-      return { success: false, message: formatValidationError(validation.error!) };
-    }
+    if (!validation.valid)
+      return {
+        success: false,
+        message: formatValidationError(validation.error!),
+      };
 
-    const { computedSubtotal, computedDiscount, computedFinal, reservations, allowedPaymentMethods = ALL_PAYMENT_METHODS } = validation;
+    const {
+      computedSubtotal,
+      computedDiscount,
+      computedFinal,
+      reservations,
+      allowedPaymentMethods = ALL_PAYMENT_METHODS,
+    } = validation;
 
-    // ── 2. Validate payment method is allowed for this event ────────────────
     if (!allowedPaymentMethods.includes(input.payment_method)) {
       return {
         success: false,
@@ -253,15 +237,10 @@ export async function createPendingOrder(
       };
     }
 
-    // ── 3. Map payment method to DB enum ───────────────────────────────────
     const paymentSource: PaymentSource = input.payment_method as PaymentSource;
-
     const remarks = input.remarks ?? null;
-
-    // ── 4. Fetch event_id from primary reservation ──────────────────────────
     const eventId = reservations![0].event_id;
 
-    // ── 5. Create pending order ────────────────────────────────────────────
     const { data: newOrder, error: orderErr } = await getSupabaseAdmin()
       .from("orders")
       .insert({
@@ -280,9 +259,9 @@ export async function createPendingOrder(
 
     if (orderErr) throw orderErr;
 
-    // ── 6. Link reservations to this order ─────────────────────────────────
-    const reservationIds = reservations!.map((r: ReservationRow) => r.reservation_id);
-
+    const reservationIds = reservations!.map(
+      (r: ReservationRow) => r.reservation_id,
+    );
     const { error: linkErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .update({ order_id: newOrder.order_id })
@@ -291,29 +270,33 @@ export async function createPendingOrder(
       .eq("status", "PENDING");
 
     if (linkErr) {
-      logger.error({ fn: "createPendingOrder.linkReservations", message: linkErr.message });
-      // Mark the order as FAILED since reservations couldn't be linked
+      logger.error({
+        fn: "createPendingOrder.linkReservations",
+        message: linkErr.message,
+      });
       await getSupabaseAdmin()
         .from("orders")
-        .update({ payment_status: "FAILED", remarks: "RESERVATION_LINK_FAILED" })
+        .update({
+          payment_status: "FAILED",
+          remarks: "RESERVATION_LINK_FAILED",
+        })
         .eq("order_id", newOrder.order_id);
-      return { success: false, message: "Failed to link reservations. Please try again." };
+      return {
+        success: false,
+        message: "Failed to link reservations. Please try again.",
+      };
     }
 
-    // ── 7. Build payment response ──────────────────────────────────────────
     if (input.payment_method === "PAYMENT_GATEWAY") {
-      // Fetch user profile for gateway form fields
       const { data: userProfile } = await getSupabaseAdmin()
         .from("users")
         .select("name, email, mobile")
         .eq("user_id", session.sub)
         .maybeSingle();
-
       const nameParts = (userProfile?.name ?? "Customer").split(" ");
       const firstName = nameParts[0] ?? "Customer";
       const lastName = nameParts.slice(1).join(" ") || "-";
 
-      // Build event item description for gateway "items" field
       const { data: event } = await getSupabaseAdmin()
         .from("events")
         .select("name")
@@ -343,9 +326,12 @@ export async function createPendingOrder(
       const bankDetails: BankTransferDetails = {
         order_id: newOrder.order_id,
         amount: computedFinal!,
-        bank_name: process.env.BANK_TRANSFER_BANK_NAME ?? "Commercial Bank of Ceylon",
-        account_number: process.env.BANK_TRANSFER_ACCOUNT_NUMBER ?? "8001234567",
-        account_holder: process.env.BANK_TRANSFER_ACCOUNT_HOLDER ?? "BuddyTicket (Pvt) Ltd",
+        bank_name:
+          process.env.BANK_TRANSFER_BANK_NAME ?? "Commercial Bank of Ceylon",
+        account_number:
+          process.env.BANK_TRANSFER_ACCOUNT_NUMBER ?? "8001234567",
+        account_holder:
+          process.env.BANK_TRANSFER_ACCOUNT_HOLDER ?? "BuddyTicket (Pvt) Ltd",
         reference: `BT-${newOrder.order_id.split("-")[0].toUpperCase()}`,
         instructions:
           "Please transfer the exact amount and use your Order ID as the payment reference. Your tickets will be issued once payment is confirmed.",
@@ -358,7 +344,6 @@ export async function createPendingOrder(
       };
     }
 
-    // ONGATE — staff confirm at gate
     return {
       success: true,
       message: "Order created. Complete payment at the gate.",
@@ -370,13 +355,12 @@ export async function createPendingOrder(
       message: "Error creating order",
       meta: err,
     });
-    return { success: false, message: "Failed to process payment. Please try again." };
+    return {
+      success: false,
+      message: "Failed to process payment. Please try again.",
+    };
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
 
 function formatValidationError(code: string): string {
   switch (code) {
@@ -387,7 +371,11 @@ function formatValidationError(code: string): string {
     case "INVENTORY_CONFLICT":
       return "Some tickets are no longer available. Please update your selection.";
     default:
-      return code.startsWith("Reservation") || code.startsWith("Ticket") || code.startsWith("Event") || code.startsWith("The") || code.startsWith("A ")
+      return code.startsWith("Reservation") ||
+        code.startsWith("Ticket") ||
+        code.startsWith("Event") ||
+        code.startsWith("The") ||
+        code.startsWith("A ")
         ? code
         : "Checkout validation failed. Please try again.";
   }

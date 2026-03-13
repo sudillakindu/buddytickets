@@ -1,4 +1,3 @@
-// lib/utils/profile-image-upload.ts
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 
@@ -36,27 +35,21 @@ export async function uploadProfileImageToStorage(
 ): Promise<ProfileImageUploadResult> {
   try {
     const ext = extensionFromMime(file);
-    if (!ext) {
+    if (!ext)
       return {
         success: false,
-        message: "Invalid file type. Only JPEG, PNG, and WebP images are allowed.",
+        message:
+          "Invalid file type. Only JPEG, PNG, and WebP images are allowed.",
       };
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return {
-        success: false,
-        message: "File size exceeds 5 MB limit.",
-      };
-    }
+    if (file.size > MAX_FILE_SIZE)
+      return { success: false, message: "File size exceeds 5 MB limit." };
 
     const bucket = getBucketName();
     const objectPath = `${PROFILE_PATH}/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-
     const body = new Uint8Array(await file.arrayBuffer());
 
-    const { error: uploadError } = await getSupabaseAdmin().storage
-      .from(bucket)
+    const { error: uploadError } = await getSupabaseAdmin()
+      .storage.from(bucket)
       .upload(objectPath, body, {
         contentType: file.type,
         cacheControl: "3600",
@@ -75,10 +68,9 @@ export async function uploadProfileImageToStorage(
       };
     }
 
-    const { data } = getSupabaseAdmin().storage
-      .from(bucket)
+    const { data } = getSupabaseAdmin()
+      .storage.from(bucket)
       .getPublicUrl(objectPath);
-
     return {
       success: true,
       message: "Image uploaded successfully.",
