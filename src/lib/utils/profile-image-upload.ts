@@ -13,6 +13,11 @@ export async function uploadProfileImageToStorage(
   userId: string,
 ): Promise<ProfileImageUploadResult> {
   const ext = extensionFromMime(file);
-  const objectPath = `${PROFILE_PATH}/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext ?? "bin"}`;
+  if (!ext)
+    return {
+      success: false,
+      message: "Invalid file type. Only JPEG, PNG, and WebP images are allowed.",
+    };
+  const objectPath = `${PROFILE_PATH}/${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
   return uploadFileToStorage(file, objectPath, "uploadProfileImageToStorage");
 }

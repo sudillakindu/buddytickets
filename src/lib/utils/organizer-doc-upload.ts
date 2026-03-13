@@ -28,7 +28,12 @@ async function uploadSingleImage(
   objectPath?: string;
 }> {
   const ext = extensionFromMime(file);
-  const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${side}-${crypto.randomUUID()}.${ext ?? "bin"}`;
+  if (!ext)
+    return {
+      success: false,
+      message: "Invalid file type. Only JPEG, PNG, and WebP images are allowed.",
+    };
+  const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${side}-${crypto.randomUUID()}.${ext}`;
   const result = await uploadFileToStorage(
     file,
     objectPath,
