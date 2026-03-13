@@ -1,8 +1,8 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import {
-  extensionFromMime,
   uploadFileToStorage,
+  extensionFromMime,
   getBucketName,
 } from "@/lib/utils/storage-upload";
 
@@ -28,13 +28,7 @@ async function uploadSingleImage(
   objectPath?: string;
 }> {
   const ext = extensionFromMime(file);
-  if (!ext)
-    return {
-      success: false,
-      message: `Invalid file type for NIC ${side} image. Only JPEG, PNG, and WebP are allowed.`,
-    };
-
-  const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${side}-${crypto.randomUUID()}.${ext}`;
+  const objectPath = `${DOCUMENTS_PATH}/${userId}/${Date.now()}-${side}-${crypto.randomUUID()}.${ext ?? "bin"}`;
   const result = await uploadFileToStorage(
     file,
     objectPath,
