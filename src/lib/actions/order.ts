@@ -3,7 +3,15 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
-import type { OrderSuccessData } from "@/lib/types/payment";
+import type { OrderSuccessData, PaymentStatus } from "@/lib/types/payment";
+
+interface OrderWithEventRow {
+  order_id: string;
+  user_id: string;
+  final_amount: number;
+  payment_status: PaymentStatus;
+  events: { name: string; start_at: string; location: string } | null;
+}
 
 // Fetch order success data for /checkout/success page
 export async function getOrderSuccessData(
@@ -33,21 +41,20 @@ export async function getOrderSuccessData(
 
     if (countErr) throw countErr;
 
-    const ev = Array.isArray(order.events) ? order.events[0] : order.events;
+    const typedOrder = order as unknown as OrderWithEventRow;
+    const eventData = typedOrder.events;
 
     return {
       success: true,
       message: "Order found.",
       data: {
-        order_id: order.order_id,
-        event_name: ((ev as Record<string, unknown>)?.name as string) ?? "—",
-        event_start_at:
-          ((ev as Record<string, unknown>)?.start_at as string) ?? "",
-        event_location:
-          ((ev as Record<string, unknown>)?.location as string) ?? "—",
+        order_id: typedOrder.order_id,
+        event_name: eventData?.name ?? "—",
+        event_start_at: eventData?.start_at ?? "",
+        event_location: eventData?.location ?? "—",
         ticket_count: ticketCount ?? 0,
-        final_amount: Number(order.final_amount),
-        payment_status: order.payment_status,
+        final_amount: Number(typedOrder.final_amount),
+        payment_status: typedOrder.payment_status,
       },
     };
   } catch (err) {

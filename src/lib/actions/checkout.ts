@@ -17,6 +17,27 @@ import type {
 import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
 import type { PaymentMethod } from "@/lib/types/payment";
 
+interface TicketTypeRow {
+  ticket_type_id: string;
+  name: string;
+  description: string;
+  price: number;
+  capacity: number;
+  qty_sold: number;
+  is_active: boolean;
+  version: number;
+  sale_end_at: string | null;
+}
+
+interface EventRow {
+  event_id: string;
+  name: string;
+  start_at: string;
+  location: string;
+  status: string;
+  allowed_payment_methods: PaymentMethod[] | null;
+}
+
 // Create inventory reservation via RPC ensuring DB FCFS constraint
 export async function createReservation(
   eventId: string,
@@ -98,74 +119,76 @@ export async function getCheckoutData(
         message: "Reservation is missing event details.",
       };
 
-    const { data: reservations, error: resErr } = await getSupabaseAdmin()
-      .from("ticket_reservations")
-      .select(
-        "reservation_id, ticket_type_id, quantity, expires_at, status, order_id",
-      )
-      .eq("user_id", session.sub)
-      .eq("event_id", eventId)
-      .eq("status", "PENDING")
-      .gt("expires_at", new Date().toISOString());
+    const { data: reservations, error: reservationError } =
+      await getSupabaseAdmin()
+        .from("ticket_reservations")
+        .select(
+          "reservation_id, ticket_type_id, quantity, expires_at, status, order_id",
+        )
+        .eq("user_id", session.sub)
+        .eq("event_id", eventId)
+        .eq("status", "PENDING")
+        .gt("expires_at", new Date().toISOString());
 
-    if (resErr) throw resErr;
+    if (reservationError) throw reservationError;
     if (!reservations || reservations.length === 0)
       return { success: false, message: "RESERVATION_EXPIRED" };
 
     const ticketTypeIds = reservations.map((r) => r.ticket_type_id);
 
-    const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
-      .from("ticket_types")
-      .select(
-        "ticket_type_id, name, description, price, capacity, qty_sold, is_active, version, sale_end_at",
-      )
-      .in("ticket_type_id", ticketTypeIds);
+    const { data: ticketTypes, error: ticketTypeError } =
+      await getSupabaseAdmin()
+        .from("ticket_types")
+        .select(
+          "ticket_type_id, name, description, price, capacity, qty_sold, is_active, version, sale_end_at",
+        )
+        .in("ticket_type_id", ticketTypeIds);
 
-    if (ttErr) throw ttErr;
+    if (ticketTypeError) throw ticketTypeError;
 
-    const ttMap = new Map(
-      (ticketTypes ?? []).map((tt: Record<string, unknown>) => [
-        tt.ticket_type_id,
-        tt,
+    const ticketTypeMap = new Map(
+      ((ticketTypes ?? []) as TicketTypeRow[]).map((ticketType) => [
+        ticketType.ticket_type_id,
+        ticketType,
       ]),
     );
 
-    const { data: event, error: evErr } = await getSupabaseAdmin()
+    const { data: event, error: eventError } = await getSupabaseAdmin()
       .from("events")
       .select(
         "event_id, name, start_at, location, status, allowed_payment_methods",
       )
       .eq("event_id", eventId)
-      .maybeSingle();
+      .maybeSingle<EventRow>();
 
-    if (evErr) throw evErr;
+    if (eventError) throw eventError;
     if (!event) return { success: false, message: "Event not found." };
 
     const lineItems: ReservationLineItem[] = reservations.map((r) => {
-      const tt = ttMap.get(r.ticket_type_id) as
-        | Record<string, unknown>
-        | undefined;
-      const priceEach = Number(tt?.price ?? 0);
+      const ticketType = ticketTypeMap.get(r.ticket_type_id);
+      const priceEach = Number(ticketType?.price ?? 0);
       const quantity = r.quantity;
       return {
         reservation_id: r.reservation_id,
         ticket_type_id: r.ticket_type_id,
-        ticket_type_name: (tt?.name as string) ?? "—",
-        description: (tt?.description as string) ?? "",
+        ticket_type_name: ticketType?.name ?? "—",
+        description: ticketType?.description ?? "",
         price_each: priceEach,
         quantity,
         line_total: priceEach * quantity,
-        version: (tt?.version as number) ?? 1,
-        capacity: (tt?.capacity as number) ?? 0,
-        qty_sold: (tt?.qty_sold as number) ?? 0,
-        is_active: (tt?.is_active as boolean) ?? true,
-        sale_end_at: (tt?.sale_end_at as string | null) ?? null,
+        version: ticketType?.version ?? 1,
+        capacity: ticketType?.capacity ?? 0,
+        qty_sold: ticketType?.qty_sold ?? 0,
+        is_active: ticketType?.is_active ?? true,
+        sale_end_at: ticketType?.sale_end_at ?? null,
       };
     });
 
-    const subtotal = lineItems.reduce((sum, li) => sum + li.line_total, 0);
-    const rawMethods = (event as Record<string, unknown>)
-      .allowed_payment_methods as PaymentMethod[] | null;
+    const subtotal = lineItems.reduce(
+      (sum, lineItem) => sum + lineItem.line_total,
+      0,
+    );
+    const rawMethods = event.allowed_payment_methods;
     const allowedPaymentMethods: PaymentMethod[] =
       rawMethods && rawMethods.length > 0
         ? rawMethods
@@ -174,10 +197,10 @@ export async function getCheckoutData(
     const checkoutData: CheckoutData = {
       primary_reservation_id: primaryReservationId,
       event_id: eventId,
-      event_name: (event as Record<string, unknown>).name as string,
-      event_start_at: (event as Record<string, unknown>).start_at as string,
-      event_location: (event as Record<string, unknown>).location as string,
-      event_status: (event as Record<string, unknown>).status as string,
+      event_name: event.name,
+      event_start_at: event.start_at,
+      event_location: event.location,
+      event_status: event.status,
       expires_at: reservations[0].expires_at,
       line_items: lineItems,
       subtotal,

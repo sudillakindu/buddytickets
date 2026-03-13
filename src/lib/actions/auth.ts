@@ -159,7 +159,7 @@ export async function getVerifyEmailData(
   token: string,
 ): Promise<DataFetchResult<OtpStatus>> {
   try {
-    const { data: ft, error: ftErr } = await getSupabaseAdmin()
+    const { data: flowToken, error: flowTokenError } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("email, purpose")
       .eq("token", token)
@@ -167,43 +167,44 @@ export async function getVerifyEmailData(
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
 
-    if (ftErr) {
+    if (flowTokenError) {
       logger.error({
         fn: "getVerifyEmailData",
         message: "Token lookup error",
-        meta: ftErr.message,
+        meta: flowTokenError.message,
       });
       return {
         success: false,
         message: "Failed to validate session. Please try again.",
       };
     }
-    if (!ft)
+    if (!flowToken)
       return { success: false, message: "Session expired. Please start over." };
 
-    const { data: rec, error: recErr } = await getSupabaseAdmin()
+    const { data: otpRecord, error: otpRecordError } = await getSupabaseAdmin()
       .from("otp_records")
       .select("resend_count, last_sent_at")
-      .eq("email", ft.email)
-      .eq("purpose", ft.purpose)
+      .eq("email", flowToken.email)
+      .eq("purpose", flowToken.purpose)
       .eq("is_used", false)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (recErr)
+    if (otpRecordError)
       logger.error({
         fn: "getVerifyEmailData",
         message: "OTP lookup error",
-        meta: recErr.message,
+        meta: otpRecordError.message,
       });
 
     let canResend = true;
     let remainingSeconds = 0;
 
-    if (rec) {
-      const cooldownMs = resendDelay(rec.resend_count) * 1000;
-      const canResendAt = new Date(rec.last_sent_at).getTime() + cooldownMs;
+    if (otpRecord) {
+      const cooldownMs = resendDelay(otpRecord.resend_count) * 1000;
+      const canResendAt =
+        new Date(otpRecord.last_sent_at).getTime() + cooldownMs;
       const now = Date.now();
       if (now < canResendAt) {
         canResend = false;
@@ -215,8 +216,8 @@ export async function getVerifyEmailData(
       success: true,
       message: "Session data loaded.",
       data: {
-        email: ft.email,
-        purpose: ft.purpose,
+        email: flowToken.email,
+        purpose: flowToken.purpose,
         canResend,
         remainingSeconds,
       },
@@ -499,7 +500,7 @@ export async function verifyOtp(
     if (!otp || otp.length !== 6)
       return { success: false, message: "Please enter a valid 6-digit code." };
 
-    const { data: ft } = await getSupabaseAdmin()
+    const { data: flowToken } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("token_id, email, purpose")
       .eq("token", token)
@@ -507,48 +508,48 @@ export async function verifyOtp(
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
 
-    if (!ft)
+    if (!flowToken)
       return {
         success: false,
         message: "Session expired. Please start the process again.",
       };
 
-    const { data: rec } = await getSupabaseAdmin()
+    const { data: otpRecord } = await getSupabaseAdmin()
       .from("otp_records")
       .select("otp_id, otp_hash, verify_attempts, user_id")
-      .eq("email", ft.email)
-      .eq("purpose", ft.purpose)
+      .eq("email", flowToken.email)
+      .eq("purpose", flowToken.purpose)
       .eq("is_used", false)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!rec)
+    if (!otpRecord)
       return {
         success: false,
         message: "Code has expired. Please request a new one.",
       };
 
-    if (rec.verify_attempts >= MAX_ATTEMPTS) {
+    if (otpRecord.verify_attempts >= MAX_ATTEMPTS) {
       await getSupabaseAdmin()
         .from("otp_records")
         .update({ is_used: true })
-        .eq("otp_id", rec.otp_id);
+        .eq("otp_id", otpRecord.otp_id);
       return {
         success: false,
         message: "Too many failed attempts. Please request a new code.",
       };
     }
 
-    const isValid = await compareOtp(otp, rec.otp_hash);
+    const isValid = await compareOtp(otp, otpRecord.otp_hash);
 
     if (!isValid) {
-      const newAttempts = rec.verify_attempts + 1;
+      const newAttempts = otpRecord.verify_attempts + 1;
       await getSupabaseAdmin()
         .from("otp_records")
         .update({ verify_attempts: newAttempts })
-        .eq("otp_id", rec.otp_id);
+        .eq("otp_id", otpRecord.otp_id);
       return {
         success: false,
         message: "Invalid code. Please try again.",
@@ -560,37 +561,37 @@ export async function verifyOtp(
       getSupabaseAdmin()
         .from("otp_records")
         .update({ is_used: true })
-        .eq("otp_id", rec.otp_id),
+        .eq("otp_id", otpRecord.otp_id),
       getSupabaseAdmin()
         .from("auth_flow_tokens")
         .update({ is_used: true })
-        .eq("token_id", ft.token_id),
+        .eq("token_id", flowToken.token_id),
     ]);
 
-    if (ft.purpose === "signup" || ft.purpose === "signin") {
+    if (flowToken.purpose === "signup" || flowToken.purpose === "signin") {
       let redirectTo = "/";
-      if (rec.user_id) {
+      if (otpRecord.user_id) {
         await getSupabaseAdmin()
           .from("users")
           .update({ is_email_verified: true })
-          .eq("user_id", rec.user_id);
-        const role = await autoLogin(rec.user_id);
+          .eq("user_id", otpRecord.user_id);
+        const role = await autoLogin(otpRecord.user_id);
         if (role && DASHBOARD_ROLES.has(role)) redirectTo = "/dashboard";
       }
       return {
         success: true,
         message: "Email verified successfully.",
-        purpose: ft.purpose,
+        purpose: flowToken.purpose,
         redirectTo,
       };
     }
 
-    if (ft.purpose === "forgot-password") {
+    if (flowToken.purpose === "forgot-password") {
       const resetToken = newToken();
       await getSupabaseAdmin()
         .from("auth_flow_tokens")
         .insert({
-          email: ft.email,
+          email: flowToken.email,
           purpose: "reset-password",
           token: resetToken,
           expires_at: resetExpiry(),
@@ -616,7 +617,7 @@ export async function verifyOtp(
 
 export async function resendOtp(token: string): Promise<ResendResult> {
   try {
-    const { data: ft } = await getSupabaseAdmin()
+    const { data: flowToken } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("email, purpose")
       .eq("token", token)
@@ -624,30 +625,31 @@ export async function resendOtp(token: string): Promise<ResendResult> {
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
 
-    if (!ft)
+    if (!flowToken)
       return {
         success: false,
         message: "Session expired. Please start the process again.",
       };
 
-    const { data: rec } = await getSupabaseAdmin()
+    const { data: otpRecord } = await getSupabaseAdmin()
       .from("otp_records")
       .select("otp_id, resend_count, last_sent_at")
-      .eq("email", ft.email)
-      .eq("purpose", ft.purpose)
+      .eq("email", flowToken.email)
+      .eq("purpose", flowToken.purpose)
       .eq("is_used", false)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (!rec)
+    if (!otpRecord)
       return {
         success: false,
         message: "No active session found. Please start over.",
       };
 
-    const cooldownMs = resendDelay(rec.resend_count) * 1000;
-    const canResendAt = new Date(rec.last_sent_at).getTime() + cooldownMs;
+    const cooldownMs = resendDelay(otpRecord.resend_count) * 1000;
+    const canResendAt =
+      new Date(otpRecord.last_sent_at).getTime() + cooldownMs;
     const now = Date.now();
 
     if (now < canResendAt) {
@@ -660,7 +662,7 @@ export async function resendOtp(token: string): Promise<ResendResult> {
 
     const newOtp = generateOtp();
     const newOtpHash = await hashOtp(newOtp);
-    const newCount = rec.resend_count + 1;
+    const newCount = otpRecord.resend_count + 1;
 
     await getSupabaseAdmin()
       .from("otp_records")
@@ -671,12 +673,12 @@ export async function resendOtp(token: string): Promise<ResendResult> {
         expires_at: expiresAt(),
         verify_attempts: 0,
       })
-      .eq("otp_id", rec.otp_id);
+      .eq("otp_id", otpRecord.otp_id);
 
-    sendOtpEmail(ft.email, newOtp, ft.purpose).catch((err) =>
+    sendOtpEmail(flowToken.email, newOtp, flowToken.purpose).catch((err) =>
       logger.error({
         fn: "resendOtp",
-        message: `Email resend failed (${ft.purpose})`,
+        message: `Email resend failed (${flowToken.purpose})`,
         meta: err,
       }),
     );
@@ -705,7 +707,7 @@ export async function resetPassword(
     if (data.password !== data.confirmPassword)
       return { success: false, message: "Passwords do not match." };
 
-    const { data: ft } = await getSupabaseAdmin()
+    const { data: flowToken } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .select("token_id, email")
       .eq("token", resetToken)
@@ -714,21 +716,21 @@ export async function resetPassword(
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
 
-    if (!ft)
+    if (!flowToken)
       return {
         success: false,
         message: "Reset link has expired. Please request a new one.",
       };
 
-    const { data: markedToken, error: markErr } = await getSupabaseAdmin()
+    const { data: consumedToken, error: markErr } = await getSupabaseAdmin()
       .from("auth_flow_tokens")
       .update({ is_used: true })
-      .eq("token_id", ft.token_id)
+      .eq("token_id", flowToken.token_id)
       .eq("is_used", false)
       .select("token_id")
       .maybeSingle();
 
-    if (markErr || !markedToken) {
+    if (markErr || !consumedToken) {
       logger.error({
         fn: "resetPassword",
         message: "Token already used or mark failed",
@@ -744,7 +746,7 @@ export async function resetPassword(
     const { error } = await getSupabaseAdmin()
       .from("users")
       .update({ password_hash: passwordHash })
-      .eq("email", ft.email);
+      .eq("email", flowToken.email);
 
     if (error) {
       logger.error({
@@ -758,13 +760,13 @@ export async function resetPassword(
       };
     }
 
-    const { data: u } = await getSupabaseAdmin()
+    const { data: user } = await getSupabaseAdmin()
       .from("users")
       .select("name")
-      .eq("email", ft.email)
+      .eq("email", flowToken.email)
       .single();
-    if (u?.name)
-      sendPasswordChangedEmail(ft.email, u.name).catch((err) =>
+    if (user?.name)
+      sendPasswordChangedEmail(flowToken.email, user.name).catch((err) =>
         logger.error({
           fn: "resetPassword",
           message: "Security email failed",

@@ -14,6 +14,32 @@ import type {
 } from "@/lib/types/payment";
 import type { ValidatedPromotion, ReservationRow } from "@/lib/types/checkout";
 
+interface TicketTypeRow {
+  ticket_type_id: string;
+  price: number;
+  capacity: number;
+  qty_sold: number;
+  is_active: boolean;
+  sale_start_at: string | null;
+  sale_end_at: string | null;
+  version: number;
+}
+
+interface PromotionValidationRow {
+  promotion_id: string;
+  is_active: boolean;
+  start_at: string;
+  end_at: string;
+  usage_limit_global: number;
+  current_global_usage: number;
+  discount_type: string;
+  discount_value: number;
+  max_discount_cap: number | null;
+  min_order_amount: number;
+  scope_event_id: string | null;
+  scope_ticket_type_id: string | null;
+}
+
 interface PrePaymentValidationResult {
   valid: boolean;
   error?: string;
@@ -32,14 +58,14 @@ async function runPrePaymentValidation(
 ): Promise<PrePaymentValidationResult> {
   const now = new Date().toISOString();
 
-  const { data: primary, error: primErr } = await getSupabaseAdmin()
+  const { data: primary, error: primaryError } = await getSupabaseAdmin()
     .from("ticket_reservations")
     .select("reservation_id, user_id, event_id, expires_at, status")
     .eq("reservation_id", primaryReservationId)
     .eq("user_id", userId)
     .maybeSingle();
 
-  if (primErr) throw primErr;
+  if (primaryError) throw primaryError;
   if (!primary) return { valid: false, error: "Reservation not found." };
   if (primary.status !== "PENDING")
     return { valid: false, error: "RESERVATION_INVALID_STATUS" };
@@ -50,17 +76,18 @@ async function runPrePaymentValidation(
   if (!eventId)
     return { valid: false, error: "Reservation missing event reference." };
 
-  const { data: reservations, error: resErr } = await getSupabaseAdmin()
-    .from("ticket_reservations")
-    .select(
-      "reservation_id, ticket_type_id, quantity, expires_at, status, order_id, user_id, event_id, reserved_at",
-    )
-    .eq("user_id", userId)
-    .eq("event_id", eventId)
-    .eq("status", "PENDING")
-    .gt("expires_at", now);
+  const { data: reservations, error: reservationError } =
+    await getSupabaseAdmin()
+      .from("ticket_reservations")
+      .select(
+        "reservation_id, ticket_type_id, quantity, expires_at, status, order_id, user_id, event_id, reserved_at",
+      )
+      .eq("user_id", userId)
+      .eq("event_id", eventId)
+      .eq("status", "PENDING")
+      .gt("expires_at", now);
 
-  if (resErr) throw resErr;
+  if (reservationError) throw reservationError;
   if (!reservations || reservations.length === 0)
     return { valid: false, error: "RESERVATION_EXPIRED" };
 
@@ -68,29 +95,30 @@ async function runPrePaymentValidation(
     (r: ReservationRow) => r.ticket_type_id,
   );
 
-  const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
-    .from("ticket_types")
-    .select(
-      "ticket_type_id, price, capacity, qty_sold, is_active, sale_start_at, sale_end_at, version",
-    )
-    .in("ticket_type_id", ticketTypeIds);
+  const { data: ticketTypes, error: ticketTypeError } =
+    await getSupabaseAdmin()
+      .from("ticket_types")
+      .select(
+        "ticket_type_id, price, capacity, qty_sold, is_active, sale_start_at, sale_end_at, version",
+      )
+      .in("ticket_type_id", ticketTypeIds);
 
-  if (ttErr) throw ttErr;
+  if (ticketTypeError) throw ticketTypeError;
 
-  const ttMap = new Map(
-    (ticketTypes ?? []).map((tt: Record<string, unknown>) => [
-      tt.ticket_type_id as string,
-      tt,
+  const ticketTypeMap = new Map(
+    ((ticketTypes ?? []) as TicketTypeRow[]).map((ticketType) => [
+      ticketType.ticket_type_id,
+      ticketType,
     ]),
   );
 
-  const { data: event, error: evErr } = await getSupabaseAdmin()
+  const { data: event, error: eventError } = await getSupabaseAdmin()
     .from("events")
     .select("event_id, status, is_active, allowed_payment_methods")
     .eq("event_id", eventId)
     .maybeSingle();
 
-  if (evErr) throw evErr;
+  if (eventError) throw eventError;
   if (!event || !event.is_active)
     return { valid: false, error: "Event not available." };
   if (event.status !== "ON_SALE" && event.status !== "ONGOING")
@@ -102,19 +130,17 @@ async function runPrePaymentValidation(
 
   let computedSubtotal = 0;
 
-  for (const res of reservations as ReservationRow[]) {
-    const tt = ttMap.get(res.ticket_type_id) as
-      | Record<string, unknown>
-      | undefined;
-    if (!tt) return { valid: false, error: "Ticket type not found." };
-    if (!tt.is_active)
+  for (const reservation of reservations as ReservationRow[]) {
+    const ticketType = ticketTypeMap.get(reservation.ticket_type_id);
+    if (!ticketType) return { valid: false, error: "Ticket type not found." };
+    if (!ticketType.is_active)
       return {
         valid: false,
         error: "A selected ticket type is no longer available.",
       };
 
-    const saleStart = tt.sale_start_at as string | null;
-    const saleEnd = tt.sale_end_at as string | null;
+    const saleStart = ticketType.sale_start_at;
+    const saleEnd = ticketType.sale_end_at;
     if (saleStart && now < saleStart)
       return { valid: false, error: "Ticket sales have not started yet." };
     if (saleEnd && now > saleEnd)
@@ -123,15 +149,15 @@ async function runPrePaymentValidation(
         error: "Ticket sales have ended for a selected type.",
       };
 
-    const available = (tt.capacity as number) - (tt.qty_sold as number);
-    if (available < res.quantity)
+    const available = ticketType.capacity - ticketType.qty_sold;
+    if (available < reservation.quantity)
       return { valid: false, error: "INVENTORY_CONFLICT" };
 
-    const price = Number(tt.price);
+    const price = Number(ticketType.price);
     if (!Number.isFinite(price) || price < 0)
       return { valid: false, error: "Invalid ticket price configuration." };
 
-    computedSubtotal += price * res.quantity;
+    computedSubtotal += price * reservation.quantity;
   }
 
   let computedDiscount = 0;
@@ -142,41 +168,41 @@ async function runPrePaymentValidation(
         "promotion_id, is_active, start_at, end_at, usage_limit_global, current_global_usage, discount_type, discount_value, max_discount_cap, min_order_amount, scope_event_id, scope_ticket_type_id",
       )
       .eq("promotion_id", appliedPromo.promotion_id)
-      .maybeSingle();
+      .maybeSingle<PromotionValidationRow>();
 
     if (promoRes.error) throw promoRes.error;
     if (!promoRes.data)
       return { valid: false, error: "Applied promo no longer exists." };
 
-    const p = promoRes.data as Record<string, unknown>;
+    const promotion = promoRes.data;
     if (
-      !p.is_active ||
-      now > (p.end_at as string) ||
-      now < (p.start_at as string)
+      !promotion.is_active ||
+      now > promotion.end_at ||
+      now < promotion.start_at
     )
       return {
         valid: false,
         error: "The applied promo code is no longer valid.",
       };
     if (
-      (p.usage_limit_global as number) > 0 &&
-      (p.current_global_usage as number) >= (p.usage_limit_global as number)
+      promotion.usage_limit_global > 0 &&
+      promotion.current_global_usage >= promotion.usage_limit_global
     )
       return { valid: false, error: "The promo code has reached its limit." };
-    if ((p.scope_event_id as string | null) && p.scope_event_id !== eventId)
+    if (promotion.scope_event_id && promotion.scope_event_id !== eventId)
       return { valid: false, error: "Promo not valid for this event." };
 
-    if (p.discount_type === "PERCENTAGE") {
+    if (promotion.discount_type === "PERCENTAGE") {
       computedDiscount =
-        computedSubtotal * ((p.discount_value as number) / 100);
-      if ((p.max_discount_cap as number | null) !== null) {
+        computedSubtotal * (promotion.discount_value / 100);
+      if (promotion.max_discount_cap !== null) {
         computedDiscount = Math.min(
           computedDiscount,
-          p.max_discount_cap as number,
+          promotion.max_discount_cap,
         );
       }
     } else {
-      computedDiscount = Math.min(p.discount_value as number, computedSubtotal);
+      computedDiscount = Math.min(promotion.discount_value, computedSubtotal);
     }
     computedDiscount = Math.round(computedDiscount * 100) / 100;
   }
@@ -301,12 +327,12 @@ export async function createPendingOrder(
         .from("events")
         .select("name")
         .eq("event_id", eventId)
-        .maybeSingle();
+        .maybeSingle<{ name: string }>();
 
       const gatewayForm = initiatePaymentGateway({
         orderId: newOrder.order_id,
         amount: computedFinal!,
-        itemName: `Tickets - ${(event as Record<string, unknown>)?.name ?? "Event"}`,
+        itemName: `Tickets - ${event?.name ?? "Event"}`,
         customerFirstName: firstName,
         customerLastName: lastName,
         customerEmail: userProfile?.email ?? session.email,
