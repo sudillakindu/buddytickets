@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     "example/**",
     "supabase/.temp/**",
     "tsconfig.tsbuildinfo",
+    "scripts/**",
   ]),
 ]);
 
