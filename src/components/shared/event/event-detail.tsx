@@ -765,7 +765,11 @@ const ReviewForm: React.FC<ReviewFormProps> = memo(
                   onClick={() => setRating(i + 1)}
                   onMouseEnter={() => setHoverRating(i + 1)}
                   onMouseLeave={() => setHoverRating(0)}
-                  className="p-0.5 transition-transform hover:scale-110"
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowRight" && i < 4) setRating(i + 2);
+                    if (e.key === "ArrowLeft" && i > 0) setRating(i);
+                  }}
+                  className="p-0.5 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(270,70%,50%)] rounded"
                   aria-label={`Rate ${i + 1} star${i > 0 ? "s" : ""}`}
                 >
                   <Star
@@ -802,7 +806,7 @@ const ReviewForm: React.FC<ReviewFormProps> = memo(
               maxLength={500}
               rows={3}
               disabled={isSubmitting}
-              className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-secondary ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+              className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-secondary ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(270,70%,50%)] disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
             <p className="font-secondary text-[10px] text-gray-400 mt-1 text-right">
               {reviewText.length}/500
