@@ -75,6 +75,10 @@ export interface PromotionRow {
   current_global_usage: number;
   scope_event_id: string | null;
   scope_ticket_type_id: string | null;
+  extra_rules_json: Record<string, unknown> | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string | null;
   version: number;
 }
 
@@ -113,6 +117,17 @@ export interface GetCheckoutDataResult {
   success: boolean;
   message: string;
   data?: CheckoutData;
+}
+
+// --- Promotion Usages ---
+
+export interface PromotionUsageRow {
+  usage_id: string;
+  promotion_id: string;
+  user_id: string;
+  order_id: string;
+  discount_received: number;
+  used_at: string;
 }
 
 export interface BuyTicketItem extends TicketType {

@@ -30,6 +30,7 @@ const STATUS_PRIORITY: Record<string, number> = {
 const EVENT_CARD_SELECT = `
   event_id, organizer_id, category_id, name, subtitle, description, requirements,
   location, map_link, start_at, end_at, status, is_active, is_vip,
+  platform_fee_type, platform_fee_value, platform_fee_cap,
   allowed_payment_methods, created_at, updated_at,
   categories ( name ),
   event_images ( image_url, priority_order ),
@@ -53,6 +54,9 @@ interface RawEventRow {
   status: EventStatus;
   is_active: boolean;
   is_vip: boolean;
+  platform_fee_type: import("@/lib/types/checkout").DiscountType;
+  platform_fee_value: number;
+  platform_fee_cap: number | null;
   allowed_payment_methods: import("@/lib/types/payment").PaymentMethod[] | null;
   created_at: string;
   updated_at: string | null;
@@ -97,6 +101,10 @@ function mapRowToEvent(row: RawEventRow): Event {
     status: row.status,
     is_active: row.is_active,
     is_vip: row.is_vip,
+    platform_fee_type: row.platform_fee_type,
+    platform_fee_value: Number(row.platform_fee_value),
+    platform_fee_cap:
+      row.platform_fee_cap != null ? Number(row.platform_fee_cap) : null,
     allowed_payment_methods: row.allowed_payment_methods ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at ?? null,
@@ -199,7 +207,8 @@ export async function getEventById(
         `
         event_id, organizer_id, category_id, name, subtitle, description,
         requirements, location, map_link, start_at, end_at, status,
-        is_active, is_vip, allowed_payment_methods, created_at, updated_at,
+        is_active, is_vip, platform_fee_type, platform_fee_value, platform_fee_cap,
+        allowed_payment_methods, created_at, updated_at,
         categories ( category_id, name, description ),
         event_images ( event_id, priority_order, image_url, created_at ),
         ticket_types ( ticket_type_id, event_id, name, description, inclusions, price, capacity, qty_sold, sale_start_at, sale_end_at, is_active, version, created_at, updated_at ),
@@ -276,6 +285,11 @@ export async function getEventById(
       status: data.status,
       is_active: data.is_active,
       is_vip: data.is_vip,
+      platform_fee_type:
+        data.platform_fee_type as import("@/lib/types/checkout").DiscountType,
+      platform_fee_value: Number(data.platform_fee_value),
+      platform_fee_cap:
+        data.platform_fee_cap != null ? Number(data.platform_fee_cap) : null,
       allowed_payment_methods:
         (data.allowed_payment_methods as
           | import("@/lib/types/payment").PaymentMethod[]

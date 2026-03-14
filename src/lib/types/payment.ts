@@ -137,6 +137,41 @@ export interface FinalizeOrderResult {
   ticket_count?: number;
 }
 
+// --- Transactions ---
+
+export type TransactionStatus = "SUCCESS" | "FAILED";
+
+export interface TransactionRow {
+  transaction_id: string;
+  order_id: string;
+  gateway: GatewayType;
+  gateway_ref_id: string | null;
+  amount: number;
+  status: TransactionStatus;
+  meta_data: Record<string, unknown> | null;
+  created_at: string;
+}
+
+// --- Refund Requests ---
+
+export type RefundStatus = "PENDING" | "APPROVED" | "REJECTED" | "REFUNDED";
+
+export interface RefundRequestRow {
+  refund_id: string;
+  order_id: string;
+  ticket_id: string | null;
+  user_id: string;
+  reason: string;
+  refund_amount: number;
+  status: RefundStatus;
+  admin_note: string | null;
+  gateway_refund_ref: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
 export interface OrderSuccessData {
   order_id: string;
   event_name: string;
