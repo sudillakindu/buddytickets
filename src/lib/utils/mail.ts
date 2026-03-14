@@ -122,7 +122,7 @@ export async function sendSignUpOtpEmail(
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
     <div style="background:linear-gradient(135deg,#f8fafc 0%,#ede9fe 100%);border:2px solid #7c3aed;border-radius:14px;padding:28px 24px;text-align:center;margin:0 0 32px;">
       <p style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">Your Verification Code</p>
-      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${otp}</span>
+      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${escapeHtml(otp)}</span>
       <p style="color:#64748b;font-size:12px;margin:12px 0 0;">⏱ This code expires in <strong>10 minutes</strong></p>
     </div>
     <p style="color:#94a3b8;font-size:13px;margin:0;text-align:center;line-height:1.6;">Didn&rsquo;t create an account? You can safely ignore this email.</p>`;
@@ -148,7 +148,7 @@ export async function sendSignInOtpEmail(
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
     <div style="background:linear-gradient(135deg,#f8fafc 0%,#ede9fe 100%);border:2px solid #7c3aed;border-radius:14px;padding:28px 24px;text-align:center;margin:0 0 32px;">
       <p style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">Your Verification Code</p>
-      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${otp}</span>
+      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${escapeHtml(otp)}</span>
       <p style="color:#64748b;font-size:12px;margin:12px 0 0;">⏱ This code expires in <strong>10 minutes</strong></p>
     </div>
     <p style="color:#ea580c;font-size:14px;font-weight:600;margin:0 0 6px;line-height:1.6;">If you didn&rsquo;t try to sign in, your account may be at risk.</p>
@@ -175,7 +175,7 @@ export async function sendForgotPasswordOtpEmail(
     <p style="color:#64748b;font-size:14px;margin:0 0 32px;">Copy the code and paste it on the verification page. Do not share it with anyone.</p>
     <div style="background:linear-gradient(135deg,#f8fafc 0%,#ede9fe 100%);border:2px solid #7c3aed;border-radius:14px;padding:28px 24px;text-align:center;margin:0 0 32px;">
       <p style="color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 12px;">Your Verification Code</p>
-      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${otp}</span>
+      <span style="font-size:40px;font-weight:800;letter-spacing:14px;color:#7c3aed;font-family:'Courier New',monospace;display:inline-block;padding:0 8px;">${escapeHtml(otp)}</span>
       <p style="color:#64748b;font-size:12px;margin:12px 0 0;">⏱ This code expires in <strong>10 minutes</strong></p>
     </div>
     <p style="color:#94a3b8;font-size:13px;margin:0 0 6px;text-align:center;line-height:1.6;">Didn&rsquo;t request this? Your password is safe, no changes were made.</p>
