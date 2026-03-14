@@ -19,11 +19,13 @@ import {
   X,
   Copy,
   Check,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
 import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
@@ -31,6 +33,7 @@ import type {
   PaymentMethod,
   PaymentGatewayFormData,
   BankTransferDetails,
+  AttendeeDetail,
 } from "@/lib/types/payment";
 
 const formatLKR = (n: number) => {
@@ -270,6 +273,31 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
   );
   const [orderCreated, setOrderCreated] = useState<string | null>(null);
 
+  // --- Attendee Details State ---
+  const totalTicketCount = data.line_items.reduce(
+    (sum, li) => sum + li.quantity,
+    0,
+  );
+  const [attendees, setAttendees] = useState<AttendeeDetail[]>(() =>
+    Array.from({ length: totalTicketCount }, () => ({
+      attendee_name: "",
+      attendee_nic: "",
+      attendee_email: "",
+      attendee_mobile: "",
+    })),
+  );
+
+  const updateAttendee = useCallback(
+    (index: number, field: keyof AttendeeDetail, value: string) => {
+      setAttendees((prev) => {
+        const next = [...prev];
+        next[index] = { ...next[index], [field]: value };
+        return next;
+      });
+    },
+    [],
+  );
+
   const discountAmount = appliedPromo?.discount_amount ?? 0;
   const finalTotal = Math.max(0, data.subtotal - discountAmount);
 
@@ -333,6 +361,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
       final_amount: finalTotal,
       payment_method: paymentMethod,
       remarks: null,
+      attendees,
     });
 
     if (!result.success) {
@@ -362,6 +391,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
     discountAmount,
     finalTotal,
     paymentMethod,
+    attendees,
     router,
   ]);
 
@@ -475,6 +505,127 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
           </div>
         </div>
       </div>
+
+      {/* --- Attendee Details Section --- */}
+      {totalTicketCount > 0 && (
+        <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="w-4 h-4 text-[hsl(270,70%,50%)]" />
+            <h4 className="font-primary font-bold text-sm uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
+              Attendee Details
+            </h4>
+          </div>
+          <p className="font-secondary text-xs text-gray-400 mb-4">
+            Please provide details for each ticket holder.
+          </p>
+
+          <div className="space-y-5">
+            {(() => {
+              let ticketIndex = 0;
+              return data.line_items.map((item) =>
+                Array.from({ length: item.quantity }, (_, qi) => {
+                  const idx = ticketIndex++;
+                  return (
+                    <div
+                      key={`${item.reservation_id}-${qi}`}
+                      className="p-4 rounded-xl border border-gray-100 bg-gray-50/50 space-y-3"
+                    >
+                      <p className="font-secondary text-xs font-semibold text-[hsl(222.2,47.4%,11.2%)]">
+                        <Ticket className="inline w-3 h-3 mr-1 text-[hsl(270,70%,50%)]" />
+                        {item.ticket_type_name} — Ticket {qi + 1}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label
+                            htmlFor={`att-name-${idx}`}
+                            className="font-secondary text-xs text-gray-500"
+                          >
+                            Full Name
+                          </Label>
+                          <Input
+                            id={`att-name-${idx}`}
+                            value={attendees[idx]?.attendee_name ?? ""}
+                            onChange={(e) =>
+                              updateAttendee(idx, "attendee_name", e.target.value)
+                            }
+                            placeholder="John Doe"
+                            className="h-9 text-sm rounded-xl border-gray-200 focus:border-[hsl(270,70%,50%)] focus:ring-[hsl(270,70%,50%)]"
+                            maxLength={100}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label
+                            htmlFor={`att-nic-${idx}`}
+                            className="font-secondary text-xs text-gray-500"
+                          >
+                            NIC / Passport
+                          </Label>
+                          <Input
+                            id={`att-nic-${idx}`}
+                            value={attendees[idx]?.attendee_nic ?? ""}
+                            onChange={(e) =>
+                              updateAttendee(idx, "attendee_nic", e.target.value)
+                            }
+                            placeholder="200012345678"
+                            className="h-9 text-sm rounded-xl border-gray-200 focus:border-[hsl(270,70%,50%)] focus:ring-[hsl(270,70%,50%)]"
+                            maxLength={20}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label
+                            htmlFor={`att-email-${idx}`}
+                            className="font-secondary text-xs text-gray-500"
+                          >
+                            Email
+                          </Label>
+                          <Input
+                            id={`att-email-${idx}`}
+                            type="email"
+                            value={attendees[idx]?.attendee_email ?? ""}
+                            onChange={(e) =>
+                              updateAttendee(
+                                idx,
+                                "attendee_email",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="john@example.com"
+                            className="h-9 text-sm rounded-xl border-gray-200 focus:border-[hsl(270,70%,50%)] focus:ring-[hsl(270,70%,50%)]"
+                            maxLength={255}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label
+                            htmlFor={`att-mobile-${idx}`}
+                            className="font-secondary text-xs text-gray-500"
+                          >
+                            Mobile
+                          </Label>
+                          <Input
+                            id={`att-mobile-${idx}`}
+                            type="tel"
+                            value={attendees[idx]?.attendee_mobile ?? ""}
+                            onChange={(e) =>
+                              updateAttendee(
+                                idx,
+                                "attendee_mobile",
+                                e.target.value,
+                              )
+                            }
+                            placeholder="0771234567"
+                            className="h-9 text-sm rounded-xl border-gray-200 focus:border-[hsl(270,70%,50%)] focus:ring-[hsl(270,70%,50%)]"
+                            maxLength={15}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }),
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
       <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="flex items-center gap-2 mb-3">

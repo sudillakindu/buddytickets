@@ -90,6 +90,13 @@ export interface OrderRow {
   updated_at: string | null;
 }
 
+export interface AttendeeDetail {
+  attendee_name: string;
+  attendee_nic: string;
+  attendee_email: string;
+  attendee_mobile: string;
+}
+
 export interface CreateOrderInput {
   reservation_id: string;
   promotion_id: string | null;
@@ -98,6 +105,7 @@ export interface CreateOrderInput {
   final_amount: number;
   payment_method: PaymentMethod;
   remarks: string | null;
+  attendees?: AttendeeDetail[];
 }
 
 export interface CreatedOrder {
