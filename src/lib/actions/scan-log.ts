@@ -75,18 +75,22 @@ export async function scanTicket(
       result = "ALLOWED";
     }
 
-    // Record the scan log
-    const { data: scanLog, error: scanErr } = await getSupabaseAdmin()
-      .from("scan_logs")
-      .insert({
-        ticket_id: ticket?.ticket_id ?? "00000000-0000-0000-0000-000000000000",
-        scanned_by_user_id: session.sub,
-        result,
-      })
-      .select("scan_id")
-      .single();
+    // Record the scan log only when ticket exists (FK constraint requires valid ticket_id)
+    let scanId: number | undefined;
+    if (ticket) {
+      const { data: scanLog, error: scanErr } = await getSupabaseAdmin()
+        .from("scan_logs")
+        .insert({
+          ticket_id: ticket.ticket_id,
+          scanned_by_user_id: session.sub,
+          result,
+        })
+        .select("scan_id")
+        .single();
 
-    if (scanErr) throw scanErr;
+      if (scanErr) throw scanErr;
+      scanId = scanLog.scan_id;
+    }
 
     // If ALLOWED, mark ticket as USED
     if (result === "ALLOWED" && ticket) {
@@ -118,7 +122,7 @@ export async function scanTicket(
       success: allowed,
       message: messageMap[result],
       result,
-      scan_id: scanLog.scan_id,
+      scan_id: scanId,
     };
   } catch (err) {
     logger.error({
