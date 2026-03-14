@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import type {
   Event,
@@ -13,6 +15,7 @@ import type {
   GetFeaturedEventsResult,
   GetAllEventsResult,
   GetEventByIdResult,
+  WaitlistStatus,
 } from "@/lib/types/event";
 
 const FEATURED_ACTIVE_LIMIT = 8;
@@ -315,5 +318,316 @@ export async function getEventById(
       meta: err,
     });
     return { success: false, message: "Event not found or an error occurred." };
+  }
+}
+
+// --- Waitlist Result Types ---
+
+interface JoinWaitlistResult {
+  success: boolean;
+  message: string;
+}
+
+interface WaitlistEntry {
+  waitlist_id: string;
+  position_order: number;
+  status: WaitlistStatus;
+  created_at: string;
+}
+
+interface GetWaitlistPositionResult {
+  success: boolean;
+  message: string;
+  entry?: WaitlistEntry | null;
+}
+
+// --- Join Waitlist ---
+
+export async function joinWaitlist(
+  eventId: string,
+  notifyEmail: string,
+  ticketTypeId?: string,
+): Promise<JoinWaitlistResult> {
+  const session = await getSession();
+  if (!session) return { success: false, message: "UNAUTHENTICATED" };
+
+  if (!eventId) return { success: false, message: "Event ID is required." };
+  if (!notifyEmail.trim())
+    return { success: false, message: "Email address is required." };
+
+  try {
+    const { data: event, error: evErr } = await getSupabaseAdmin()
+      .from("events")
+      .select("event_id, status")
+      .eq("event_id", eventId)
+      .maybeSingle();
+
+    if (evErr) throw evErr;
+    if (!event) return { success: false, message: "Event not found." };
+    if (event.status !== "SOLD_OUT")
+      return {
+        success: false,
+        message: "Waitlist is only available for sold-out events.",
+      };
+
+    const existingQuery = getSupabaseAdmin()
+      .from("waitlists")
+      .select("waitlist_id", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .eq("user_id", session.sub);
+
+    if (ticketTypeId) {
+      existingQuery.eq("ticket_type_id", ticketTypeId);
+    } else {
+      existingQuery.is("ticket_type_id", null);
+    }
+
+    const { count, error: existErr } = await existingQuery;
+    if (existErr) throw existErr;
+    if ((count ?? 0) > 0)
+      return {
+        success: false,
+        message: "You are already on the waitlist for this event.",
+      };
+
+    const { data: maxPos, error: maxErr } = await getSupabaseAdmin()
+      .from("waitlists")
+      .select("position_order")
+      .eq("event_id", eventId)
+      .order("position_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (maxErr) throw maxErr;
+    const nextPosition = (maxPos?.position_order ?? 0) + 1;
+
+    const { error: insertErr } = await getSupabaseAdmin()
+      .from("waitlists")
+      .insert({
+        event_id: eventId,
+        ticket_type_id: ticketTypeId ?? null,
+        user_id: session.sub,
+        notify_email: notifyEmail.trim(),
+        position_order: nextPosition,
+        status: "WAITING",
+      });
+
+    if (insertErr) throw insertErr;
+
+    return {
+      success: true,
+      message: `You're #${nextPosition} on the waitlist! We'll notify you at ${notifyEmail.trim()}.`,
+    };
+  } catch (err) {
+    logger.error({
+      fn: "joinWaitlist",
+      message: "Error joining waitlist",
+      meta: err,
+    });
+    return { success: false, message: "Failed to join waitlist." };
+  }
+}
+
+// --- Get Waitlist Position ---
+
+export async function getWaitlistPosition(
+  eventId: string,
+): Promise<GetWaitlistPositionResult> {
+  const session = await getSession();
+  if (!session) return { success: false, message: "UNAUTHENTICATED" };
+
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("waitlists")
+      .select("waitlist_id, position_order, status, created_at")
+      .eq("event_id", eventId)
+      .eq("user_id", session.sub)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      message: "OK",
+      entry: data
+        ? {
+            waitlist_id: data.waitlist_id,
+            position_order: data.position_order,
+            status: data.status as WaitlistStatus,
+            created_at: data.created_at,
+          }
+        : null,
+    };
+  } catch (err) {
+    logger.error({
+      fn: "getWaitlistPosition",
+      message: "Error fetching waitlist position",
+      meta: err,
+    });
+    return { success: false, message: "Failed to check waitlist status." };
+  }
+}
+
+// --- Review Result Types ---
+
+interface ReviewDisplay {
+  review_id: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  user: {
+    name: string;
+    image_url: string | null;
+  };
+}
+
+export interface GetEventReviewsResult {
+  success: boolean;
+  message: string;
+  reviews?: ReviewDisplay[];
+  average_rating?: number;
+  total_count?: number;
+}
+
+interface SubmitReviewResult {
+  success: boolean;
+  message: string;
+}
+
+interface ReviewJoinRow {
+  review_id: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  users: { name: string; image_url: string | null }[];
+}
+
+// --- Get Event Reviews ---
+
+export async function getEventReviews(
+  eventId: string,
+): Promise<GetEventReviewsResult> {
+  if (!eventId)
+    return { success: false, message: "Event ID is required." };
+
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("reviews")
+      .select(
+        "review_id, rating, review_text, created_at, users ( name, image_url )",
+      )
+      .eq("event_id", eventId)
+      .eq("is_visible", true)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    const reviews: ReviewDisplay[] = (data ?? []).map((row: ReviewJoinRow) => {
+      const user = row.users?.[0];
+      return {
+        review_id: row.review_id,
+        rating: row.rating,
+        review_text: row.review_text,
+        created_at: row.created_at,
+        user: {
+          name: user?.name ?? "Anonymous",
+          image_url: user?.image_url ?? null,
+        },
+      };
+    });
+
+    const totalRating = reviews.reduce((sum, r) => sum + r.rating, 0);
+    const averageRating =
+      reviews.length > 0
+        ? Math.round((totalRating / reviews.length) * 10) / 10
+        : 0;
+
+    return {
+      success: true,
+      message: "OK",
+      reviews,
+      average_rating: averageRating,
+      total_count: reviews.length,
+    };
+  } catch (err) {
+    logger.error({
+      fn: "getEventReviews",
+      message: "Error fetching reviews",
+      meta: err,
+    });
+    return { success: false, message: "Failed to load reviews." };
+  }
+}
+
+// --- Submit Review ---
+
+export async function submitReview(
+  eventId: string,
+  ticketId: string,
+  rating: number,
+  reviewText: string,
+): Promise<SubmitReviewResult> {
+  const session = await getSession();
+  if (!session) return { success: false, message: "UNAUTHENTICATED" };
+
+  if (!eventId) return { success: false, message: "Event ID is required." };
+  if (!ticketId) return { success: false, message: "Ticket ID is required." };
+  if (rating < 1 || rating > 5)
+    return { success: false, message: "Rating must be between 1 and 5." };
+
+  try {
+    const { data: ticket, error: ticketErr } = await getSupabaseAdmin()
+      .from("tickets")
+      .select("ticket_id, event_id, owner_user_id, status")
+      .eq("ticket_id", ticketId)
+      .eq("owner_user_id", session.sub)
+      .maybeSingle();
+
+    if (ticketErr) throw ticketErr;
+    if (!ticket) return { success: false, message: "Ticket not found." };
+    if (ticket.event_id !== eventId)
+      return { success: false, message: "Ticket does not match event." };
+    if (ticket.status !== "USED")
+      return {
+        success: false,
+        message: "You can only review events you have attended.",
+      };
+
+    const { count: existingCount, error: existErr } = await getSupabaseAdmin()
+      .from("reviews")
+      .select("review_id", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .eq("user_id", session.sub);
+
+    if (existErr) throw existErr;
+    if ((existingCount ?? 0) > 0)
+      return {
+        success: false,
+        message: "You have already reviewed this event.",
+      };
+
+    const { error: insertErr } = await getSupabaseAdmin()
+      .from("reviews")
+      .insert({
+        event_id: eventId,
+        user_id: session.sub,
+        ticket_id: ticketId,
+        rating,
+        review_text: reviewText.trim() || null,
+      });
+
+    if (insertErr) throw insertErr;
+
+    return { success: true, message: "Review submitted successfully!" };
+  } catch (err) {
+    logger.error({
+      fn: "submitReview",
+      message: "Error submitting review",
+      meta: err,
+    });
+    return { success: false, message: "Failed to submit review." };
   }
 }
