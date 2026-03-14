@@ -263,6 +263,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const result = finalizeResult as { order_id: string; ticket_count: number };
 
+    // --- Store transaction meta_data (raw webhook payload) ---
+    const { error: metaErr } = await getSupabaseAdmin()
+      .from("transactions")
+      .update({
+        meta_data: {
+          payment_id: payload.payment_id,
+          method: payload.method ?? null,
+          status_message: payload.status_message ?? null,
+          payhere_currency: payload.payhere_currency,
+          payhere_amount: payload.payhere_amount,
+        },
+      })
+      .eq("order_id", orderId)
+      .eq("gateway_ref_id", payload.payment_id);
+
+    if (metaErr) {
+      logger.error({
+        fn: "payhere.webhook.updateMeta",
+        message: `Failed to store transaction meta_data for order ${orderId}: ${metaErr.message}`,
+      });
+    }
+
     logger.success({
       fn: "payhere.webhook",
       message: `Order ${orderId} finalized. Tickets issued: ${result.ticket_count}. PayHere ref: ${payload.payment_id}`,

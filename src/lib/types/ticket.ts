@@ -7,6 +7,10 @@ export interface Ticket {
   qr_hash: string;
   status: TicketStatus;
   price_purchased: string;
+  attendee_name: string | null;
+  attendee_nic: string | null;
+  attendee_email: string | null;
+  attendee_mobile: string | null;
   created_at: string;
   ticket_type: {
     ticket_type_id: string;
@@ -22,4 +26,17 @@ export interface Ticket {
     status: EventStatus;
     primary_image: string | null;
   };
+}
+
+export interface UpdateAttendeeInput {
+  ticket_id: string;
+  attendee_name: string;
+  attendee_nic?: string;
+  attendee_email?: string;
+  attendee_mobile?: string;
+}
+
+export interface UpdateAttendeeResult {
+  success: boolean;
+  message: string;
 }

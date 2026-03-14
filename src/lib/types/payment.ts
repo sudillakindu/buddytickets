@@ -146,3 +146,47 @@ export interface OrderSuccessData {
   final_amount: number;
   payment_status: PaymentStatus;
 }
+
+// --- Transaction Types ---
+
+export type TransactionStatus = "SUCCESS" | "FAILED";
+
+export interface Transaction {
+  transaction_id: string;
+  order_id: string;
+  gateway: GatewayType;
+  gateway_ref_id: string | null;
+  amount: number;
+  status: TransactionStatus;
+  meta_data: Record<string, unknown> | null;
+  created_at: string;
+}
+
+// --- Promotion Usage Types ---
+
+export interface PromotionUsage {
+  usage_id: string;
+  promotion_id: string;
+  user_id: string;
+  order_id: string;
+  discount_received: number;
+  used_at: string;
+}
+
+// --- VIP Event Types ---
+
+export interface VipEvent {
+  event_id: string;
+  priority_order: number;
+  assigned_by: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+// --- Event Community Types ---
+
+export interface EventCommunityMember {
+  user_id: string;
+  event_id: string;
+  assigned_at: string;
+}

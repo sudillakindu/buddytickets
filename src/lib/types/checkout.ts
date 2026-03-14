@@ -59,6 +59,14 @@ export interface ReserveTicketsResult {
   expires_at: string;
 }
 
+export interface ExtraRules {
+  min_tickets?: number;
+  max_tickets?: number;
+  allowed_ticket_types?: string[];
+  excluded_ticket_types?: string[];
+  first_purchase_only?: boolean;
+}
+
 export interface PromotionRow {
   promotion_id: string;
   code: string;
@@ -75,6 +83,8 @@ export interface PromotionRow {
   current_global_usage: number;
   scope_event_id: string | null;
   scope_ticket_type_id: string | null;
+  extra_rules_json: ExtraRules | null;
+  created_by: string;
   version: number;
 }
 

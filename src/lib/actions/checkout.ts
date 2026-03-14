@@ -13,6 +13,7 @@ import type {
   PromoValidationResult,
   ValidatedPromotion,
   PromotionRow,
+  ExtraRules,
 } from "@/lib/types/checkout";
 import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
 import type { PaymentMethod } from "@/lib/types/payment";
@@ -232,7 +233,7 @@ export async function validatePromoCode(
     const { data: promoRaw, error: promoErr } = await getSupabaseAdmin()
       .from("promotions")
       .select(
-        `promotion_id, code, description, discount_type, discount_value, max_discount_cap, min_order_amount, start_at, end_at, is_active, usage_limit_global, usage_limit_per_user, current_global_usage, scope_event_id, scope_ticket_type_id, version`,
+        `promotion_id, code, description, discount_type, discount_value, max_discount_cap, min_order_amount, start_at, end_at, is_active, usage_limit_global, usage_limit_per_user, current_global_usage, scope_event_id, scope_ticket_type_id, extra_rules_json, created_by, version`,
       )
       .eq("code", code.trim().toUpperCase())
       .maybeSingle();
@@ -294,6 +295,44 @@ export async function validatePromoCode(
         success: false,
         message: `Minimum order amount of LKR ${promo.min_order_amount.toLocaleString()} required.`,
       };
+
+    // --- Extra rules validation ---
+    const extraRules = promo.extra_rules_json as ExtraRules | null;
+    if (extraRules) {
+      if (extraRules.allowed_ticket_types && extraRules.allowed_ticket_types.length > 0) {
+        const hasAllowed = ticketTypeIds.some((id) =>
+          extraRules.allowed_ticket_types!.includes(id),
+        );
+        if (!hasAllowed)
+          return {
+            success: false,
+            message: "This promo code is not valid for the selected ticket types.",
+          };
+      }
+      if (extraRules.excluded_ticket_types && extraRules.excluded_ticket_types.length > 0) {
+        const hasExcluded = ticketTypeIds.some((id) =>
+          extraRules.excluded_ticket_types!.includes(id),
+        );
+        if (hasExcluded)
+          return {
+            success: false,
+            message: "This promo code cannot be used with one of the selected ticket types.",
+          };
+      }
+      if (extraRules.first_purchase_only) {
+        const { count: orderCount, error: orderErr } = await getSupabaseAdmin()
+          .from("orders")
+          .select("order_id", { count: "exact", head: true })
+          .eq("user_id", session.sub)
+          .eq("payment_status", "PAID");
+        if (orderErr) throw orderErr;
+        if ((orderCount ?? 0) > 0)
+          return {
+            success: false,
+            message: "This promo code is only valid for first-time purchases.",
+          };
+      }
+    }
 
     let discountAmount = 0;
     if (promo.discount_type === "PERCENTAGE") {
