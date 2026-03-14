@@ -7,7 +7,6 @@ import {
   useMotionValue,
   useSpring,
   useTransform,
-  MotionValue,
 } from "framer-motion";
 import {
   SparklesIcon,
@@ -21,15 +20,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TargetCursor } from "@/components/shared/target-cursor";
-
-interface Particle {
-  id: number;
-  hue: number;
-  left: string;
-  top: string;
-  duration: number;
-  delay: number;
-}
+import {
+  AnimatedBackground,
+  SPRING_CONFIG,
+} from "@/components/shared/animated-background/animated-background";
 
 interface Category {
   icon: LucideIcon;
@@ -37,17 +31,6 @@ interface Category {
   color: string;
   delay: number;
 }
-
-const SPRING_CONFIG = { stiffness: 100, damping: 30 } as const;
-
-const PARTICLES: Particle[] = Array.from({ length: 20 }, (_, i) => ({
-  id: i,
-  hue: i * 18,
-  left: `${(i * 37 + 13) % 100}%`,
-  top: `${(i * 53 + 7) % 100}%`,
-  duration: 3 + (i % 5) * 0.4,
-  delay: (i % 8) * 0.25,
-}));
 
 const CATEGORIES: Category[] = [
   { icon: MusicIcon, label: "Concerts", color: "#ef4444", delay: 0.4 },
@@ -57,72 +40,6 @@ const CATEGORIES: Category[] = [
   { icon: StarIcon, label: "Arts", color: "#a855f7", delay: 0.6 },
   { icon: ZapIcon, label: "Technology", color: "#6366f1", delay: 0.65 },
 ];
-
-interface HeroBackgroundProps {
-  springX: MotionValue<number>;
-  springY: MotionValue<number>;
-}
-
-const HeroBackground = memo(({ springX, springY }: HeroBackgroundProps) => {
-  return (
-    <div
-      className="absolute inset-0 overflow-hidden pointer-events-none"
-      aria-hidden="true"
-    >
-      <motion.div
-        className="absolute top-[-5%] right-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
-        style={{
-          background:
-            "linear-gradient(to right, hsl(222.2 47.4% 11.2% / 0.2), hsl(270 70% 50% / 0.2), hsl(330 80% 60% / 0.2))",
-          x: springX,
-          y: springY,
-        }}
-        animate={{ scale: [1, 1.2, 1], rotate: [0, 45, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-[-10%] left-[-30%] w-[50vw] h-[50vw] min-w-[200px] min-h-[200px] rounded-full blur-[80px] opacity-30"
-        style={{
-          background:
-            "linear-gradient(to right, hsl(210 100% 60% / 0.2), hsl(180 70% 50% / 0.2), hsl(160 70% 45% / 0.2))",
-          x: springX,
-          y: springY,
-        }}
-        animate={{ scale: [1.2, 1, 1.2], rotate: [45, 0, 45] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(222.2_47.4%_11.2%/_0.05),transparent,transparent)]" />
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, #80808012 1px, transparent 1px), linear-gradient(to bottom, #80808012 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-        }}
-      />
-      {PARTICLES.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute w-2 h-2 rounded-full"
-          style={{
-            background: `hsl(${p.hue}, 70%, 50%)`,
-            left: p.left,
-            top: p.top,
-          }}
-          animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0.8, 0.3] }}
-          transition={{
-            duration: p.duration,
-            repeat: Infinity,
-            delay: p.delay,
-            ease: "easeInOut",
-          }}
-        />
-      ))}
-    </div>
-  );
-});
-
-HeroBackground.displayName = "HeroBackground";
 
 const CategoryPill = memo(({ icon: Icon, label, color, delay }: Category) => {
   return (
@@ -181,7 +98,7 @@ export default function Hero() {
           containerRef={sectionRef}
         />
       </div>
-      <HeroBackground springX={springX} springY={springY} />
+      <AnimatedBackground springX={springX} springY={springY} variant="hero" />
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col justify-center items-center gap-6">
         <motion.div
           className="max-w-4xl mx-auto text-center w-full"
