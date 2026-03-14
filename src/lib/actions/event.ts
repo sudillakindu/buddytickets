@@ -483,7 +483,7 @@ interface ReviewDisplay {
   };
 }
 
-export interface GetEventReviewsResult {
+interface GetEventReviewsResult {
   success: boolean;
   message: string;
   reviews?: ReviewDisplay[];

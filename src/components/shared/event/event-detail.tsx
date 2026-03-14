@@ -35,7 +35,6 @@ import {
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
-import type { GetEventReviewsResult } from "@/lib/actions/event";
 import { joinWaitlist, getEventReviews } from "@/lib/actions/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
@@ -661,7 +660,7 @@ const ReviewsSection: React.FC<{ eventId: string }> = memo(({ eventId }) => {
     let cancelled = false;
     const load = async () => {
       try {
-        const result: GetEventReviewsResult = await getEventReviews(eventId);
+        const result = await getEventReviews(eventId);
         if (!cancelled && result.success) {
           setReviews((result.reviews ?? []) as ReviewDisplayItem[]);
           setAverageRating(result.average_rating ?? 0);
