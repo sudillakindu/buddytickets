@@ -265,6 +265,7 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
                 <ReviewForm
                   eventId={ticket.event.event_id}
                   ticketId={ticket.ticket_id}
+                  // TODO: Replace with actual review server action
                   onSubmit={async () => ({
                     success: true,
                     message:
@@ -283,9 +284,10 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
             >
               <div className="pb-5">
                 <RefundRequestForm
-                  orderId={ticket.ticket_id}
+                  orderId={ticket.order_id}
                   ticketId={ticket.ticket_id}
                   maxRefundAmount={Number(ticket.price_purchased)}
+                  // TODO: Replace with actual refund server action
                   onSubmit={async () => ({
                     success: true,
                     message:

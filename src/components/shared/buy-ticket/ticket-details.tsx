@@ -616,6 +616,7 @@ export function TicketDetails({ event }: TicketDetailsProps) {
           <div className="mt-8">
             <JoinWaitlistForm
               eventId={event.event_id}
+              // TODO: Replace with actual waitlist server action
               onSubmit={async (data) => {
                 void data;
                 return {

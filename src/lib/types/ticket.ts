@@ -4,6 +4,7 @@ export type TicketStatus = "ACTIVE" | "PENDING" | "USED" | "CANCELLED";
 
 export interface Ticket {
   ticket_id: string;
+  order_id: string;
   qr_hash: string;
   status: TicketStatus;
   price_purchased: string;

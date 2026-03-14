@@ -24,7 +24,7 @@ export function OrganizerDashboard({ user }: { user: SessionUser }) {
           <EventPlatformFeeForm />
         </section>
 
-        {/* --- Payouts --- */}
+        {/* --- Payouts (TODO: Fetch from backend) --- */}
         <section>
           <PayoutsTable payouts={[]} />
         </section>
@@ -33,6 +33,7 @@ export function OrganizerDashboard({ user }: { user: SessionUser }) {
         <section>
           <PromotionForm
             createdBy={user.name}
+            // TODO: Replace with actual promotion server action
             onSubmit={async () => ({
               success: true,
               message: "Promotion saved.",
@@ -40,12 +41,12 @@ export function OrganizerDashboard({ user }: { user: SessionUser }) {
           />
         </section>
 
-        {/* --- VIP Events --- */}
+        {/* --- VIP Events (TODO: Fetch from backend) --- */}
         <section>
           <VipEventsList vipEvents={[]} />
         </section>
 
-        {/* --- Event Team --- */}
+        {/* --- Event Team (TODO: Fetch from backend) --- */}
         <section>
           <EventCommunityList members={[]} />
         </section>
