@@ -653,6 +653,8 @@ ReviewCard.displayName = "ReviewCard";
 
 // --- Review Form ---
 
+const MAX_REVIEW_LENGTH = 500;
+
 interface ReviewFormProps {
   eventId: string;
   ticketId: string;
@@ -803,13 +805,13 @@ const ReviewForm: React.FC<ReviewFormProps> = memo(
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
               placeholder="Tell others about your experience..."
-              maxLength={500}
+              maxLength={MAX_REVIEW_LENGTH}
               rows={3}
               disabled={isSubmitting}
               className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-secondary ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(270,70%,50%)] disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
             <p className="font-secondary text-[10px] text-gray-400 mt-1 text-right">
-              {reviewText.length}/500
+              {reviewText.length}/{MAX_REVIEW_LENGTH}
             </p>
           </div>
 

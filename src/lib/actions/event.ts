@@ -556,7 +556,7 @@ export async function getReviewEligibility(
       message: "Error checking review eligibility",
       meta: err,
     });
-    return { success: false, message: "Failed to check eligibility.", canReview: false };
+    return { success: false, message: "Unable to verify review eligibility. Please try again later.", canReview: false };
   }
 }
 
