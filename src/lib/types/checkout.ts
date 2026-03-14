@@ -75,6 +75,8 @@ export interface PromotionRow {
   current_global_usage: number;
   scope_event_id: string | null;
   scope_ticket_type_id: string | null;
+  extra_rules_json: Record<string, unknown> | null;
+  created_by: string;
   version: number;
 }
 

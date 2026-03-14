@@ -22,6 +22,8 @@ export interface Event {
   status: EventStatus;
   is_active: boolean;
   is_vip: boolean;
+  platform_fee_value: number | null;
+  platform_fee_cap: number | null;
   allowed_payment_methods: import("./payment").PaymentMethod[] | null;
   created_at: string;
   updated_at: string | null;

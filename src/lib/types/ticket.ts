@@ -7,6 +7,10 @@ export interface Ticket {
   qr_hash: string;
   status: TicketStatus;
   price_purchased: string;
+  attendee_name: string | null;
+  attendee_nic: string | null;
+  attendee_email: string | null;
+  attendee_mobile: string | null;
   created_at: string;
   ticket_type: {
     ticket_type_id: string;
