@@ -496,12 +496,68 @@ interface SubmitReviewResult {
   message: string;
 }
 
+interface ReviewEligibilityResult {
+  success: boolean;
+  message: string;
+  canReview: boolean;
+  ticketId?: string;
+}
+
 interface ReviewJoinRow {
   review_id: string;
   rating: number;
   review_text: string | null;
   created_at: string;
   users: { name: string; image_url: string | null }[];
+}
+
+// --- Review Eligibility ---
+
+export async function getReviewEligibility(
+  eventId: string,
+): Promise<ReviewEligibilityResult> {
+  const session = await getSession();
+  if (!session)
+    return { success: true, message: "NOT_LOGGED_IN", canReview: false };
+
+  try {
+    const { data: usedTicket, error: ticketErr } = await getSupabaseAdmin()
+      .from("tickets")
+      .select("ticket_id")
+      .eq("event_id", eventId)
+      .eq("owner_user_id", session.sub)
+      .eq("status", "USED")
+      .limit(1)
+      .maybeSingle();
+
+    if (ticketErr) throw ticketErr;
+    if (!usedTicket)
+      return { success: true, message: "NO_USED_TICKET", canReview: false };
+
+    const { count: existingCount, error: existErr } = await getSupabaseAdmin()
+      .from("reviews")
+      .select("review_id", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .eq("user_id", session.sub);
+
+    if (existErr) throw existErr;
+    if ((existingCount ?? 0) > 0)
+      return { success: true, message: "ALREADY_REVIEWED", canReview: false };
+
+    return {
+      success: true,
+      message: "ELIGIBLE",
+      canReview: true,
+      ticketId: usedTicket.ticket_id,
+    };
+  } catch (err) {
+    logger.error({
+      fn: "getReviewEligibility",
+      message: "Error checking review eligibility",
+      meta: err,
+    });
+    return { success: false, message: "Failed to check eligibility.", canReview: false };
+  }
 }
 
 // --- Get Event Reviews ---

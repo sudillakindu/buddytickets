@@ -25,6 +25,7 @@ import {
   Mail,
   Star,
   MessageSquare,
+  Send,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/ui/utils";
@@ -35,7 +36,7 @@ import {
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
-import { joinWaitlist, getEventReviews } from "@/lib/actions/event";
+import { joinWaitlist, getEventReviews, submitReview, getReviewEligibility } from "@/lib/actions/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface StatusConfig {
@@ -559,7 +560,7 @@ const WaitlistSection: React.FC<WaitlistSectionProps> = memo(
 
 WaitlistSection.displayName = "WaitlistSection";
 
-// --- Reviews Section ---
+// --- Review Components ---
 
 interface ReviewDisplayItem {
   review_id: string;
@@ -650,21 +651,222 @@ const ReviewCard: React.FC<{ review: ReviewDisplayItem; index: number }> = memo(
 );
 ReviewCard.displayName = "ReviewCard";
 
+// --- Review Form ---
+
+interface ReviewFormProps {
+  eventId: string;
+  ticketId: string;
+  onReviewSubmitted: () => void;
+}
+
+const ReviewForm: React.FC<ReviewFormProps> = memo(
+  ({ eventId, ticketId, onReviewSubmitted }) => {
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [reviewText, setReviewText] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = useCallback(
+      async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+
+        if (rating < 1) {
+          setError("Please select a star rating.");
+          return;
+        }
+
+        setIsSubmitting(true);
+        try {
+          const result = await submitReview(
+            eventId,
+            ticketId,
+            rating,
+            reviewText,
+          );
+          if (result.success) {
+            setSubmitted(true);
+            onReviewSubmitted();
+          } else {
+            setError(
+              result.message === "UNAUTHENTICATED"
+                ? "Please sign in to submit a review."
+                : result.message,
+            );
+          }
+        } catch {
+          setError("Something went wrong. Please try again.");
+        } finally {
+          setIsSubmitting(false);
+        }
+      },
+      [eventId, ticketId, rating, reviewText, onReviewSubmitted],
+    );
+
+    if (submitted) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-xl border border-emerald-100 bg-emerald-50 p-5 flex items-start gap-3"
+        >
+          <CheckCircle2
+            className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
+          <div>
+            <p className="font-primary font-bold text-sm text-emerald-700">
+              Thank you for your review!
+            </p>
+            <p className="font-secondary text-xs text-emerald-600 mt-0.5">
+              Your feedback helps others discover great events.
+            </p>
+          </div>
+        </motion.div>
+      );
+    }
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="rounded-2xl border border-purple-100 bg-purple-50/60 p-5 sm:p-6"
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+            <Send
+              className="w-[18px] h-[18px] text-[hsl(270,70%,50%)]"
+              aria-hidden="true"
+            />
+          </div>
+          <div>
+            <h3 className="font-primary font-bold text-sm uppercase tracking-wide text-[hsl(222.2,47.4%,11.2%)]">
+              Write a Review
+            </h3>
+            <p className="font-secondary text-xs text-gray-500">
+              Share your experience with others
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="font-secondary text-xs font-medium text-gray-600 mb-1.5 block">
+              Your Rating
+            </label>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setRating(i + 1)}
+                  onMouseEnter={() => setHoverRating(i + 1)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="p-0.5 transition-transform hover:scale-110"
+                  aria-label={`Rate ${i + 1} star${i > 0 ? "s" : ""}`}
+                >
+                  <Star
+                    className={cn(
+                      "w-7 h-7 transition-colors",
+                      i < (hoverRating || rating)
+                        ? "text-amber-400 fill-amber-400"
+                        : "text-gray-300",
+                    )}
+                  />
+                </button>
+              ))}
+              {rating > 0 && (
+                <span className="font-secondary text-xs text-gray-500 ml-2">
+                  {rating}/5
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="review-text"
+              className="font-secondary text-xs font-medium text-gray-600 mb-1.5 block"
+            >
+              Your Review{" "}
+              <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <textarea
+              id="review-text"
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Tell others about your experience..."
+              maxLength={500}
+              rows={3}
+              disabled={isSubmitting}
+              className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-secondary ring-offset-background transition-colors placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            />
+            <p className="font-secondary text-[10px] text-gray-400 mt-1 text-right">
+              {reviewText.length}/500
+            </p>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isSubmitting || rating < 1}
+            className={cn(
+              "w-full rounded-xl font-primary font-bold text-sm h-10 text-white shadow-sm",
+              "bg-gradient-to-r from-[hsl(270,70%,50%)] to-[hsl(270,60%,60%)] hover:from-[hsl(270,70%,45%)] hover:to-[hsl(270,60%,55%)]",
+            )}
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <Send className="w-4 h-4" aria-hidden="true" />
+                Submit Review
+              </span>
+            )}
+          </Button>
+
+          {error && (
+            <p className="font-secondary text-xs text-red-600">{error}</p>
+          )}
+        </form>
+      </motion.div>
+    );
+  },
+);
+
+ReviewForm.displayName = "ReviewForm";
+
+// --- Reviews Section ---
+
 const ReviewsSection: React.FC<{ eventId: string }> = memo(({ eventId }) => {
   const [reviews, setReviews] = useState<ReviewDisplayItem[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [canReview, setCanReview] = useState(false);
+  const [eligibleTicketId, setEligibleTicketId] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const result = await getEventReviews(eventId);
-        if (!cancelled && result.success) {
-          setReviews((result.reviews ?? []) as ReviewDisplayItem[]);
-          setAverageRating(result.average_rating ?? 0);
-          setTotalCount(result.total_count ?? 0);
+        const [reviewsResult, eligibilityResult] = await Promise.all([
+          getEventReviews(eventId),
+          getReviewEligibility(eventId),
+        ]);
+        if (!cancelled) {
+          if (reviewsResult.success) {
+            setReviews((reviewsResult.reviews ?? []) as ReviewDisplayItem[]);
+            setAverageRating(reviewsResult.average_rating ?? 0);
+            setTotalCount(reviewsResult.total_count ?? 0);
+          }
+          if (eligibilityResult.success && eligibilityResult.canReview) {
+            setCanReview(true);
+            setEligibleTicketId(eligibilityResult.ticketId ?? null);
+          }
         }
       } catch {
         /* silently fail — reviews are non-critical */
@@ -676,7 +878,12 @@ const ReviewsSection: React.FC<{ eventId: string }> = memo(({ eventId }) => {
     return () => {
       cancelled = true;
     };
-  }, [eventId]);
+  }, [eventId, refreshKey]);
+
+  const handleReviewSubmitted = useCallback(() => {
+    setCanReview(false);
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   if (isLoading) {
     return (
@@ -703,7 +910,7 @@ const ReviewsSection: React.FC<{ eventId: string }> = memo(({ eventId }) => {
     );
   }
 
-  if (totalCount === 0) return null;
+  if (totalCount === 0 && !canReview) return null;
 
   return (
     <motion.section
@@ -723,25 +930,46 @@ const ReviewsSection: React.FC<{ eventId: string }> = memo(({ eventId }) => {
             Reviews
           </span>
         </h2>
-        <div className="flex items-center gap-2 ml-auto">
-          <StarRating rating={Math.round(averageRating)} />
-          <span className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)]">
-            {averageRating}
-          </span>
-          <span className="font-secondary text-xs text-gray-400">
-            ({totalCount})
-          </span>
-        </div>
+        {totalCount > 0 && (
+          <div className="flex items-center gap-2 ml-auto">
+            <StarRating rating={Math.round(averageRating)} />
+            <span className="font-primary font-bold text-sm text-[hsl(222.2,47.4%,11.2%)]">
+              {averageRating}
+            </span>
+            <span className="font-secondary text-xs text-gray-400">
+              ({totalCount})
+            </span>
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {reviews.map((review, index) => (
-          <ReviewCard
-            key={review.review_id}
-            review={review}
-            index={index}
+
+      {canReview && eligibleTicketId && (
+        <div className="mb-6">
+          <ReviewForm
+            eventId={eventId}
+            ticketId={eligibleTicketId}
+            onReviewSubmitted={handleReviewSubmitted}
           />
-        ))}
-      </div>
+        </div>
+      )}
+
+      {totalCount > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {reviews.map((review, index) => (
+            <ReviewCard
+              key={review.review_id}
+              review={review}
+              index={index}
+            />
+          ))}
+        </div>
+      )}
+
+      {totalCount === 0 && !canReview && (
+        <p className="font-secondary text-sm text-gray-500">
+          No reviews yet. Be the first to share your experience!
+        </p>
+      )}
     </motion.section>
   );
 });
