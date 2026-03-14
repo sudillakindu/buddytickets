@@ -12,6 +12,8 @@ import {
   Ticket,
   LogOut,
   LayoutDashboard,
+  RefreshCw,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
@@ -227,6 +229,20 @@ export function Header({ user }: { user: UserInfo | null }) {
                         >
                           <Ticket className="w-4 h-4" /> My Tickets
                         </Link>
+                        <Link
+                          href="/refunds"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                        >
+                          <RefreshCw className="w-4 h-4" /> My Refunds
+                        </Link>
+                        <Link
+                          href="/waitlists"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-secondary hover:bg-[hsl(270,70%,97%)] transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                        >
+                          <Clock className="w-4 h-4" /> My Waitlists
+                        </Link>
                         {hasDashboardAccess && (
                           <Link
                             href="/dashboard"
@@ -323,6 +339,20 @@ export function Header({ user }: { user: UserInfo | null }) {
                     className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
                   >
                     <Ticket className="w-4 h-4" /> My Tickets
+                  </Link>
+                  <Link
+                    href="/refunds"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                  >
+                    <RefreshCw className="w-4 h-4" /> My Refunds
+                  </Link>
+                  <Link
+                    href="/waitlists"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 font-secondary text-sm py-1.5 transition-colors text-[hsl(222.2,47.4%,11.2%)] hover:text-[hsl(270,70%,50%)]"
+                  >
+                    <Clock className="w-4 h-4" /> My Waitlists
                   </Link>
                   {hasDashboardAccess && (
                     <Link

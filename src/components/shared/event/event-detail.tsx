@@ -27,6 +27,7 @@ import {
   EVENT_STATUS_PILLS,
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
+import { ReviewSection } from "@/components/shared/review/review-section";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
@@ -789,6 +790,16 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               ))}
             </div>
           )}
+        </motion.section>
+
+        {/* --- Reviews Section --- */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="mt-8"
+        >
+          <ReviewSection eventId={event.event_id} />
         </motion.section>
 
         <div className="mt-6 lg:hidden">
