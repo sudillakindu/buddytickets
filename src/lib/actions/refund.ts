@@ -145,6 +145,12 @@ export async function reviewRefundRequest(
           message: `Failed to update order status for refund ${refund_id}`,
           meta: orderUpdateErr.message,
         });
+        // Roll back refund status to PENDING since order update failed
+        await getSupabaseAdmin()
+          .from("refund_requests")
+          .update({ status: "PENDING", reviewed_by: null, reviewed_at: null })
+          .eq("refund_id", refund_id);
+        return { success: false, message: "Failed to update order. Please try again." };
       }
     }
 

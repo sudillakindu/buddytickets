@@ -77,9 +77,10 @@ export async function calculatePayout(
       if (feeCap !== null) {
         platformFeeAmount = Math.min(platformFeeAmount, feeCap);
       }
-    } else {
-      // FIXED_AMOUNT: flat fee per event
+    } else if (feeType === "FIXED_AMOUNT") {
       platformFeeAmount = Math.min(feeValue, grossRevenue);
+    } else {
+      platformFeeAmount = 0;
     }
     platformFeeAmount = Math.round(platformFeeAmount * 100) / 100;
 

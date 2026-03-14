@@ -75,14 +75,25 @@ export async function scanTicket(
       };
     }
 
-    // --- Mark ticket as USED ---
-    const { error: updateErr } = await getSupabaseAdmin()
+    // --- Mark ticket as USED (atomic: WHERE status = 'ACTIVE' prevents race conditions) ---
+    const { data: updatedRows, error: updateErr } = await getSupabaseAdmin()
       .from("tickets")
       .update({ status: "USED" })
       .eq("ticket_id", ticket_id)
-      .eq("status", "ACTIVE");
+      .eq("status", "ACTIVE")
+      .select("ticket_id");
 
     if (updateErr) throw updateErr;
+
+    if (!updatedRows || updatedRows.length === 0) {
+      const scanResult: ScanResult = "DENIED_ALREADY_USED";
+      await insertScanLog(ticket_id, session.sub, scanResult);
+      return {
+        success: false,
+        message: "Ticket was already used by a concurrent scan.",
+        result: scanResult,
+      };
+    }
 
     const scanResult: ScanResult = "ALLOWED";
     const scanLog = await insertScanLog(ticket_id, session.sub, scanResult);

@@ -300,8 +300,9 @@ export async function validatePromoCode(
     const extraRules = promo.extra_rules_json as ExtraRules | null;
     if (extraRules) {
       if (extraRules.allowed_ticket_types && extraRules.allowed_ticket_types.length > 0) {
+        const allowedList = extraRules.allowed_ticket_types;
         const hasAllowed = ticketTypeIds.some((id) =>
-          extraRules.allowed_ticket_types!.includes(id),
+          allowedList.includes(id),
         );
         if (!hasAllowed)
           return {
@@ -310,8 +311,9 @@ export async function validatePromoCode(
           };
       }
       if (extraRules.excluded_ticket_types && extraRules.excluded_ticket_types.length > 0) {
+        const excludedList = extraRules.excluded_ticket_types;
         const hasExcluded = ticketTypeIds.some((id) =>
-          extraRules.excluded_ticket_types!.includes(id),
+          excludedList.includes(id),
         );
         if (hasExcluded)
           return {

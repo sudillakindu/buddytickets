@@ -26,18 +26,16 @@ export async function joinWaitlist(
 
   try {
     // --- Check if user is already on the waitlist ---
-    const existingQuery = getSupabaseAdmin()
+    let existingQuery = getSupabaseAdmin()
       .from("waitlists")
       .select("waitlist_id")
       .eq("event_id", event_id)
       .eq("user_id", session.sub)
       .in("status", ["WAITING", "NOTIFIED"]);
 
-    if (ticket_type_id) {
-      existingQuery.eq("ticket_type_id", ticket_type_id);
-    } else {
-      existingQuery.is("ticket_type_id", null);
-    }
+    existingQuery = ticket_type_id
+      ? existingQuery.eq("ticket_type_id", ticket_type_id)
+      : existingQuery.is("ticket_type_id", null);
 
     const { data: existing, error: existErr } = await existingQuery.maybeSingle();
 
@@ -46,18 +44,16 @@ export async function joinWaitlist(
       return { success: false, message: "You are already on the waitlist." };
 
     // --- Calculate next position in queue ---
-    const posQuery = getSupabaseAdmin()
+    let posQuery = getSupabaseAdmin()
       .from("waitlists")
       .select("position_order")
       .eq("event_id", event_id)
       .order("position_order", { ascending: false })
       .limit(1);
 
-    if (ticket_type_id) {
-      posQuery.eq("ticket_type_id", ticket_type_id);
-    } else {
-      posQuery.is("ticket_type_id", null);
-    }
+    posQuery = ticket_type_id
+      ? posQuery.eq("ticket_type_id", ticket_type_id)
+      : posQuery.is("ticket_type_id", null);
 
     const { data: lastPosition, error: posErr } = await posQuery.maybeSingle();
     if (posErr) throw posErr;
@@ -145,7 +141,7 @@ export async function notifyWaitlistUsers(
 
   try {
     // --- Find WAITING entries in position order ---
-    const query = getSupabaseAdmin()
+    let query = getSupabaseAdmin()
       .from("waitlists")
       .select(
         "waitlist_id, user_id, notify_email, position_order",
@@ -155,7 +151,7 @@ export async function notifyWaitlistUsers(
       .order("position_order", { ascending: true });
 
     if (ticketTypeId) {
-      query.eq("ticket_type_id", ticketTypeId);
+      query = query.eq("ticket_type_id", ticketTypeId);
     }
 
     const { data: entries, error: fetchErr } = await query;
