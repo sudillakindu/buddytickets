@@ -23,6 +23,7 @@ export interface OrganizerDetails {
   remarks: string | null;
   status: OrganizerStatus;
   is_submitted: boolean;
+  verified_by: string | null;
   verified_at: string | null;
   created_at: string;
   updated_at: string | null;

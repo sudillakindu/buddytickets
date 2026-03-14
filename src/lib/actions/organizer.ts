@@ -37,6 +37,7 @@ interface OrganizerDetailsRow {
   remarks: string | null;
   status: OrganizerDetails["status"];
   is_submitted: boolean;
+  verified_by: string | null;
   verified_at: string | null;
   created_at: string;
   updated_at: string | null;
@@ -149,7 +150,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
       await getSupabaseAdmin()
         .from("organizer_details")
         .select(
-          "user_id, nic_number, address, bank_name, bank_branch, account_holder_name, account_number, nic_front_image_url, nic_back_image_url, remarks, status, is_submitted, verified_at, created_at, updated_at",
+          "user_id, nic_number, address, bank_name, bank_branch, account_holder_name, account_number, nic_front_image_url, nic_back_image_url, remarks, status, is_submitted, verified_by, verified_at, created_at, updated_at",
         )
         .eq("user_id", user.user_id)
         .maybeSingle<OrganizerDetailsRow>();

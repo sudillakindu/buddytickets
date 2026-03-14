@@ -232,7 +232,7 @@ export async function validatePromoCode(
     const { data: promoRaw, error: promoErr } = await getSupabaseAdmin()
       .from("promotions")
       .select(
-        `promotion_id, code, description, discount_type, discount_value, max_discount_cap, min_order_amount, start_at, end_at, is_active, usage_limit_global, usage_limit_per_user, current_global_usage, scope_event_id, scope_ticket_type_id, version`,
+        `promotion_id, code, description, discount_type, discount_value, max_discount_cap, min_order_amount, start_at, end_at, is_active, usage_limit_global, usage_limit_per_user, current_global_usage, scope_event_id, scope_ticket_type_id, extra_rules_json, created_by, version`,
       )
       .eq("code", code.trim().toUpperCase())
       .maybeSingle();
