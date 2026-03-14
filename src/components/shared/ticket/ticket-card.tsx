@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
+import { Calendar, Clock, MapPin, QrCode, Tag, User, Mail, Phone, IdCard } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
 import type { Ticket } from "@/lib/types/ticket";
 
@@ -75,6 +75,12 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
       ? `${ticket.qr_hash.slice(0, 8)}…${ticket.qr_hash.slice(-4)}`
       : "—";
 
+    const hasAttendeeInfo =
+      ticket.attendee_name ||
+      ticket.attendee_nic ||
+      ticket.attendee_email ||
+      ticket.attendee_mobile;
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -142,6 +148,63 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
           </div>
 
           <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
+
+          {hasAttendeeInfo && (
+            <>
+              <div className="rounded-xl bg-[hsl(270,70%,50%)]/5 border border-[hsl(270,70%,50%)]/10 px-4 py-3 space-y-2">
+                <p className="font-secondary text-[10px] uppercase tracking-wider text-[hsl(270,70%,50%)] font-semibold">
+                  Attendee
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ticket.attendee_name && (
+                    <div className="flex items-center gap-2">
+                      <User
+                        className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="font-secondary text-xs text-[hsl(222.2,47.4%,11.2%)] truncate">
+                        {ticket.attendee_name}
+                      </span>
+                    </div>
+                  )}
+                  {ticket.attendee_nic && (
+                    <div className="flex items-center gap-2">
+                      <IdCard
+                        className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="font-secondary text-xs text-[hsl(222.2,47.4%,11.2%)] truncate">
+                        {ticket.attendee_nic}
+                      </span>
+                    </div>
+                  )}
+                  {ticket.attendee_email && (
+                    <div className="flex items-center gap-2">
+                      <Mail
+                        className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="font-secondary text-xs text-[hsl(222.2,47.4%,11.2%)] truncate">
+                        {ticket.attendee_email}
+                      </span>
+                    </div>
+                  )}
+                  {ticket.attendee_mobile && (
+                    <div className="flex items-center gap-2">
+                      <Phone
+                        className="w-3.5 h-3.5 text-[hsl(270,70%,50%)] shrink-0"
+                        aria-hidden="true"
+                      />
+                      <span className="font-secondary text-xs text-[hsl(222.2,47.4%,11.2%)]">
+                        {ticket.attendee_mobile}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
+            </>
+          )}
 
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">

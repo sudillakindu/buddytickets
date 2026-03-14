@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Radio,
+  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/ui/utils";
@@ -28,6 +29,8 @@ import {
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
+import { WaitlistSection } from "@/components/shared/event/waitlist-section";
+import { ReviewsSection } from "@/components/shared/event/reviews-section";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface StatusConfig {
@@ -684,6 +687,10 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
               </span>
             </Button>
 
+            {event.status === "SOLD_OUT" && (
+              <WaitlistSection eventId={event.event_id} />
+            )}
+
             <div className="overflow-hidden">
               <h2 className="font-primary font-bold text-xl uppercase tracking-wider text-[hsl(222.2,47.4%,11.2%)] mb-1 mt-2">
                 About
@@ -767,6 +774,22 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
 
+          {event.platform_fee_value > 0 && (
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <Info className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
+              <p className="font-secondary text-[11px] text-gray-400">
+                A{" "}
+                {event.platform_fee_type === "PERCENTAGE"
+                  ? `${event.platform_fee_value}% service fee`
+                  : `LKR ${event.platform_fee_value.toLocaleString()} service fee`}
+                {" "}applies per ticket
+                {event.platform_fee_type === "PERCENTAGE" &&
+                  event.platform_fee_cap !== null &&
+                  ` (max LKR ${event.platform_fee_cap.toLocaleString()})`}
+              </p>
+            </div>
+          )}
+
           {event.ticket_types.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <Ticket
@@ -790,6 +813,16 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             </div>
           )}
         </motion.section>
+
+        {event.status === "COMPLETED" && (
+          <ReviewsSection eventId={event.event_id} />
+        )}
+
+        {event.status === "SOLD_OUT" && (
+          <div className="mt-6 lg:hidden">
+            <WaitlistSection eventId={event.event_id} />
+          </div>
+        )}
 
         <div className="mt-6 lg:hidden">
           <Button
