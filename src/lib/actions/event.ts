@@ -17,6 +17,8 @@ import type {
 
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
+const DEFAULT_PLATFORM_FEE_VALUE = 3;
+const DEFAULT_PLATFORM_FEE_TYPE = "PERCENTAGE" as const;
 
 const STATUS_PRIORITY: Record<string, number> = {
   ONGOING: 1,
@@ -101,8 +103,8 @@ function mapRowToEvent(row: RawEventRow): Event {
     status: row.status,
     is_active: row.is_active,
     is_vip: row.is_vip,
-    platform_fee_type: row.platform_fee_type ?? "PERCENTAGE",
-    platform_fee_value: Number(row.platform_fee_value ?? 3),
+    platform_fee_type: row.platform_fee_type ?? DEFAULT_PLATFORM_FEE_TYPE,
+    platform_fee_value: Number(row.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE),
     platform_fee_cap: row.platform_fee_cap != null ? Number(row.platform_fee_cap) : null,
     allowed_payment_methods: row.allowed_payment_methods ?? null,
     created_at: row.created_at,
@@ -284,8 +286,8 @@ export async function getEventById(
       status: data.status,
       is_active: data.is_active,
       is_vip: data.is_vip,
-      platform_fee_type: data.platform_fee_type ?? "PERCENTAGE",
-      platform_fee_value: Number(data.platform_fee_value ?? 3),
+      platform_fee_type: data.platform_fee_type ?? DEFAULT_PLATFORM_FEE_TYPE,
+      platform_fee_value: Number(data.platform_fee_value ?? DEFAULT_PLATFORM_FEE_VALUE),
       platform_fee_cap: data.platform_fee_cap != null ? Number(data.platform_fee_cap) : null,
       allowed_payment_methods:
         (data.allowed_payment_methods as
