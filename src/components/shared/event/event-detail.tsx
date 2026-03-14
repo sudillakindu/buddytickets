@@ -778,11 +778,9 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             <div className="flex items-center gap-2 mb-4 px-1">
               <Info className="w-3.5 h-3.5 text-gray-400 shrink-0" aria-hidden="true" />
               <p className="font-secondary text-[11px] text-gray-400">
-                A{" "}
                 {event.platform_fee_type === "PERCENTAGE"
-                  ? `${event.platform_fee_value}% service fee`
-                  : `LKR ${event.platform_fee_value.toLocaleString()} service fee`}
-                {" "}applies per ticket
+                  ? `A ${event.platform_fee_value}% service fee applies per ticket`
+                  : `A LKR ${event.platform_fee_value.toLocaleString()} service fee applies per ticket`}
                 {event.platform_fee_type === "PERCENTAGE" &&
                   event.platform_fee_cap !== null &&
                   ` (max LKR ${event.platform_fee_cap.toLocaleString()})`}
