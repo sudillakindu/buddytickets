@@ -13,6 +13,15 @@ interface OrderWithEventRow {
   events: { name: string; start_at: string; location: string } | null;
 }
 
+interface TransactionRow {
+  transaction_id: string;
+  gateway_ref_id: string | null;
+}
+
+interface PromotionUsageRow {
+  discount_received: number;
+}
+
 // Fetch order success data for /checkout/success page
 export async function getOrderSuccessData(
   orderId: string,
@@ -41,6 +50,28 @@ export async function getOrderSuccessData(
 
     if (countErr) throw countErr;
 
+    // --- Fetch latest transaction for this order ---
+    const { data: transaction } = await getSupabaseAdmin()
+      .from("transactions")
+      .select("transaction_id, gateway_ref_id")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const txRow = transaction as TransactionRow | null;
+
+    // --- Fetch promotion usage discount for this order ---
+    const { data: promoUsage } = await getSupabaseAdmin()
+      .from("promotion_usages")
+      .select("discount_received")
+      .eq("order_id", orderId)
+      .eq("user_id", session.sub)
+      .limit(1)
+      .maybeSingle();
+
+    const puRow = promoUsage as PromotionUsageRow | null;
+
     const typed = order as unknown as OrderWithEventRow;
     const ev = typed.events;
 
@@ -55,6 +86,9 @@ export async function getOrderSuccessData(
         ticket_count: ticketCount ?? 0,
         final_amount: Number(typed.final_amount),
         payment_status: typed.payment_status,
+        transaction_id: txRow?.transaction_id ?? null,
+        gateway_ref_id: txRow?.gateway_ref_id ?? null,
+        discount_received: puRow?.discount_received ?? null,
       },
     };
   } catch (err) {

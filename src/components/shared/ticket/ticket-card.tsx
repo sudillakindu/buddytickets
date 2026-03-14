@@ -1,9 +1,21 @@
 "use client";
 
-import React, { memo } from "react";
-import { motion } from "framer-motion";
-import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
+import React, { memo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  QrCode,
+  Tag,
+  User,
+  Star,
+  RotateCcw,
+} from "lucide-react";
 import { cn } from "@/lib/ui/utils";
+import { Button } from "@/components/ui/button";
+import { ReviewForm } from "@/components/shared/reviews/review-form";
+import { RefundRequestForm } from "@/components/shared/refunds/refund-request-form";
 import type { Ticket } from "@/lib/types/ticket";
 
 export interface TicketCardProps {
@@ -30,6 +42,9 @@ const formatTime = (iso: string): string => {
 
 export const TicketCard: React.FC<TicketCardProps> = memo(
   ({ ticket, index = 0 }) => {
+    const [showReview, setShowReview] = useState(false);
+    const [showRefund, setShowRefund] = useState(false);
+
     const getStatusUI = () => {
       switch (ticket.status) {
         case "ACTIVE":
@@ -74,6 +89,15 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
     const qrShort = ticket.qr_hash
       ? `${ticket.qr_hash.slice(0, 8)}…${ticket.qr_hash.slice(-4)}`
       : "—";
+
+    const isEventCompleted = ticket.event.status === "COMPLETED";
+    const canRequestRefund =
+      ticket.status === "ACTIVE" || ticket.status === "PENDING";
+    const hasAttendeeInfo =
+      ticket.attendee_name ||
+      ticket.attendee_nic ||
+      ticket.attendee_email ||
+      ticket.attendee_mobile;
 
     return (
       <motion.div
@@ -141,6 +165,40 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
             </div>
           </div>
 
+          {/* --- Attendee Info --- */}
+          {hasAttendeeInfo && (
+            <>
+              <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
+              <div className="space-y-1.5">
+                <p className="font-secondary text-[10px] uppercase tracking-wider text-gray-400 flex items-center gap-1">
+                  <User className="w-3 h-3" /> Attendee
+                </p>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                  {ticket.attendee_name && (
+                    <span className="font-secondary text-xs text-[hsl(222.2,47.4%,11.2%)]">
+                      {ticket.attendee_name}
+                    </span>
+                  )}
+                  {ticket.attendee_nic && (
+                    <span className="font-secondary text-xs text-gray-500 font-mono">
+                      {ticket.attendee_nic}
+                    </span>
+                  )}
+                  {ticket.attendee_email && (
+                    <span className="font-secondary text-xs text-gray-500 truncate">
+                      {ticket.attendee_email}
+                    </span>
+                  )}
+                  {ticket.attendee_mobile && (
+                    <span className="font-secondary text-xs text-gray-500">
+                      {ticket.attendee_mobile}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
 
           <div className="flex items-center justify-between gap-3">
@@ -163,7 +221,82 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
               </span>
             </div>
           </div>
+
+          {/* --- Action Buttons --- */}
+          {(isEventCompleted || canRequestRefund) && (
+            <>
+              <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
+              <div className="flex items-center gap-2 flex-wrap">
+                {isEventCompleted && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowReview((v) => !v)}
+                    className="h-7 px-3 text-xs font-secondary text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg"
+                  >
+                    <Star className="w-3 h-3 mr-1" />
+                    {showReview ? "Hide Review" : "Leave Review"}
+                  </Button>
+                )}
+                {canRequestRefund && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowRefund((v) => !v)}
+                    className="h-7 px-3 text-xs font-secondary text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                  >
+                    <RotateCcw className="w-3 h-3 mr-1" />
+                    {showRefund ? "Cancel" : "Request Refund"}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </div>
+
+        {/* --- Expandable Sections --- */}
+        <AnimatePresence>
+          {showReview && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden px-5 sm:px-6"
+            >
+              <div className="pb-5">
+                <ReviewForm
+                  eventId={ticket.event.event_id}
+                  ticketId={ticket.ticket_id}
+                  onSubmit={async () => ({
+                    success: true,
+                    message:
+                      "Thank you! Your review has been submitted.",
+                  })}
+                />
+              </div>
+            </motion.div>
+          )}
+          {showRefund && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden px-5 sm:px-6"
+            >
+              <div className="pb-5">
+                <RefundRequestForm
+                  orderId={ticket.ticket_id}
+                  ticketId={ticket.ticket_id}
+                  maxRefundAmount={Number(ticket.price_purchased)}
+                  onSubmit={async () => ({
+                    success: true,
+                    message:
+                      "Your refund request has been submitted. We will review it shortly.",
+                  })}
+                  onClose={() => setShowRefund(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     );
   },

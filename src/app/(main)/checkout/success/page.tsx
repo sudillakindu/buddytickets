@@ -14,6 +14,9 @@ import {
   Loader2,
   Share2,
   AlertCircle,
+  Hash,
+  CreditCard,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -330,6 +333,40 @@ const CheckoutSuccessContent: React.FC = memo(() => {
                   {orderData.order_id.split("-")[0].toUpperCase()}
                 </span>
               </div>
+
+              {orderData.transaction_id && (
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1 font-secondary text-xs text-gray-400">
+                    <Hash className="w-3 h-3" /> Transaction ID
+                  </span>
+                  <span className="font-secondary text-xs text-gray-500 font-mono">
+                    {orderData.transaction_id.slice(0, 8)}…
+                  </span>
+                </div>
+              )}
+
+              {orderData.gateway_ref_id && (
+                <div className="flex justify-between items-center">
+                  <span className="flex items-center gap-1 font-secondary text-xs text-gray-400">
+                    <CreditCard className="w-3 h-3" /> Gateway Ref
+                  </span>
+                  <span className="font-secondary text-xs text-gray-500 font-mono">
+                    {orderData.gateway_ref_id}
+                  </span>
+                </div>
+              )}
+
+              {orderData.discount_received != null &&
+                orderData.discount_received > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="flex items-center gap-1 font-secondary text-xs text-emerald-600">
+                      <Tag className="w-3 h-3" /> Discount Applied
+                    </span>
+                    <span className="font-primary font-bold text-xs text-emerald-600">
+                      -{formatLKR(orderData.discount_received)}
+                    </span>
+                  </div>
+                )}
             </div>
           </motion.div>
         )}

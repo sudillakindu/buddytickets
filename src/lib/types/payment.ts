@@ -153,4 +153,7 @@ export interface OrderSuccessData {
   ticket_count: number;
   final_amount: number;
   payment_status: PaymentStatus;
+  transaction_id: string | null;
+  gateway_ref_id: string | null;
+  discount_received: number | null;
 }

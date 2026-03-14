@@ -29,6 +29,7 @@ import {
 } from "@/lib/constants/event-status";
 import type { TicketType, EventDetails } from "@/lib/types/event";
 import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
+import { JoinWaitlistForm } from "@/components/shared/waitlist/join-waitlist-form";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 const MAX_QTY_PER_TYPE = 10;
@@ -608,6 +609,24 @@ export function TicketDetails({ event }: TicketDetailsProps) {
             <Lock className="inline-block w-3 h-3 mr-1 text-gray-400" />
             Tickets are held for 10 minutes once you proceed to checkout.
           </p>
+        )}
+
+        {/* --- Waitlist Form for Sold-Out Events --- */}
+        {event.status === "SOLD_OUT" && (
+          <div className="mt-8">
+            <JoinWaitlistForm
+              eventId={event.event_id}
+              onSubmit={async (data) => {
+                void data;
+                return {
+                  success: true,
+                  message:
+                    "You have been added to the waitlist! We will notify you when tickets become available.",
+                  position: 1,
+                };
+              }}
+            />
+          </div>
         )}
       </div>
     </main>
