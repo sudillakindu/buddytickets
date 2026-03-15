@@ -52,7 +52,7 @@ interface CheckoutData {
   event_name: string;
   event_start_at: string;
   event_location: string;
-  event_status: string;
+  event_status: Database["public"]["Enums"]["event_status"] | null;
   expires_at: string;
   line_items: ReservationLineItem[];
   subtotal: number;

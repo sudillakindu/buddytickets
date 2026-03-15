@@ -117,7 +117,7 @@ const UserAvatar = memo(
 
 UserAvatar.displayName = "UserAvatar";
 
-export function Header({ user }: { user: UserInfo | null }) {
+export const Header = ({ user }: { user: UserInfo | null }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -368,4 +368,4 @@ export function Header({ user }: { user: UserInfo | null }) {
       </div>
     </header>
   );
-}
+};

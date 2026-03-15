@@ -1,6 +1,7 @@
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
@@ -36,7 +37,6 @@ interface ProfileFetchResult extends ProfileResult {
 interface ProfileImageResult extends ProfileResult {
   imageUrl?: string;
 }
-import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -248,7 +248,7 @@ export async function updateProfile(data: {
         message: "Mobile number is already registered.",
       };
 
-    const payload: Record<string, unknown> = {
+    const payload: Database["public"]["Tables"]["users"]["Update"] = {
       name,
       username,
       mobile,

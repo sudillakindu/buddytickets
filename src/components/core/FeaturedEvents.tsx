@@ -135,7 +135,7 @@ const EventGrid = memo(({ events }: { events: Event[] }) => (
 
 EventGrid.displayName = "EventGrid";
 
-export default function FeaturedEvents() {
+const FeaturedEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -232,4 +232,6 @@ export default function FeaturedEvents() {
       </div>
     </section>
   );
-}
+};
+
+export default FeaturedEvents;

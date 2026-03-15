@@ -62,7 +62,7 @@ const CategoryPill = memo(({ icon: Icon, label, color, delay }: Category) => {
 
 CategoryPill.displayName = "CategoryPill";
 
-export default function Hero() {
+const Hero = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -217,4 +217,6 @@ export default function Hero() {
       />
     </section>
   );
-}
+};
+
+export default Hero;

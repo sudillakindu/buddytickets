@@ -36,31 +36,30 @@ export interface TicketsResult {
   tickets?: Ticket[];
 }
 
-interface TicketTypeJoin {
-  ticket_type_id: string;
-  name: string;
-  description: string;
-}
+// --- Row Type Aliases for Read Operations ---
+type TicketTypeJoin = Pick<
+  Database["public"]["Tables"]["ticket_types"]["Row"],
+  "ticket_type_id" | "name" | "description"
+>;
 
-interface EventJoin {
-  event_id: string;
-  name: string;
-  location: string;
-  start_at: string;
-  end_at: string;
-  status: string;
-  event_images?: { priority_order: number; image_url: string }[];
-}
+type EventJoin = Pick<
+  Database["public"]["Tables"]["events"]["Row"],
+  "event_id" | "name" | "location" | "start_at" | "end_at" | "status"
+> & {
+  event_images?: Pick<
+    Database["public"]["Tables"]["event_images"]["Row"],
+    "priority_order" | "image_url"
+  >[];
+};
 
-interface TicketRow {
-  ticket_id: string;
-  qr_hash: string;
-  status: Ticket["status"];
-  price_purchased: string;
-  created_at: string;
+// Composite join type for ticket with related data
+type TicketRow = Pick<
+  Database["public"]["Tables"]["tickets"]["Row"],
+  "ticket_id" | "qr_hash" | "status" | "price_purchased" | "created_at"
+> & {
   ticket_types?: TicketTypeJoin | TicketTypeJoin[] | null;
   events?: EventJoin | EventJoin[] | null;
-}
+};
 
 // Map raw Supabase row to standardized Ticket object
 function mapToTicket(row: TicketRow): Ticket {
@@ -78,9 +77,9 @@ function mapToTicket(row: TicketRow): Ticket {
   return {
     ticket_id: row.ticket_id,
     qr_hash: row.qr_hash,
-    status: row.status,
-    price_purchased: row.price_purchased,
-    created_at: row.created_at,
+    status: row.status ?? "PENDING",
+    price_purchased: String(row.price_purchased),
+    created_at: row.created_at ?? "",
     ticket_type: {
       ticket_type_id: ticketType?.ticket_type_id ?? "",
       name: ticketType?.name ?? "—",
