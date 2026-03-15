@@ -248,7 +248,7 @@ export async function updateProfile(data: {
         message: "Mobile number is already registered.",
       };
 
-    const payload: Record<string, unknown> = {
+    const payload: Database["public"]["Tables"]["users"]["Update"] = {
       name,
       username,
       mobile,

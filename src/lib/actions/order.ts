@@ -17,13 +17,16 @@ interface OrderSuccessData {
   payment_status: PaymentStatus;
 }
 
-interface OrderWithEventRow {
-  order_id: string;
-  user_id: string;
-  final_amount: number;
-  payment_status: PaymentStatus;
-  events: { name: string; start_at: string; location: string } | null;
-}
+// --- Composite Join Type for Read Operations ---
+type OrderWithEventRow = Pick<
+  Database["public"]["Tables"]["orders"]["Row"],
+  "order_id" | "user_id" | "final_amount" | "payment_status"
+> & {
+  events: Pick<
+    Database["public"]["Tables"]["events"]["Row"],
+    "name" | "start_at" | "location"
+  > | null;
+};
 
 // Fetch order success data for /checkout/success page
 export async function getOrderSuccessData(
@@ -66,7 +69,7 @@ export async function getOrderSuccessData(
         event_location: ev?.location ?? "—",
         ticket_count: ticketCount ?? 0,
         final_amount: Number(typed.final_amount),
-        payment_status: typed.payment_status,
+        payment_status: typed.payment_status ?? "PENDING",
       },
     };
   } catch (err) {

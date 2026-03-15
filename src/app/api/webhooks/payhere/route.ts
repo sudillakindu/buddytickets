@@ -23,6 +23,17 @@ import {
 import {
   generateQRHashesForReservation,
 } from "@/lib/utils/qrcode";
+import type { Database } from "@/lib/types/supabase";
+
+type ReservationPartial = Pick<
+  Database["public"]["Tables"]["ticket_reservations"]["Row"],
+  "reservation_id" | "ticket_type_id" | "quantity" | "expires_at" | "status"
+>;
+
+type TicketTypeVersionPartial = Pick<
+  Database["public"]["Tables"]["ticket_types"]["Row"],
+  "ticket_type_id" | "version"
+>;
 
 interface PaymentGatewayWebhookPayload {
   merchant_id: string;
@@ -205,7 +216,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // ── 6. Fetch ticket type versions for OCC ─────────────────────────────
-    const ticketTypeIds = [...new Set(reservations.map((r: Record<string, unknown>) => r.ticket_type_id as string))];
+    const ticketTypeIds = [...new Set(reservations.map((r: ReservationPartial) => r.ticket_type_id))];
 
     const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
       .from("ticket_types")
@@ -217,19 +228,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    const versionMap = new Map(
-      (ticketTypes ?? []).map((tt: Record<string, unknown>) => [tt.ticket_type_id as string, tt.version as number]),
+    const versionMap = new Map<string, number>(
+      (ticketTypes ?? []).map((tt: TicketTypeVersionPartial) => [tt.ticket_type_id, tt.version ?? 0]),
     );
 
     // ── 7. Generate QR hashes for all tickets ─────────────────────────────
     // One QR hash per physical ticket seat (reservation.quantity tickets each)
-    const ticketQRData: TicketQRItem[] = reservations.map((r: Record<string, unknown>) => ({
-      reservation_id: r.reservation_id as string,
-      ticket_type_version: versionMap.get(r.ticket_type_id as string) ?? 1,
+    const ticketQRData: TicketQRItem[] = reservations.map((r: ReservationPartial) => ({
+      reservation_id: r.reservation_id,
+      ticket_type_version: versionMap.get(r.ticket_type_id) ?? 1,
       qr_hashes: generateQRHashesForReservation(
         orderId!,
-        r.reservation_id as string,
-        r.quantity as number,
+        r.reservation_id,
+        r.quantity,
       ),
     }));
 

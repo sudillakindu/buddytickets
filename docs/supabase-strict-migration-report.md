@@ -116,3 +116,72 @@ Types that represent application logic (not direct DB rows) are defined inline i
 - ✅ `npm run build` passes with zero TypeScript errors
 - ✅ `npm run lint` passes with zero errors and zero warnings
 - ✅ All types are derived from `Database` or defined inline where needed
+
+---
+
+## Phase 2: Enterprise-Level CRUD Type Mapping & Join Relationships
+
+### Summary
+
+Refactored all server actions, API routes, and components to enforce strict CRUD type mapping using `Database['public']['Tables'][table]['Row']`, `Insert`, and `Update` types from the auto-generated Supabase schema. All hand-written local interfaces that duplicated DB row shapes were replaced with `Pick<>`, `Omit<>`, or direct Row type aliases. Composite join types are now constructed from DB types using `&` composition. All `Record<string, unknown>` and `any` usages have been eliminated.
+
+### Step 1: Strict CRUD Type Mapping
+
+#### READ Operations → `Row` Types
+
+| File | Before | After |
+|---|---|---|
+| `event.ts` | `interface EventImage { ... }` | `type EventImage = Database['public']['Tables']['event_images']['Row']` |
+| `event.ts` | `interface Organizer { ... }` | `type Organizer = Pick<UserRow, 'user_id' \| 'name' \| 'image_url' \| 'email' \| 'username'>` |
+| `event.ts` | `interface CategoryDetails { ... }` | `type CategoryDetails = Pick<CategoryRow, 'category_id' \| 'name' \| 'description'>` |
+| `checkout.ts` | `interface PromotionRow { ... }` | `type PromotionRow = Pick<Database['...']['promotions']['Row'], ...>` |
+| `checkout.ts` | `interface TicketTypeRow { ... }` | `type TicketTypeRow = Pick<Database['...']['ticket_types']['Row'], ...>` |
+| `checkout.ts` | `interface EventRow { ... }` | `type EventRow = Pick<Database['...']['events']['Row'], ...>` |
+| `payment.ts` | `interface ReservationRow { ... }` | `type ReservationRow = Database['...']['ticket_reservations']['Row']` |
+| `payment.ts` | `interface TicketTypeRow { ... }` | `type TicketTypeRow = Pick<Database['...']['ticket_types']['Row'], ...>` |
+| `payment.ts` | `interface EventRow { ... }` | `type EventRow = Pick<Database['...']['events']['Row'], ...>` |
+| `payment.ts` | `interface PromotionValidationRow { ... }` | `type PromotionValidationRow = Pick<Database['...']['promotions']['Row'], ...>` |
+| `ticket.ts` | `interface TicketTypeJoin { ... }` | `type TicketTypeJoin = Pick<Database['...']['ticket_types']['Row'], ...>` |
+| `organizer.ts` | `interface OrganizerOnboardingUser { ... }` | `type OrganizerOnboardingUser = Pick<Database['...']['users']['Row'], ...>` |
+| `organizer.ts` | `interface OrganizerDetails { ... }` + `interface OrganizerDetailsRow { ... }` | `type OrganizerDetails = Omit<Database['...']['organizer_details']['Row'], 'verified_by'>` |
+
+#### UPDATE Operations → `Update` Types
+
+| File | Before | After |
+|---|---|---|
+| `profile.ts` | `const payload: Record<string, unknown> = { ... }` | `const payload: Database['public']['Tables']['users']['Update'] = { ... }` |
+
+#### INSERT Operations
+
+Insert payloads in `payment.ts` (`orders.insert(...)`) and `organizer.ts` (`organizer_details.upsert(...)`) are passed directly to Supabase client methods, which enforce `Insert` types at the query level via the typed client.
+
+### Step 2: Composite Join Types
+
+| File | Type | Implementation |
+|---|---|---|
+| `event.ts` | `RawEventRow` | `Pick<EventsRow, ...> & { categories: Pick<CategoryRow, 'name'> \| null; event_images: Pick<EventImageRow, ...>[]; ticket_types: Pick<TicketTypesRow, ...>[]; vip_events: Pick<VipEventsRow, 'priority_order'>[] }` |
+| `event.ts` | `Event` | `Pick<EventsRow, ...> & { category: string; thumbnail_image: string \| null; ... }` |
+| `event.ts` | `TicketType` (mapped) | `Omit<TicketTypesRow, 'inclusions' \| 'qty_sold' \| 'version'> & { inclusions: string[]; qty_sold: number; version: number }` |
+| `order.ts` | `OrderWithEventRow` | `Pick<OrdersRow, ...> & { events: Pick<EventsRow, 'name' \| 'start_at' \| 'location'> \| null }` |
+| `ticket.ts` | `EventJoin` | `Pick<EventsRow, ...> & { event_images?: Pick<EventImageRow, ...>[] }` |
+| `ticket.ts` | `TicketRow` | `Pick<TicketsRow, ...> & { ticket_types?: TicketTypeJoin \| ... ; events?: EventJoin \| ... }` |
+| `route.ts` | `ReservationPartial` | `Pick<Database['...']['ticket_reservations']['Row'], ...>` |
+| `route.ts` | `TicketTypeVersionPartial` | `Pick<Database['...']['ticket_types']['Row'], 'ticket_type_id' \| 'version'>` |
+
+### Step 3: Industry Standard Practices
+
+- **Zero `any` types**: Confirmed no `any` usages exist in the codebase.
+- **Zero `Record<string, unknown>`**: All instances replaced with DB-derived types.
+- **Strict null checking**: Nullable DB columns (`status`, `payment_status`, `qty_sold`, `version`, `created_at`) are handled with null coalescing (`??`) operators at the mapping layer, providing safe defaults.
+- **Enum consistency**: `checkout.ts` `event_status` field updated from `string` to `Database['public']['Enums']['event_status'] | null` across server action and consuming component (`order-summary.tsx`).
+- **Unused type aliases removed**: `EventStatus` (event.ts), `OrganizerStatus` (organizer.ts), `OrderPartial` (route.ts) removed to eliminate lint warnings.
+
+### Confirmation
+
+- ✅ `src/lib/types/supabase.ts` was NOT modified
+- ✅ `npm run build` passes with zero TypeScript errors
+- ✅ `npm run lint` passes with zero errors and zero warnings
+- ✅ All `Record<string, unknown>` usages eliminated
+- ✅ All `any` types eliminated
+- ✅ All Row/Update read types derive from `Database['public']['Tables'][...]['Row']` or `['Update']`
+- ✅ All join/composite types constructed using `Pick<>`, `Omit<>`, and `&` from DB schema types

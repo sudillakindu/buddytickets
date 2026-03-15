@@ -4,70 +4,42 @@ import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
 import type { Database } from "@/lib/types/supabase";
 
-type EventStatus = Database["public"]["Enums"]["event_status"];
 type PaymentSource = Database["public"]["Enums"]["payment_source"];
 
-interface EventImage {
-  event_id: string;
-  priority_order: number;
-  image_url: string;
-  created_at: string | null;
-}
+// --- Row Type Aliases ---
+type EventsRow = Database["public"]["Tables"]["events"]["Row"];
+type EventImageRow = Database["public"]["Tables"]["event_images"]["Row"];
+type TicketTypesRow = Database["public"]["Tables"]["ticket_types"]["Row"];
+type UserRow = Database["public"]["Tables"]["users"]["Row"];
+type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
+type VipEventsRow = Database["public"]["Tables"]["vip_events"]["Row"];
 
-interface TicketType {
-  ticket_type_id: string;
-  event_id: string;
-  name: string;
-  description: string;
+// --- Derived Read Types ---
+type EventImage = EventImageRow;
+
+// Mapped output type: inclusions filtered to string[], qty_sold/version defaulted to non-null
+type TicketType = Omit<TicketTypesRow, "inclusions" | "qty_sold" | "version"> & {
   inclusions: string[];
-  price: number;
-  capacity: number;
   qty_sold: number;
-  sale_start_at: string | null;
-  sale_end_at: string | null;
-  is_active: boolean | null;
   version: number;
-  created_at: string | null;
-  updated_at: string | null;
-}
+};
 
-interface Organizer {
-  user_id: string;
-  name: string;
-  image_url: string | null;
-  email: string;
-  username: string;
-}
+type Organizer = Pick<UserRow, "user_id" | "name" | "image_url" | "email" | "username">;
 
-interface CategoryDetails {
-  category_id: string;
-  name: string;
-  description: string | null;
-}
+type CategoryDetails = Pick<CategoryRow, "category_id" | "name" | "description">;
 
-interface Event {
-  event_id: string;
-  organizer_id: string;
-  category_id: string;
-  name: string;
-  subtitle: string;
-  description: string;
-  requirements: string | null;
-  location: string;
-  map_link: string;
-  start_at: string;
-  end_at: string;
-  status: EventStatus | null;
-  is_active: boolean | null;
-  is_vip: boolean | null;
-  allowed_payment_methods: PaymentSource[] | null;
-  created_at: string | null;
-  updated_at: string | null;
+type Event = Pick<
+  EventsRow,
+  | "event_id" | "organizer_id" | "category_id" | "name" | "subtitle"
+  | "description" | "requirements" | "location" | "map_link" | "start_at"
+  | "end_at" | "status" | "is_active" | "is_vip"
+  | "allowed_payment_methods" | "created_at" | "updated_at"
+> & {
   category: string;
   thumbnail_image: string | null;
   start_ticket_price: number | null;
   vip_priority_order: number | null;
-}
+};
 
 interface EventDetails extends Event {
   images: EventImage[];
@@ -117,29 +89,18 @@ const EVENT_CARD_SELECT = `
 ` as const;
 
 // Raw shape returned by Supabase for EVENT_CARD_SELECT
-interface RawEventRow {
-  event_id: string;
-  organizer_id: string;
-  category_id: string;
-  name: string;
-  subtitle: string;
-  description: string;
-  requirements: string | null;
-  location: string;
-  map_link: string;
-  start_at: string;
-  end_at: string;
-  status: EventStatus | null;
-  is_active: boolean | null;
-  is_vip: boolean | null;
-  allowed_payment_methods: PaymentSource[] | null;
-  created_at: string | null;
-  updated_at: string | null;
-  categories: { name: string } | null;
-  event_images: { image_url: string; priority_order: number }[];
-  ticket_types: { price: number; is_active: boolean | null }[];
-  vip_events: { priority_order: number }[];
-}
+type RawEventRow = Pick<
+  EventsRow,
+  | "event_id" | "organizer_id" | "category_id" | "name" | "subtitle"
+  | "description" | "requirements" | "location" | "map_link" | "start_at"
+  | "end_at" | "status" | "is_active" | "is_vip"
+  | "allowed_payment_methods" | "created_at" | "updated_at"
+> & {
+  categories: Pick<CategoryRow, "name"> | null;
+  event_images: Pick<EventImageRow, "image_url" | "priority_order">[];
+  ticket_types: Pick<TicketTypesRow, "price" | "is_active">[];
+  vip_events: Pick<VipEventsRow, "priority_order">[];
+};
 
 // Map raw Supabase row to standardized Event object
 function mapRowToEvent(row: RawEventRow): Event {

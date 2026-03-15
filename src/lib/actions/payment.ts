@@ -80,50 +80,27 @@ interface ValidatedPromotion {
   final_total: number;
 }
 
-interface ReservationRow {
-  reservation_id: string;
-  user_id: string;
-  event_id: string;
-  ticket_type_id: string;
-  quantity: number;
-  reserved_at: string | null;
-  expires_at: string;
-  status: Database["public"]["Enums"]["reservation_status"] | null;
-  order_id: string | null;
-}
+// --- Row Type Aliases for Read Operations ---
+type ReservationRow = Database["public"]["Tables"]["ticket_reservations"]["Row"];
 
-interface TicketTypeRow {
-  ticket_type_id: string;
-  price: number;
-  capacity: number;
-  qty_sold: number | null;
-  is_active: boolean | null;
-  sale_start_at: string | null;
-  sale_end_at: string | null;
-  version: number | null;
-}
+type TicketTypeRow = Pick<
+  Database["public"]["Tables"]["ticket_types"]["Row"],
+  | "ticket_type_id" | "price" | "capacity" | "qty_sold"
+  | "is_active" | "sale_start_at" | "sale_end_at" | "version"
+>;
 
-interface EventRow {
-  event_id: string;
-  status: string;
-  is_active: boolean | null;
-  allowed_payment_methods: PaymentSource[] | null;
-}
+type EventRow = Pick<
+  Database["public"]["Tables"]["events"]["Row"],
+  "event_id" | "status" | "is_active" | "allowed_payment_methods"
+>;
 
-interface PromotionValidationRow {
-  promotion_id: string;
-  is_active: boolean | null;
-  start_at: string;
-  end_at: string;
-  usage_limit_global: number | null;
-  current_global_usage: number | null;
-  discount_type: string;
-  discount_value: number;
-  max_discount_cap: number | null;
-  min_order_amount: number | null;
-  scope_event_id: string | null;
-  scope_ticket_type_id: string | null;
-}
+type PromotionValidationRow = Pick<
+  Database["public"]["Tables"]["promotions"]["Row"],
+  | "promotion_id" | "is_active" | "start_at" | "end_at"
+  | "usage_limit_global" | "current_global_usage" | "discount_type"
+  | "discount_value" | "max_discount_cap" | "min_order_amount"
+  | "scope_event_id" | "scope_ticket_type_id"
+>;
 
 interface PrePaymentValidationResult {
   valid: boolean;

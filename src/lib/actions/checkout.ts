@@ -40,7 +40,7 @@ interface CheckoutData {
   event_name: string;
   event_start_at: string;
   event_location: string;
-  event_status: string;
+  event_status: Database["public"]["Enums"]["event_status"] | null;
   expires_at: string;
   line_items: ReservationLineItem[];
   subtotal: number;
@@ -83,45 +83,25 @@ interface GetCheckoutDataResult {
   data?: CheckoutData;
 }
 
-interface PromotionRow {
-  promotion_id: string;
-  code: string;
-  description: string | null;
-  discount_type: DiscountType;
-  discount_value: number;
-  max_discount_cap: number | null;
-  min_order_amount: number | null;
-  start_at: string;
-  end_at: string;
-  is_active: boolean | null;
-  usage_limit_global: number | null;
-  usage_limit_per_user: number | null;
-  current_global_usage: number | null;
-  scope_event_id: string | null;
-  scope_ticket_type_id: string | null;
-  version: number | null;
-}
+// --- Row Type Aliases for Read Operations ---
+type PromotionRow = Pick<
+  Database["public"]["Tables"]["promotions"]["Row"],
+  | "promotion_id" | "code" | "description" | "discount_type" | "discount_value"
+  | "max_discount_cap" | "min_order_amount" | "start_at" | "end_at" | "is_active"
+  | "usage_limit_global" | "usage_limit_per_user" | "current_global_usage"
+  | "scope_event_id" | "scope_ticket_type_id" | "version"
+>;
 
-interface TicketTypeRow {
-  ticket_type_id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  capacity: number;
-  qty_sold: number | null;
-  is_active: boolean | null;
-  version: number | null;
-  sale_end_at: string | null;
-}
+type TicketTypeRow = Pick<
+  Database["public"]["Tables"]["ticket_types"]["Row"],
+  | "ticket_type_id" | "name" | "description" | "price" | "capacity"
+  | "qty_sold" | "is_active" | "version" | "sale_end_at"
+>;
 
-interface EventRow {
-  event_id: string;
-  name: string;
-  start_at: string;
-  location: string;
-  status: string;
-  allowed_payment_methods: PaymentSource[] | null;
-}
+type EventRow = Pick<
+  Database["public"]["Tables"]["events"]["Row"],
+  "event_id" | "name" | "start_at" | "location" | "status" | "allowed_payment_methods"
+>;
 
 // Create inventory reservation via RPC ensuring DB FCFS constraint
 export async function createReservation(

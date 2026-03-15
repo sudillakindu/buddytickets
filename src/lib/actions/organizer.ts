@@ -5,35 +5,18 @@ import { getSession } from "@/lib/utils/session";
 import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
 import type { Database } from "@/lib/types/supabase";
 
-type OrganizerStatus = Database["public"]["Enums"]["organizer_status"];
 type UserRole = Database["public"]["Enums"]["user_role"];
 
-interface OrganizerOnboardingUser {
-  user_id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  role: UserRole;
-  is_active: boolean | null;
-}
+// --- Row Type Aliases for Read Operations ---
+type OrganizerOnboardingUser = Pick<
+  Database["public"]["Tables"]["users"]["Row"],
+  "user_id" | "name" | "email" | "mobile" | "role" | "is_active"
+>;
 
-interface OrganizerDetails {
-  user_id: string;
-  nic_number: string;
-  address: string;
-  bank_name: string;
-  bank_branch: string;
-  account_holder_name: string;
-  account_number: string;
-  nic_front_image_url: string;
-  nic_back_image_url: string;
-  remarks: string | null;
-  status: OrganizerStatus | null;
-  is_submitted: boolean | null;
-  verified_at: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
+type OrganizerDetails = Omit<
+  Database["public"]["Tables"]["organizer_details"]["Row"],
+  "verified_by"
+>;
 
 interface OrganizerDetailsInput {
   nic_number: string;
@@ -74,23 +57,7 @@ import { logger } from "@/lib/logger";
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-interface OrganizerDetailsRow {
-  user_id: string;
-  nic_number: string;
-  address: string;
-  bank_name: string;
-  bank_branch: string;
-  account_holder_name: string;
-  account_number: string;
-  nic_front_image_url: string;
-  nic_back_image_url: string;
-  remarks: string | null;
-  status: OrganizerStatus | null;
-  is_submitted: boolean | null;
-  verified_at: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
+type OrganizerDetailsRow = OrganizerDetails;
 
 function getWhatsappNumber(): string {
   return process.env.WHATSAPP_NUMBER ?? "";
