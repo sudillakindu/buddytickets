@@ -12,9 +12,17 @@ export interface Review {
 
 export interface CreateReviewInput {
   event_id: string;
-  ticket_id: string;
+  ticket_id?: string;
   rating: number;
   review_text?: string | null;
+}
+
+export interface EventReview {
+  review_id: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  user_name: string;
 }
 
 export interface ReviewResult {
@@ -26,5 +34,5 @@ export interface ReviewResult {
 export interface EventReviewsResult {
   success: boolean;
   message: string;
-  reviews?: Review[];
+  reviews?: EventReview[];
 }
