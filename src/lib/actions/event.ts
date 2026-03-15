@@ -7,7 +7,6 @@ import type { Database } from "@/lib/types/supabase";
 type PaymentSource = Database["public"]["Enums"]["payment_source"];
 type EventStatus = Database["public"]["Enums"]["event_status"];
 
-// --- Row Type Aliases ---
 type EventsRow = Database["public"]["Tables"]["events"]["Row"];
 type EventImageRow = Database["public"]["Tables"]["event_images"]["Row"];
 type TicketTypesRow = Database["public"]["Tables"]["ticket_types"]["Row"];
@@ -15,10 +14,8 @@ type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
 type VipEventsRow = Database["public"]["Tables"]["vip_events"]["Row"];
 
-// --- Derived Read Types ---
 type EventImage = EventImageRow;
 
-// Mapped output type: inclusions filtered to string[], qty_sold/version defaulted to non-null
 type TicketType = Omit<TicketTypesRow, "inclusions" | "qty_sold" | "version"> & {
   inclusions: string[];
   qty_sold: number;
@@ -90,7 +87,6 @@ const EVENT_CARD_SELECT = `
   vip_events ( priority_order )
 ` as const;
 
-// Raw shape returned by Supabase for EVENT_CARD_SELECT
 type RawEventRow = Pick<
   EventsRow,
   | "event_id" | "organizer_id" | "category_id" | "name" | "subtitle"
@@ -104,7 +100,6 @@ type RawEventRow = Pick<
   vip_events: Pick<VipEventsRow, "priority_order">[];
 };
 
-// Map raw Supabase row to standardized Event object
 function mapRowToEvent(row: RawEventRow): Event {
   const images = row.event_images ?? [];
   const tickets = row.ticket_types ?? [];

@@ -36,7 +36,6 @@ export interface TicketsResult {
   tickets?: Ticket[];
 }
 
-// --- Row Type Aliases for Read Operations ---
 type TicketTypeJoin = Pick<
   Database["public"]["Tables"]["ticket_types"]["Row"],
   "ticket_type_id" | "name" | "description"
@@ -52,7 +51,6 @@ type EventJoin = Pick<
   >[];
 };
 
-// Composite join type for ticket with related data
 type TicketRow = Pick<
   Database["public"]["Tables"]["tickets"]["Row"],
   "ticket_id" | "qr_hash" | "status" | "price_purchased" | "created_at"
@@ -61,7 +59,6 @@ type TicketRow = Pick<
   events?: EventJoin | EventJoin[] | null;
 };
 
-// Map raw Supabase row to standardized Ticket object
 function mapToTicket(row: TicketRow): Ticket {
   const ticketType: TicketTypeJoin | null = Array.isArray(row.ticket_types)
     ? (row.ticket_types[0] ?? null)

@@ -1,18 +1,3 @@
-// app/api/webhooks/payhere/route.ts
-// PayHere payment gateway webhook handler.
-//
-// PayHere sends a POST with application/x-www-form-urlencoded body.
-// This handler:
-//  1. Verifies the MD5 signature — REJECT if mismatch (fake payment injection)
-//  2. Validates status_code = "2" (success only)
-//  3. Checks for duplicate processing (idempotency)
-//  4. Generates QR hashes for all tickets in the order
-//  5. Calls finalize_order_tickets RPC (atomic: inventory + tickets + order)
-//  6. Returns HTTP 200 (PayHere retries on non-200)
-//
-// CRITICAL: Always return 200 to PayHere even on processing errors,
-//           to prevent infinite retry loops. Log all failures.
-
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
@@ -55,15 +40,13 @@ interface TicketQRItem {
   qr_hashes: string[];
 }
 
-// PayHere retries on non-200 — always return 200 for processed/known states
 const OK = () => NextResponse.json({ received: true }, { status: 200 });
-const AMOUNT_TOLERANCE = 0.01; // Tolerance for floating-point rounding in amount comparison
+const AMOUNT_TOLERANCE = 0.01;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let orderId: string | undefined;
 
   try {
-    // ── 1. Parse form body ────────────────────────────────────────────────
     const contentType = req.headers.get("content-type") ?? "";
     let payload: PaymentGatewayWebhookPayload;
 
@@ -90,7 +73,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       message: `Received webhook for order ${orderId} — status_code: ${payload.status_code}`,
     });
 
-    // ── 2. Merchant ID validation — reject webhooks from unknown merchants ──
     const expectedMerchantId = process.env.PAYHERE_MERCHANT_ID;
     if (expectedMerchantId && payload.merchant_id !== expectedMerchantId) {
       logger.error({
@@ -100,24 +82,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 3. Signature verification — CRITICAL security check ───────────────
     if (!verifyPayHereWebhookSignature(payload)) {
       logger.error({
         fn: "payhere.webhook",
         message: `SIGNATURE_MISMATCH for order ${orderId}. Possible fake payment injection.`,
         meta: { merchant_id: payload.merchant_id, order_id: orderId },
       });
-      // Return 200 to stop retries, but do NOT process
       return OK();
     }
 
-    // ── 3. Only process successful payments ────────────────────────────────
     if (!isPayHereSuccess(payload.status_code)) {
       logger.info({
         fn: "payhere.webhook",
         message: `Non-success status ${payload.status_code} for order ${orderId} — skipping.`,
       });
-      // Update order status to FAILED if status = -2
       if (payload.status_code === "-2" || payload.status_code === "-1") {
         await getSupabaseAdmin()
           .from("orders")
@@ -128,9 +106,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 4. Idempotency check — prevent duplicate processing ────────────────
-    // finalize_order_tickets also guards against this (order status PENDING check),
-    // but an early check avoids unnecessary work.
     const { data: existingOrder, error: orderFetchErr } = await getSupabaseAdmin()
       .from("orders")
       .select("order_id, user_id, payment_status, event_id, final_amount")
@@ -143,7 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         message: orderFetchErr.message,
         meta: { orderId },
       });
-      return OK(); // Return OK — don't let PayHere retry indefinitely
+      return OK();
     }
 
     if (!existingOrder) {
@@ -164,7 +139,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const userId = existingOrder.user_id;
 
-    // ── Amount validation — verify paid amount matches order total ──────────
     const paidAmount = Number(payload.payhere_amount);
     const expectedAmount = Number(existingOrder.final_amount);
     if (
@@ -185,7 +159,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 6. Fetch PENDING reservations linked to this order ─────────────────
     const { data: reservations, error: resErr } = await getSupabaseAdmin()
       .from("ticket_reservations")
       .select("reservation_id, ticket_type_id, quantity, expires_at, status")
@@ -207,7 +180,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         fn: "payhere.webhook",
         message: `No PENDING reservations found for order ${orderId}.`,
       });
-      // Mark order as failed — reservations expired
       await getSupabaseAdmin()
         .from("orders")
         .update({ payment_status: "FAILED", remarks: "RESERVATIONS_EXPIRED" })
@@ -215,7 +187,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return OK();
     }
 
-    // ── 6. Fetch ticket type versions for OCC ─────────────────────────────
     const ticketTypeIds = [...new Set(reservations.map((r: ReservationPartial) => r.ticket_type_id))];
 
     const { data: ticketTypes, error: ttErr } = await getSupabaseAdmin()
@@ -232,8 +203,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       (ticketTypes ?? []).map((tt: TicketTypeVersionPartial) => [tt.ticket_type_id, tt.version ?? 1]),
     );
 
-    // ── 7. Generate QR hashes for all tickets ─────────────────────────────
-    // One QR hash per physical ticket seat (reservation.quantity tickets each)
     const ticketQRData: TicketQRItem[] = reservations.map((r: ReservationPartial) => ({
       reservation_id: r.reservation_id,
       ticket_type_version: versionMap.get(r.ticket_type_id) ?? 1,
@@ -244,15 +213,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       ),
     }));
 
-    // ── 8. Call finalize_order_tickets RPC (atomic transaction) ────────────
-    // This single RPC atomically:
-    //  - Validates reservation expiry (DB-layer edge-case protection)
-    //  - OCC version check + qty_sold increment
-    //  - Inserts ticket rows with QR hashes
-    //  - Updates reservation status → CONFIRMED
-    //  - Updates order payment_status → PAID
-    //  - Inserts transaction record
-    //  - Increments promotion usage
     const { data: finalizeResult, error: finalizeErr } = await getSupabaseAdmin().rpc(
       "finalize_order_tickets",
       {
@@ -271,13 +231,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         meta: { orderId, error: finalizeErr },
       });
 
-      // If OCC conflict — the inventory has changed. Mark order failed.
       if (finalizeErr.message.includes("OCC_CONFLICT_OR_SOLD_OUT")) {
         await getSupabaseAdmin()
           .from("orders")
           .update({ payment_status: "FAILED", remarks: "OCC_CONFLICT_SOLD_OUT" })
           .eq("order_id", orderId);
-        // TODO: Trigger refund flow here in production
       }
 
       if (finalizeErr.message.includes("RESERVATION_EXPIRED")) {
@@ -304,7 +262,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       message: `Unhandled error processing webhook for order ${orderId ?? "UNKNOWN"}`,
       meta: err,
     });
-    // Return 200 to prevent PayHere infinite retries
     return OK();
   }
 }

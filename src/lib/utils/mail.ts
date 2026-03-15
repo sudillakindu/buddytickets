@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 
-// Prevents HTML injection in generated email templates
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

@@ -141,7 +141,6 @@ const CheckoutSuccessContent: React.FC = memo(() => {
         });
       }
     } catch {
-      // Intentionally ignoring share failure
     }
   }, [orderData]);
 

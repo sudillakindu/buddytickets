@@ -17,7 +17,6 @@ interface OrderSuccessData {
   payment_status: PaymentStatus;
 }
 
-// --- Composite Join Type for Read Operations ---
 type OrderWithEventRow = Pick<
   Database["public"]["Tables"]["orders"]["Row"],
   "order_id" | "user_id" | "final_amount" | "payment_status"
@@ -28,7 +27,6 @@ type OrderWithEventRow = Pick<
   > | null;
 };
 
-// Fetch order success data for /checkout/success page
 export async function getOrderSuccessData(
   orderId: string,
 ): Promise<{ success: boolean; message: string; data?: OrderSuccessData }> {
@@ -78,7 +76,6 @@ export async function getOrderSuccessData(
   }
 }
 
-// Poll order payment status
 export async function getOrderPaymentStatus(
   orderId: string,
 ): Promise<{ success: boolean; status?: string }> {

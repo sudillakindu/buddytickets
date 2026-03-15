@@ -8,7 +8,6 @@ import type { Database } from "@/lib/types/supabase";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
 
-// --- Row Type Aliases for Read Operations ---
 type OrganizerOnboardingUser = Pick<
   Database["public"]["Tables"]["users"]["Row"],
   "user_id" | "name" | "email" | "mobile" | "role" | "is_active"

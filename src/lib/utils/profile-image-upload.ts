@@ -3,7 +3,7 @@ import { logger } from "@/lib/logger";
 
 const BUCKET_NAME = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;
 const PROFILE_PATH = "profiles";
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",

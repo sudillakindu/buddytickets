@@ -118,7 +118,6 @@ export async function uploadProfileImage(
       return { success: false, message: upload.message };
     }
 
-    // Fetch existing image for cleanup
     const { data: currentUser } = await getSupabaseAdmin()
       .from("users")
       .select("image_url")
@@ -147,7 +146,6 @@ export async function uploadProfileImage(
       };
     }
 
-    // Clean up old image if it exists
     if (currentUser?.image_url) {
       try {
         const bucket = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET;

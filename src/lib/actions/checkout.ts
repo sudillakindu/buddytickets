@@ -83,7 +83,6 @@ interface GetCheckoutDataResult {
   data?: CheckoutData;
 }
 
-// --- Row Type Aliases for Read Operations ---
 type PromotionRow = Pick<
   Database["public"]["Tables"]["promotions"]["Row"],
   | "promotion_id" | "code" | "description" | "discount_type" | "discount_value"
@@ -103,7 +102,6 @@ type EventRow = Pick<
   "event_id" | "name" | "start_at" | "location" | "status" | "allowed_payment_methods"
 >;
 
-// Create inventory reservation via RPC ensuring DB FCFS constraint
 export async function createReservation(
   eventId: string,
   items: CartItem[],
@@ -150,7 +148,6 @@ export async function createReservation(
   }
 }
 
-// Prepare checkout state with safe, server-side data extraction
 export async function getCheckoutData(
   primaryReservationId: string,
 ): Promise<GetCheckoutDataResult> {
@@ -278,7 +275,6 @@ export async function getCheckoutData(
   }
 }
 
-// Server-side promo logic, discarding client price requests completely
 export async function validatePromoCode(
   code: string,
   eventId: string,
