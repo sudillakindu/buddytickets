@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getEventById } from "@/lib/actions/event";
+import { getSession } from "@/lib/utils/session";
 import { EventDetail } from "@/components/shared/event/event-detail";
 import { EventDetailSkeleton } from "@/components/shared/event/event-detail-skeleton";
 import { logger } from "@/lib/logger";
@@ -36,7 +37,10 @@ export async function generateMetadata({
 }
 
 async function EventDetailLoader({ eventId }: { eventId: string }) {
-  const result = await getEventById(eventId);
+  const [result, session] = await Promise.all([
+    getEventById(eventId),
+    getSession(),
+  ]);
 
   if (!result.success || !result.event) {
     logger.error({
@@ -47,7 +51,7 @@ async function EventDetailLoader({ eventId }: { eventId: string }) {
     notFound();
   }
 
-  return <EventDetail event={result.event} />;
+  return <EventDetail event={result.event} isAuthenticated={!!session} />;
 }
 
 export default async function EventDetailPage({ params }: PageProps) {

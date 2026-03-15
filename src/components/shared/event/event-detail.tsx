@@ -28,6 +28,8 @@ import {
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
 import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
+import EventWaitlist from "@/components/shared/event/event-waitlist";
+import EventReviews from "@/components/shared/event/event-reviews";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface StatusConfig {
@@ -417,9 +419,10 @@ EventTicketCard.displayName = "EventTicketCard";
 
 interface EventDetailProps {
   event: EventDetails;
+  isAuthenticated?: boolean;
 }
 
-export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
+export const EventDetail: React.FC<EventDetailProps> = memo(({ event, isAuthenticated = false }) => {
   const router = useRouter();
   const buyTicketHref = `/events/${event.event_id}/buy-tickets`;
   const statusCfg = getStatusConfig(event.status);
@@ -790,6 +793,18 @@ export const EventDetail: React.FC<EventDetailProps> = memo(({ event }) => {
             </div>
           )}
         </motion.section>
+
+        {event.status === "SOLD_OUT" && (
+          <EventWaitlist
+            eventId={event.event_id}
+            isAuthenticated={isAuthenticated}
+          />
+        )}
+
+        <EventReviews
+          eventId={event.event_id}
+          isAuthenticated={isAuthenticated}
+        />
 
         <div className="mt-6 lg:hidden">
           <Button

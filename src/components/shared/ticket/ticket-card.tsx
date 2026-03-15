@@ -1,9 +1,10 @@
 "use client";
 
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
+import { Calendar, Clock, MapPin, QrCode, Tag, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
+import { RefundRequestDialog } from "@/components/shared/ticket/refund-request-dialog";
 import type { Ticket } from "@/lib/types/ticket";
 
 export interface TicketCardProps {
@@ -30,6 +31,8 @@ const formatTime = (iso: string): string => {
 
 export const TicketCard: React.FC<TicketCardProps> = memo(
   ({ ticket, index = 0 }) => {
+    const [refundOpen, setRefundOpen] = useState(false);
+
     const getStatusUI = () => {
       switch (ticket.status) {
         case "ACTIVE":
@@ -163,7 +166,46 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
               </span>
             </div>
           </div>
+
+          {ticket.attendee_name && (
+            <>
+              <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
+              <div className="space-y-1">
+                <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)]">
+                  <span className="font-semibold">Attendee:</span>{" "}
+                  {ticket.attendee_name}
+                </p>
+                {ticket.attendee_nic && (
+                  <p className="font-secondary text-xs text-[hsl(215.4,16.3%,46.9%)]">
+                    <span className="font-semibold">NIC:</span>{" "}
+                    {ticket.attendee_nic}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          {(ticket.status === "ACTIVE" || ticket.status === "PENDING") && (
+            <>
+              <div className="border-t border-dashed border-[hsl(214.3,31.8%,91.4%)] my-3" />
+              <button
+                onClick={() => setRefundOpen(true)}
+                className="flex items-center gap-1.5 text-xs font-secondary text-red-500 hover:text-red-700 transition-colors"
+              >
+                <RotateCcw className="w-3 h-3" aria-hidden="true" />
+                Request Refund
+              </button>
+            </>
+          )}
         </div>
+
+        <RefundRequestDialog
+          ticketId={ticket.ticket_id}
+          orderId=""
+          ticketPrice={Number(ticket.price_purchased)}
+          isOpen={refundOpen}
+          onClose={() => setRefundOpen(false)}
+        />
       </motion.div>
     );
   },
