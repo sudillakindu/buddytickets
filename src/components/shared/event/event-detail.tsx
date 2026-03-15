@@ -27,7 +27,80 @@ import {
   EVENT_STATUS_PILLS,
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
-import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+
+interface TicketType {
+  ticket_type_id: string;
+  event_id: string;
+  name: string;
+  description: string;
+  inclusions: string[];
+  price: number;
+  capacity: number;
+  qty_sold: number;
+  sale_start_at: string | null;
+  sale_end_at: string | null;
+  is_active: boolean | null;
+  version: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface Organizer {
+  user_id: string;
+  name: string;
+  image_url: string | null;
+  email: string;
+  username: string;
+}
+
+interface CategoryDetails {
+  category_id: string;
+  name: string;
+  description: string | null;
+}
+
+interface EventImage {
+  event_id: string;
+  priority_order: number;
+  image_url: string;
+  created_at: string | null;
+}
+
+interface Event {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus | null;
+  is_active: boolean | null;
+  is_vip: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+  category: string;
+  thumbnail_image: string | null;
+  start_ticket_price: number | null;
+  vip_priority_order: number | null;
+}
+
+interface EventDetails extends Event {
+  images: EventImage[];
+  banner_image: string | null;
+  ticket_types: TicketType[];
+  organizer: Organizer;
+  category_details: CategoryDetails;
+}
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface StatusConfig {
@@ -86,9 +159,9 @@ const BUTTON_OVERRIDES: Record<EventStatus, Omit<StatusConfig, "label" | "pillCl
   },
 };
 
-function getStatusConfig(status: EventStatus): StatusConfig {
-  const pill = EVENT_STATUS_PILLS[status] ?? FALLBACK_STATUS_PILL;
-  const button = BUTTON_OVERRIDES[status] ?? {
+function getStatusConfig(status: EventStatus | null): StatusConfig {
+  const pill = (status ? EVENT_STATUS_PILLS[status] : undefined) ?? FALLBACK_STATUS_PILL;
+  const button = (status ? BUTTON_OVERRIDES[status] : undefined) ?? {
     buttonText: "Unavailable",
     buttonClass: "bg-gray-400",
     buttonDisabled: true,
@@ -224,7 +297,7 @@ ImageGallery.displayName = "ImageGallery";
 
 interface EventTicketCardProps {
   ticket: TicketType;
-  eventStatus: EventStatus;
+  eventStatus: EventStatus | null;
   eventEndAt: string;
 }
 

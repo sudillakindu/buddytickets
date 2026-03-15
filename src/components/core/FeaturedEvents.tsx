@@ -10,7 +10,34 @@ import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 import { getFeaturedEvents } from "@/lib/actions/event";
-import type { Event } from "@/lib/types/event";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+
+interface Event {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus | null;
+  is_active: boolean | null;
+  is_vip: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+  category: string;
+  thumbnail_image: string | null;
+  start_ticket_price: number | null;
+  vip_priority_order: number | null;
+}
 
 const VISIBLE_STATUSES = new Set<Event["status"]>([
   "ON_SALE",

@@ -30,7 +30,24 @@ import {
   updateProfile,
   changePassword,
 } from "@/lib/actions/profile";
-import type { UserProfile } from "@/lib/types/profile";
+import type { Database } from "@/lib/types/supabase";
+
+type UserRow = Database["public"]["Tables"]["users"]["Row"];
+type UserProfile = Pick<
+  UserRow,
+  | "user_id"
+  | "name"
+  | "email"
+  | "is_email_verified"
+  | "mobile"
+  | "is_mobile_verified"
+  | "username"
+  | "role"
+  | "is_active"
+  | "image_url"
+  | "created_at"
+  | "last_login_at"
+>;
 
 const ROLE_LABEL: Record<string, string> = {
   SYSTEM: "System",

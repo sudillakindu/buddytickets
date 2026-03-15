@@ -4,12 +4,38 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { comparePassword, hashPassword } from "@/lib/utils/password";
 import { uploadProfileImageToStorage } from "@/lib/utils/profile-image-upload";
 import { getSession } from "@/lib/utils/session";
-import type {
-  UserProfile,
-  ProfileResult,
-  ProfileFetchResult,
-  ProfileImageResult,
-} from "@/lib/types/profile";
+import type { Database } from "@/lib/types/supabase";
+
+type UserRow = Database["public"]["Tables"]["users"]["Row"];
+
+type UserProfile = Pick<
+  UserRow,
+  | "user_id"
+  | "name"
+  | "email"
+  | "is_email_verified"
+  | "mobile"
+  | "is_mobile_verified"
+  | "username"
+  | "role"
+  | "is_active"
+  | "image_url"
+  | "created_at"
+  | "last_login_at"
+>;
+
+interface ProfileResult {
+  success: boolean;
+  message: string;
+}
+
+interface ProfileFetchResult extends ProfileResult {
+  profile?: UserProfile;
+}
+
+interface ProfileImageResult extends ProfileResult {
+  imageUrl?: string;
+}
 import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;

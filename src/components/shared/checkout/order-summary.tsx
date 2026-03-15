@@ -26,12 +26,79 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
-import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
-import type {
-  PaymentMethod,
-  PaymentGatewayFormData,
-  BankTransferDetails,
-} from "@/lib/types/payment";
+import type { Database } from "@/lib/types/supabase";
+
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+type DiscountType = Database["public"]["Enums"]["discount_type"];
+
+interface ReservationLineItem {
+  reservation_id: string;
+  ticket_type_id: string;
+  ticket_type_name: string;
+  description: string;
+  price_each: number;
+  quantity: number;
+  line_total: number;
+  version: number;
+  capacity: number;
+  qty_sold: number;
+  is_active: boolean | null;
+  sale_end_at: string | null;
+}
+
+interface CheckoutData {
+  primary_reservation_id: string;
+  event_id: string;
+  event_name: string;
+  event_start_at: string;
+  event_location: string;
+  event_status: string;
+  expires_at: string;
+  line_items: ReservationLineItem[];
+  subtotal: number;
+  allowed_payment_methods: PaymentSource[];
+}
+
+interface ValidatedPromotion {
+  promotion_id: string;
+  code: string;
+  description: string | null;
+  discount_type: DiscountType;
+  discount_value: number;
+  max_discount_cap: number | null;
+  discount_amount: number;
+  final_total: number;
+}
+
+interface PaymentGatewayFormData {
+  merchant_id: string;
+  return_url: string;
+  cancel_url: string;
+  notify_url: string;
+  order_id: string;
+  items: string;
+  currency: "LKR";
+  amount: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  hash: string;
+  checkout_url: string;
+}
+
+interface BankTransferDetails {
+  order_id: string;
+  amount: number;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  reference: string;
+  instructions: string;
+}
 
 const formatLKR = (n: number) => {
   return n === 0
@@ -213,7 +280,7 @@ const BankTransferPanel: React.FC<BankTransferPanelProps> = memo(
 BankTransferPanel.displayName = "BankTransferPanel";
 
 const PAYMENT_METHODS: {
-  id: PaymentMethod;
+  id: PaymentSource;
   label: string;
   description: string;
   icon: React.ReactNode;
@@ -257,7 +324,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoSuccess, setPromoSuccess] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+  const [paymentMethod, setPaymentMethod] = useState<PaymentSource>(
     availableMethods[0]?.id ?? "PAYMENT_GATEWAY",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
