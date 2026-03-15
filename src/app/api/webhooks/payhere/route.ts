@@ -267,29 +267,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const transactionId = crypto.randomUUID();
     await getSupabaseAdmin()
       .from("transactions")
-      .upsert(
-        {
-          transaction_id: transactionId,
-          order_id: orderId,
-          gateway_ref_id: payload.payment_id ?? null,
-          amount: paidAmount,
-          currency: payload.payhere_currency ?? "LKR",
-          status: "SUCCESS",
-          meta_data: {
-            status_code: payload.status_code,
-            method: payload.method ?? null,
-            card_holder_name: payload.card_holder_name ?? null,
-            card_no: payload.card_no ?? null,
-            status_message: payload.status_message ?? null,
-          },
+      .insert({
+        transaction_id: transactionId,
+        order_id: orderId,
+        gateway_ref_id: payload.payment_id ?? null,
+        amount: paidAmount,
+        currency: payload.payhere_currency ?? "LKR",
+        status: "SUCCESS",
+        meta_data: {
+          status_code: payload.status_code,
+          method: payload.method ?? null,
+          card_holder_name: payload.card_holder_name ?? null,
+          card_no: payload.card_no ?? null,
+          status_message: payload.status_message ?? null,
         },
-        { onConflict: "order_id" },
-      );
+      });
 
     // --- Update tickets with attendee info if available ---
-    if (existingOrder.remarks) {
+    const remarksStr = String(existingOrder.remarks ?? "");
+    const attendeeMarker = "__ATTENDEES__";
+    if (remarksStr.includes(attendeeMarker)) {
       try {
-        const attendees = JSON.parse(existingOrder.remarks as string) as Array<{
+        const jsonStr = remarksStr.substring(
+          remarksStr.indexOf(attendeeMarker) + attendeeMarker.length,
+        );
+        const attendees = JSON.parse(jsonStr) as Array<{
           attendee_name: string;
           attendee_nic: string;
           attendee_email?: string;
@@ -317,7 +319,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           }
         }
       } catch {
-        // remarks is not attendee JSON — ignore
+        // remarks doesn't contain valid attendee JSON — ignore
       }
     }
 
@@ -325,16 +327,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (existingOrder.promotion_id) {
       await getSupabaseAdmin()
         .from("promotion_usages")
-        .upsert(
-          {
-            promotion_id: existingOrder.promotion_id as string,
-            user_id: userId,
-            order_id: orderId,
-            discount_received: Number(existingOrder.discount_amount ?? 0),
-            used_at: new Date().toISOString(),
-          },
-          { onConflict: "promotion_id,user_id,order_id" },
-        );
+        .insert({
+          promotion_id: existingOrder.promotion_id as string,
+          user_id: userId,
+          order_id: orderId,
+          discount_received: Number(existingOrder.discount_amount ?? 0),
+          used_at: new Date().toISOString(),
+        });
     }
 
     logger.success({

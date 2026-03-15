@@ -201,7 +201,7 @@ export const TicketCard: React.FC<TicketCardProps> = memo(
 
         <RefundRequestDialog
           ticketId={ticket.ticket_id}
-          orderId=""
+          orderId={ticket.order_id}
           ticketPrice={Number(ticket.price_purchased)}
           isOpen={refundOpen}
           onClose={() => setRefundOpen(false)}

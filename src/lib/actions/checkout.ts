@@ -242,6 +242,7 @@ export async function validatePromoCode(
   eventId: string,
   ticketTypeIds: string[],
   subtotal: number,
+  totalTicketQuantity?: number,
 ): Promise<PromoValidationResult> {
   const session = await getSession();
   if (!session)
@@ -324,7 +325,7 @@ export async function validatePromoCode(
 
       if (
         rules.min_ticket_quantity &&
-        ticketTypeIds.length < rules.min_ticket_quantity
+        (totalTicketQuantity ?? ticketTypeIds.length) < rules.min_ticket_quantity
       ) {
         return {
           success: false,

@@ -29,6 +29,7 @@ interface EventJoin {
 
 interface TicketRow {
   ticket_id: string;
+  order_id: string;
   qr_hash: string;
   status: Ticket["status"];
   price_purchased: string;
@@ -56,6 +57,7 @@ function mapToTicket(row: TicketRow): Ticket {
 
   return {
     ticket_id: row.ticket_id,
+    order_id: row.order_id,
     qr_hash: row.qr_hash,
     status: row.status,
     price_purchased: row.price_purchased,
@@ -89,7 +91,7 @@ export async function getUserTickets(): Promise<TicketsResult> {
     const { data, error } = await getSupabaseAdmin()
       .from("tickets")
       .select(
-        `ticket_id, qr_hash, status, price_purchased, attendee_name, attendee_nic, attendee_email, attendee_mobile, created_at,
+        `ticket_id, order_id, qr_hash, status, price_purchased, attendee_name, attendee_nic, attendee_email, attendee_mobile, created_at,
         ticket_types ( ticket_type_id, name, description ),
         events ( event_id, name, location, start_at, end_at, status, event_images ( priority_order, image_url ) )`,
       )
@@ -127,7 +129,7 @@ export async function getTicketById(
     const { data, error } = await getSupabaseAdmin()
       .from("tickets")
       .select(
-        `ticket_id, qr_hash, status, price_purchased, attendee_name, attendee_nic, attendee_email, attendee_mobile, created_at,
+        `ticket_id, order_id, qr_hash, status, price_purchased, attendee_name, attendee_nic, attendee_email, attendee_mobile, created_at,
         ticket_types ( ticket_type_id, name, description ),
         events ( event_id, name, location, start_at, end_at, status, event_images ( priority_order, image_url ) )`,
       )

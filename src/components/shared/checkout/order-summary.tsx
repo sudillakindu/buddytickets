@@ -305,11 +305,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
     setPromoSuccess(null);
 
     const ticketTypeIds = data.line_items.map((li) => li.ticket_type_id);
+    const totalQty = data.line_items.reduce((s, li) => s + li.quantity, 0);
     const result = await validatePromoCode(
       promoCode,
       data.event_id,
       ticketTypeIds,
       data.subtotal,
+      totalQty,
     );
 
     setPromoLoading(false);

@@ -291,11 +291,18 @@ export async function createPendingOrder(
     }
 
     const paymentSource: PaymentSource = input.payment_method as PaymentSource;
+    const remarks = input.remarks ?? null;
+    const eventId = reservations![0].event_id;
+
+    // Store attendee data as JSON in remarks if no user-provided remarks
     const attendeesJson = input.attendees && input.attendees.length > 0
       ? JSON.stringify(input.attendees)
       : null;
-    const remarks = attendeesJson ?? input.remarks ?? null;
-    const eventId = reservations![0].event_id;
+    const orderRemarks = attendeesJson
+      ? remarks
+        ? `${remarks}\n__ATTENDEES__${attendeesJson}`
+        : `__ATTENDEES__${attendeesJson}`
+      : remarks;
 
     const { data: newOrder, error: orderErr } = await getSupabaseAdmin()
       .from("orders")
@@ -303,7 +310,7 @@ export async function createPendingOrder(
         user_id: session.sub,
         event_id: eventId,
         promotion_id: input.promotion_id ?? null,
-        remarks,
+        remarks: orderRemarks,
         subtotal: computedSubtotal,
         discount_amount: computedDiscount ?? 0,
         platform_fee_amount: computedPlatformFee ?? 0,
