@@ -21,3 +21,8 @@ npx supabase db push
 
 npm run lint
 npm run build
+
+
+npm install supabase --save-dev
+npx supabase login
+npx supabase gen types typescript --project-id "OYA_COPY_KARAGATHPU_PROJECT_ID_EKA" --schema public > src/lib/types/supabase.ts
