@@ -63,7 +63,6 @@ function md5(input: string): string {
   return crypto.createHash("md5").update(input).digest("hex");
 }
 
-// Generate the PayHere checkout form hash (MD5 formula step 2)
 export function generatePayHereCheckoutHash(
   orderId: string,
   amount: string,
@@ -75,7 +74,6 @@ export function generatePayHereCheckoutHash(
   return md5(hashInput).toUpperCase();
 }
 
-// Authenticates incoming webhooks to prevent fake payment injections
 export function verifyPayHereWebhookSignature(
   payload: PaymentGatewayWebhookPayload,
 ): boolean {
@@ -91,12 +89,10 @@ export function verifyPayHereWebhookSignature(
   }
 }
 
-// Format numeric amount to the 2-decimal-place string required by PayHere
 export function formatPayHereAmount(amount: number): string {
   return amount.toFixed(2);
 }
 
-// Builds the form object mapped to PayHere API endpoints
 export function buildPayHereFormData(params: {
   orderId: string;
   amount: number;

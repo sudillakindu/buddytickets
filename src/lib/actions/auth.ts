@@ -24,7 +24,6 @@ import {
   destroySession,
   type SessionUser,
 } from "@/lib/utils/session";
-// --- Auth Result Types (application-level, not DB tables) ---
 
 interface AuthResult {
   success: boolean;

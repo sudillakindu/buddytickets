@@ -55,7 +55,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname, searchParams } = url;
   const isMaintenance = process.env.MAINTENANCE_MODE === "true";
 
-  // Handle maintenance mode redirects
   if (isMaintenance && pathname !== "/maintenance") {
     url.pathname = "/maintenance";
     return NextResponse.redirect(url);
@@ -66,7 +65,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(url);
   }
 
-  // Validate flow pages (e.g., reset password, verify email) require a token
   if (FLOW_PAGES.has(pathname)) {
     const flowToken = searchParams.get("token");
     if (!flowToken) {
@@ -80,7 +78,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const session = await getSessionPayload(request);
   const authenticated = session !== null;
 
-  // Protect Dashboard routes
   if (pathname.startsWith("/dashboard")) {
     if (!authenticated) {
       url.pathname = "/sign-in";
@@ -96,7 +93,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  // Protect standard user routes
   const isProtected =
     PROTECTED_PAGES.has(pathname) ||
     PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -107,7 +103,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth-only routes (e.g., sign-in)
   if (AUTH_ONLY_PAGES.has(pathname) && authenticated) {
     const redirectParam = searchParams.get("redirect");
     if (

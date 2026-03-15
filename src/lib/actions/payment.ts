@@ -80,7 +80,6 @@ interface ValidatedPromotion {
   final_total: number;
 }
 
-// --- Row Type Aliases for Read Operations ---
 type ReservationRow = Database["public"]["Tables"]["ticket_reservations"]["Row"];
 
 type TicketTypeRow = Pick<
@@ -112,7 +111,6 @@ interface PrePaymentValidationResult {
   allowedPaymentMethods?: PaymentSource[];
 }
 
-// Server-side validation to recompute pricing and verify availability
 async function runPrePaymentValidation(
   primaryReservationId: string,
   userId: string,
@@ -277,7 +275,6 @@ async function runPrePaymentValidation(
   };
 }
 
-// Creates a pending order after validation and ties reservations to it
 export async function createPendingOrder(
   input: CreateOrderInput,
 ): Promise<CreateOrderResult> {

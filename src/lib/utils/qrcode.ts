@@ -11,7 +11,6 @@ function getQRSecret(): string {
   return QR_SECRET;
 }
 
-// Generate a secure, globally unique hash tracking orderId, reservationId, and individual ticket indexing
 export function generateQRHash(
   orderId: string,
   reservationId: string,
@@ -22,7 +21,6 @@ export function generateQRHash(
   return crypto.createHmac("sha256", secret).update(payload).digest("hex");
 }
 
-// Build sequential QR hashes for multi-seat reservations
 export function generateQRHashesForReservation(
   orderId: string,
   reservationId: string,
@@ -33,7 +31,6 @@ export function generateQRHashesForReservation(
   );
 }
 
-// Secure server-side validation using timing-safe evaluation to block brute-force attempts
 export function verifyQRHash(
   presentedHash: string,
   orderId: string,
