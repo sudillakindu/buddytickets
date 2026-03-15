@@ -74,15 +74,6 @@ import { logger } from "@/lib/logger";
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-interface LocalUserRow {
-  user_id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  role: UserRole;
-  is_active: boolean | null;
-}
-
 interface OrganizerDetailsRow {
   user_id: string;
   nic_number: string;
@@ -186,7 +177,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
       .from("users")
       .select("user_id, name, email, mobile, role, is_active")
       .eq("user_id", session.sub)
-      .maybeSingle<LocalUserRow>();
+      .maybeSingle<OrganizerOnboardingUser>();
 
     if (userError || !user) {
       if (userError)
