@@ -229,7 +229,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const versionMap = new Map<string, number>(
-      (ticketTypes ?? []).map((tt: TicketTypeVersionPartial) => [tt.ticket_type_id, tt.version ?? 0]),
+      (ticketTypes ?? []).map((tt: TicketTypeVersionPartial) => [tt.ticket_type_id, tt.version ?? 1]),
     );
 
     // ── 7. Generate QR hashes for all tickets ─────────────────────────────
