@@ -23,8 +23,8 @@ import {
 import {
   generateQRHashesForReservation,
 } from "@/lib/utils/qrcode";
-import type { PaymentGatewayWebhookPayload } from "@/lib/types/payment";
-import type { TicketQRItem } from "@/lib/types/payment";
+import type { PaymentGatewayWebhookPayload } from "@/lib/types";
+import type { TicketQRItem } from "@/lib/types";
 
 // PayHere retries on non-200 — always return 200 for processed/known states
 const OK = () => NextResponse.json({ received: true }, { status: 200 });

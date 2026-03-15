@@ -6,7 +6,7 @@ import {
 import type {
   PaymentGatewayFormData,
   PaymentGatewayWebhookPayload,
-} from "@/lib/types/payment";
+} from "@/lib/types";
 
 export interface GatewayInitiateParams {
   orderId: string;

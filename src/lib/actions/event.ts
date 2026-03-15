@@ -13,7 +13,8 @@ import type {
   GetFeaturedEventsResult,
   GetAllEventsResult,
   GetEventByIdResult,
-} from "@/lib/types/event";
+  PaymentMethod,
+} from "@/lib/types";
 
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
@@ -53,7 +54,7 @@ interface RawEventRow {
   status: EventStatus;
   is_active: boolean;
   is_vip: boolean;
-  allowed_payment_methods: import("@/lib/types/payment").PaymentMethod[] | null;
+  allowed_payment_methods: PaymentMethod[] | null;
   created_at: string;
   updated_at: string | null;
   categories: { name: string } | null;
@@ -277,9 +278,7 @@ export async function getEventById(
       is_active: data.is_active,
       is_vip: data.is_vip,
       allowed_payment_methods:
-        (data.allowed_payment_methods as
-          | import("@/lib/types/payment").PaymentMethod[]
-          | null) ?? null,
+        (data.allowed_payment_methods as PaymentMethod[] | null) ?? null,
       created_at: data.created_at,
       updated_at: data.updated_at ?? null,
       category: categoryDetails.name,

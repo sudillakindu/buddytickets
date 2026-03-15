@@ -27,7 +27,7 @@ import type {
   OrganizerDetails,
   OrganizerDetailsFieldErrors,
   OrganizerOnboardingUser,
-} from "@/lib/types/organizer";
+} from "@/lib/types";
 
 interface OrganizerFormState {
   nic_number: string;

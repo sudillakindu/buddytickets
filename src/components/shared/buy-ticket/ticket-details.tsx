@@ -27,8 +27,8 @@ import {
   EVENT_STATUS_PILLS,
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
-import type { TicketType, EventDetails } from "@/lib/types/event";
-import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
+import type { TicketType, EventDetails } from "@/lib/types";
+import type { CartItem, BuyTicketItem } from "@/lib/types";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 const MAX_QTY_PER_TYPE = 10;

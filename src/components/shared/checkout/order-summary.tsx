@@ -26,12 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
-import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
+import type { CheckoutData, ValidatedPromotion } from "@/lib/types";
 import type {
   PaymentMethod,
   PaymentGatewayFormData,
   BankTransferDetails,
-} from "@/lib/types/payment";
+} from "@/lib/types";
 
 const formatLKR = (n: number) => {
   return n === 0

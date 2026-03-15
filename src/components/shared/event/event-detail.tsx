@@ -27,7 +27,7 @@ import {
   EVENT_STATUS_PILLS,
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
-import type { EventDetails, EventStatus, TicketType } from "@/lib/types/event";
+import type { EventDetails, EventStatus, TicketType } from "@/lib/types";
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 interface StatusConfig {

@@ -30,7 +30,7 @@ import type {
   ResendResult,
   OtpStatus,
   DataFetchResult,
-} from "@/lib/types/auth";
+} from "@/lib/types";
 
 const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 

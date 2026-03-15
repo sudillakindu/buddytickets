@@ -3,7 +3,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { getSession } from "@/lib/utils/session";
-import type { Ticket } from "@/lib/types/ticket";
+import type { Ticket } from "@/lib/types";
 
 export interface TicketsResult {
   success: boolean;
@@ -31,7 +31,7 @@ interface TicketRow {
   ticket_id: string;
   qr_hash: string;
   status: Ticket["status"];
-  price_purchased: string;
+  price_purchased: number;
   created_at: string;
   ticket_types?: TicketTypeJoin | TicketTypeJoin[] | null;
   events?: EventJoin | EventJoin[] | null;

@@ -10,7 +10,7 @@ import { EventGridSkeleton } from "@/components/shared/event/event-card-skeleton
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 import { getFeaturedEvents } from "@/lib/actions/event";
-import type { Event } from "@/lib/types/event";
+import type { Event } from "@/lib/types";
 
 const VISIBLE_STATUSES = new Set<Event["status"]>([
   "ON_SALE",

@@ -9,7 +9,7 @@ import type {
   OrganizerStateResult,
   SubmitOrganizerDetailsResult,
   UserRole,
-} from "@/lib/types/organizer";
+} from "@/lib/types";
 import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;

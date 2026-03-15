@@ -16,7 +16,7 @@ import { getAllEvents } from "@/lib/actions/event";
 import { Toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { logger } from "@/lib/logger";
-import type { Event, EventStatus } from "@/lib/types/event";
+import type { Event, EventStatus } from "@/lib/types";
 
 interface FilterTab {
   label: string;

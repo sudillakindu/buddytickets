@@ -1,4 +1,4 @@
-import type { EventStatus } from "@/lib/types/event";
+import type { EventStatus } from "@/lib/types";
 
 export interface StatusPill {
   label: string;

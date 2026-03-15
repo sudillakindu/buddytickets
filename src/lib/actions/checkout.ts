@@ -13,9 +13,9 @@ import type {
   PromoValidationResult,
   ValidatedPromotion,
   PromotionRow,
-} from "@/lib/types/checkout";
-import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
-import type { PaymentMethod } from "@/lib/types/payment";
+} from "@/lib/types";
+import { ALL_PAYMENT_METHODS } from "@/lib/types";
+import type { PaymentMethod } from "@/lib/types";
 
 interface TicketTypeRow {
   ticket_type_id: string;
@@ -252,15 +252,15 @@ export async function validatePromoCode(
     if (now > promo.end_at)
       return { success: false, message: "This promo code has expired." };
     if (
-      promo.usage_limit_global > 0 &&
-      promo.current_global_usage >= promo.usage_limit_global
+      (promo.usage_limit_global ?? 0) > 0 &&
+      (promo.current_global_usage ?? 0) >= (promo.usage_limit_global ?? 0)
     )
       return {
         success: false,
         message: "This promo code has reached its usage limit.",
       };
 
-    if (promo.usage_limit_per_user > 0) {
+    if ((promo.usage_limit_per_user ?? 0) > 0) {
       const { count, error: usageErr } = await getSupabaseAdmin()
         .from("promotion_usages")
         .select("usage_id", { count: "exact", head: true })
@@ -268,10 +268,10 @@ export async function validatePromoCode(
         .eq("user_id", session.sub);
 
       if (usageErr) throw usageErr;
-      if ((count ?? 0) >= promo.usage_limit_per_user) {
+      if ((count ?? 0) >= (promo.usage_limit_per_user ?? 0)) {
         return {
           success: false,
-          message: `You have already used this promo code (limit: ${promo.usage_limit_per_user}x).`,
+          message: `You have already used this promo code (limit: ${promo.usage_limit_per_user ?? 0}x).`,
         };
       }
     }
@@ -289,10 +289,10 @@ export async function validatePromoCode(
         success: false,
         message: "This promo code is not valid for the selected ticket types.",
       };
-    if (promo.min_order_amount > 0 && subtotal < promo.min_order_amount)
+    if ((promo.min_order_amount ?? 0) > 0 && subtotal < (promo.min_order_amount ?? 0))
       return {
         success: false,
-        message: `Minimum order amount of LKR ${promo.min_order_amount.toLocaleString()} required.`,
+        message: `Minimum order amount of LKR ${(promo.min_order_amount ?? 0).toLocaleString()} required.`,
       };
 
     let discountAmount = 0;

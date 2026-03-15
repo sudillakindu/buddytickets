@@ -4,15 +4,15 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import { initiatePaymentGateway } from "@/lib/utils/payment-gateway";
-import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
+import { ALL_PAYMENT_METHODS } from "@/lib/types";
 import type {
   CreateOrderInput,
   CreateOrderResult,
   PaymentSource,
   PaymentMethod,
   BankTransferDetails,
-} from "@/lib/types/payment";
-import type { ValidatedPromotion, ReservationRow } from "@/lib/types/checkout";
+} from "@/lib/types";
+import type { ValidatedPromotion, ReservationRow } from "@/lib/types";
 
 interface TicketTypeRow {
   ticket_type_id: string;

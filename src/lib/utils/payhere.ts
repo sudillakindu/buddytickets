@@ -2,7 +2,7 @@ import crypto from "crypto";
 import type {
   PaymentGatewayFormData,
   PaymentGatewayWebhookPayload,
-} from "@/lib/types/payment";
+} from "@/lib/types";
 
 const PAYHERE_SANDBOX_URL = "https://sandbox.payhere.lk/pay/checkout";
 const PAYHERE_LIVE_URL = "https://www.payhere.lk/pay/checkout";

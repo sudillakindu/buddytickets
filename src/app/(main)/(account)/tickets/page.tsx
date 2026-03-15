@@ -8,7 +8,7 @@ import { TicketGridSkeleton } from "@/components/shared/ticket/ticket-skeleton";
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 import { getUserTickets } from "@/lib/actions/ticket";
-import type { Ticket as TicketType } from "@/lib/types/ticket";
+import type { Ticket as TicketType } from "@/lib/types";
 
 const EmptyState: React.FC = memo(() => (
   <motion.div

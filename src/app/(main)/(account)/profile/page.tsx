@@ -30,7 +30,7 @@ import {
   updateProfile,
   changePassword,
 } from "@/lib/actions/profile";
-import type { UserProfile } from "@/lib/types/profile";
+import type { UserProfile } from "@/lib/types";
 
 const ROLE_LABEL: Record<string, string> = {
   SYSTEM: "System",

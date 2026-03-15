@@ -21,7 +21,7 @@ import {
   getOrderPaymentStatus,
 } from "@/lib/actions/order";
 import { cn } from "@/lib/ui/utils";
-import type { OrderSuccessData } from "@/lib/types/payment";
+import type { OrderSuccessData } from "@/lib/types";
 
 const formatLKR = (n: number) =>
   `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;

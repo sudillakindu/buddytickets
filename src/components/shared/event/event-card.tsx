@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
-import type { Event, EventStatus } from "@/lib/types/event";
+import type { Event, EventStatus } from "@/lib/types";
 
 interface StatusUI {
   text: string;

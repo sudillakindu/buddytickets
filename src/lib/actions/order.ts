@@ -3,7 +3,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
-import type { OrderSuccessData, PaymentStatus } from "@/lib/types/payment";
+import type { OrderSuccessData, PaymentStatus } from "@/lib/types";
 
 interface OrderWithEventRow {
   order_id: string;
