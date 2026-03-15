@@ -152,7 +152,7 @@ const ContactItem = memo(({ icon: Icon, text, href }: ContactItemProps) => {
 
 ContactItem.displayName = "ContactItem";
 
-export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
+export const Footer = ({ whatsappNumber, supportEmail }: FooterProps) => {
   const normalizedWhatsapp = whatsappNumber.startsWith("+")
     ? whatsappNumber
     : `+${whatsappNumber}`;
@@ -276,4 +276,4 @@ export function Footer({ whatsappNumber, supportEmail }: FooterProps) {
       </div>
     </footer>
   );
-}
+};

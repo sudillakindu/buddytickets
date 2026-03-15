@@ -282,7 +282,7 @@ export default function BecomeAnOrganizerPage() {
     return buildWhatsAppLink(user, whatsappNumber);
   }, [user, whatsappNumber]);
 
-  const openDetailsModal = useCallback(() => {
+  const handleOpenDetailsModal = useCallback(() => {
     if (!isOrganizer) return;
     setFieldErrors({});
     setForm({
@@ -298,7 +298,7 @@ export default function BecomeAnOrganizerPage() {
     setModalOpen(true);
   }, [isOrganizer, organizerDetails]);
 
-  const closeDetailsModal = useCallback(() => {
+  const handleCloseDetailsModal = useCallback(() => {
     if (submitting) return;
     setModalOpen(false);
   }, [submitting]);
@@ -526,7 +526,7 @@ export default function BecomeAnOrganizerPage() {
                           organizer onboarding.
                         </p>
                         <Button
-                          onClick={openDetailsModal}
+                          onClick={handleOpenDetailsModal}
                           className="h-auto py-2.5 px-5 rounded-xl font-primary text-sm text-white border-none bg-gradient-to-r from-[hsl(222.2,47.4%,11.2%)] via-[hsl(270,70%,50%)] to-[hsl(222.2,47.4%,11.2%)] bg-[length:200%_auto] bg-[position:0_0] hover:bg-[position:100%_0] transition-all duration-300"
                         >
                           {detailsStatus === "REJECTED"
@@ -635,7 +635,7 @@ export default function BecomeAnOrganizerPage() {
           <button
             type="button"
             className="absolute inset-0 bg-[hsl(222.2,47.4%,11.2%)]/45 backdrop-blur-[2px]"
-            onClick={closeDetailsModal}
+            onClick={handleCloseDetailsModal}
             aria-label="Close organizer details dialog"
           />
           <div className="relative w-full max-w-2xl rounded-2xl border border-[hsl(214.3,31.8%,91.4%)] bg-white shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
@@ -792,7 +792,7 @@ export default function BecomeAnOrganizerPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={closeDetailsModal}
+                  onClick={handleCloseDetailsModal}
                   disabled={submitting}
                   className="rounded-xl font-primary"
                 >

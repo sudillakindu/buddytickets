@@ -420,7 +420,7 @@ interface TicketDetailsProps {
   event: EventDetails;
 }
 
-export function TicketDetails({ event }: TicketDetailsProps) {
+export const TicketDetails = ({ event }: TicketDetailsProps) => {
   const router = useRouter();
   const statusCfg = (event.status ? EVENT_STATUS_PILLS[event.status] : undefined) ?? FALLBACK_STATUS_PILL;
   const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -697,4 +697,4 @@ export function TicketDetails({ event }: TicketDetailsProps) {
       </div>
     </main>
   );
-}
+};
