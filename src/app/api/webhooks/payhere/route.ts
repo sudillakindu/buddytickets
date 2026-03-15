@@ -23,8 +23,26 @@ import {
 import {
   generateQRHashesForReservation,
 } from "@/lib/utils/qrcode";
-import type { PaymentGatewayWebhookPayload } from "@/lib/types/payment";
-import type { TicketQRItem } from "@/lib/types/payment";
+
+interface PaymentGatewayWebhookPayload {
+  merchant_id: string;
+  order_id: string;
+  payment_id: string;
+  payhere_amount: string;
+  payhere_currency: string;
+  status_code: string;
+  md5sig: string;
+  method?: string;
+  status_message?: string;
+  custom_1?: string;
+  custom_2?: string;
+}
+
+interface TicketQRItem {
+  reservation_id: string;
+  ticket_type_version: number;
+  qr_hashes: string[];
+}
 
 // PayHere retries on non-200 — always return 200 for processed/known states
 const OK = () => NextResponse.json({ received: true }, { status: 200 });

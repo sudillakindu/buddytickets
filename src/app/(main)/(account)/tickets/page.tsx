@@ -8,7 +8,32 @@ import { TicketGridSkeleton } from "@/components/shared/ticket/ticket-skeleton";
 import { Toast } from "@/components/ui/toast";
 import { logger } from "@/lib/logger";
 import { getUserTickets } from "@/lib/actions/ticket";
-import type { Ticket as TicketType } from "@/lib/types/ticket";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type TicketStatus = Database["public"]["Enums"]["ticket_status"];
+
+interface TicketType {
+  ticket_id: string;
+  qr_hash: string;
+  status: TicketStatus;
+  price_purchased: string;
+  created_at: string;
+  ticket_type: {
+    ticket_type_id: string;
+    name: string;
+    description: string;
+  };
+  event: {
+    event_id: string;
+    name: string;
+    location: string;
+    start_at: string;
+    end_at: string;
+    status: EventStatus;
+    primary_image: string | null;
+  };
+}
 
 const EmptyState: React.FC = memo(() => (
   <motion.div

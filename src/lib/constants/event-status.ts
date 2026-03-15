@@ -1,4 +1,6 @@
-import type { EventStatus } from "@/lib/types/event";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
 
 export interface StatusPill {
   label: string;

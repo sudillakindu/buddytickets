@@ -3,19 +3,104 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
-import type {
-  CartItem,
-  CreateReservationResult,
-  GetCheckoutDataResult,
-  CheckoutData,
-  ReservationLineItem,
-  ReserveTicketsResult,
-  PromoValidationResult,
-  ValidatedPromotion,
-  PromotionRow,
-} from "@/lib/types/checkout";
-import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
-import type { PaymentMethod } from "@/lib/types/payment";
+import type { Database } from "@/lib/types/supabase";
+
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+type DiscountType = Database["public"]["Enums"]["discount_type"];
+
+const ALL_PAYMENT_METHODS: PaymentSource[] = [
+  "PAYMENT_GATEWAY",
+  "BANK_TRANSFER",
+  "ONGATE",
+];
+
+interface CartItem {
+  ticket_type_id: string;
+  quantity: number;
+}
+
+interface ReservationLineItem {
+  reservation_id: string;
+  ticket_type_id: string;
+  ticket_type_name: string;
+  description: string;
+  price_each: number;
+  quantity: number;
+  line_total: number;
+  version: number;
+  capacity: number;
+  qty_sold: number;
+  is_active: boolean | null;
+  sale_end_at: string | null;
+}
+
+interface CheckoutData {
+  primary_reservation_id: string;
+  event_id: string;
+  event_name: string;
+  event_start_at: string;
+  event_location: string;
+  event_status: string;
+  expires_at: string;
+  line_items: ReservationLineItem[];
+  subtotal: number;
+  allowed_payment_methods: PaymentSource[];
+}
+
+interface ReserveTicketsResult {
+  reservation_ids: string[];
+  primary_id: string;
+  expires_at: string;
+}
+
+interface ValidatedPromotion {
+  promotion_id: string;
+  code: string;
+  description: string | null;
+  discount_type: DiscountType;
+  discount_value: number;
+  max_discount_cap: number | null;
+  discount_amount: number;
+  final_total: number;
+}
+
+interface PromoValidationResult {
+  success: boolean;
+  message: string;
+  promo?: ValidatedPromotion;
+}
+
+interface CreateReservationResult {
+  success: boolean;
+  message: string;
+  primary_id?: string;
+  expires_at?: string;
+}
+
+interface GetCheckoutDataResult {
+  success: boolean;
+  message: string;
+  data?: CheckoutData;
+}
+
+interface PromotionRow {
+  promotion_id: string;
+  code: string;
+  description: string | null;
+  discount_type: DiscountType;
+  discount_value: number;
+  max_discount_cap: number | null;
+  min_order_amount: number | null;
+  start_at: string;
+  end_at: string;
+  is_active: boolean | null;
+  usage_limit_global: number | null;
+  usage_limit_per_user: number | null;
+  current_global_usage: number | null;
+  scope_event_id: string | null;
+  scope_ticket_type_id: string | null;
+  version: number | null;
+}
 
 interface TicketTypeRow {
   ticket_type_id: string;
@@ -23,9 +108,9 @@ interface TicketTypeRow {
   description: string | null;
   price: number;
   capacity: number;
-  qty_sold: number;
-  is_active: boolean;
-  version: number;
+  qty_sold: number | null;
+  is_active: boolean | null;
+  version: number | null;
   sale_end_at: string | null;
 }
 
@@ -35,7 +120,7 @@ interface EventRow {
   start_at: string;
   location: string;
   status: string;
-  allowed_payment_methods: PaymentMethod[] | null;
+  allowed_payment_methods: PaymentSource[] | null;
 }
 
 // Create inventory reservation via RPC ensuring DB FCFS constraint
@@ -184,7 +269,7 @@ export async function getCheckoutData(
 
     const subtotal = lineItems.reduce((sum, li) => sum + li.line_total, 0);
     const rawMethods = event.allowed_payment_methods;
-    const allowedPaymentMethods: PaymentMethod[] =
+    const allowedPaymentMethods: PaymentSource[] =
       rawMethods && rawMethods.length > 0
         ? rawMethods
         : [...ALL_PAYMENT_METHODS];
@@ -252,15 +337,15 @@ export async function validatePromoCode(
     if (now > promo.end_at)
       return { success: false, message: "This promo code has expired." };
     if (
-      promo.usage_limit_global > 0 &&
-      promo.current_global_usage >= promo.usage_limit_global
+      (promo.usage_limit_global ?? 0) > 0 &&
+      (promo.current_global_usage ?? 0) >= (promo.usage_limit_global ?? 0)
     )
       return {
         success: false,
         message: "This promo code has reached its usage limit.",
       };
 
-    if (promo.usage_limit_per_user > 0) {
+    if ((promo.usage_limit_per_user ?? 0) > 0) {
       const { count, error: usageErr } = await getSupabaseAdmin()
         .from("promotion_usages")
         .select("usage_id", { count: "exact", head: true })
@@ -268,10 +353,10 @@ export async function validatePromoCode(
         .eq("user_id", session.sub);
 
       if (usageErr) throw usageErr;
-      if ((count ?? 0) >= promo.usage_limit_per_user) {
+      if ((count ?? 0) >= (promo.usage_limit_per_user ?? 0)) {
         return {
           success: false,
-          message: `You have already used this promo code (limit: ${promo.usage_limit_per_user}x).`,
+          message: `You have already used this promo code (limit: ${promo.usage_limit_per_user ?? 0}x).`,
         };
       }
     }
@@ -289,10 +374,10 @@ export async function validatePromoCode(
         success: false,
         message: "This promo code is not valid for the selected ticket types.",
       };
-    if (promo.min_order_amount > 0 && subtotal < promo.min_order_amount)
+    if ((promo.min_order_amount ?? 0) > 0 && subtotal < (promo.min_order_amount ?? 0))
       return {
         success: false,
-        message: `Minimum order amount of LKR ${promo.min_order_amount.toLocaleString()} required.`,
+        message: `Minimum order amount of LKR ${(promo.min_order_amount ?? 0).toLocaleString()} required.`,
       };
 
     let discountAmount = 0;

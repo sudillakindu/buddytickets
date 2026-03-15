@@ -2,18 +2,97 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
-import type {
-  Event,
-  EventDetails,
-  EventImage,
-  EventStatus,
-  TicketType,
-  Organizer,
-  CategoryDetails,
-  GetFeaturedEventsResult,
-  GetAllEventsResult,
-  GetEventByIdResult,
-} from "@/lib/types/event";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+
+interface EventImage {
+  event_id: string;
+  priority_order: number;
+  image_url: string;
+  created_at: string | null;
+}
+
+interface TicketType {
+  ticket_type_id: string;
+  event_id: string;
+  name: string;
+  description: string;
+  inclusions: string[];
+  price: number;
+  capacity: number;
+  qty_sold: number;
+  sale_start_at: string | null;
+  sale_end_at: string | null;
+  is_active: boolean | null;
+  version: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface Organizer {
+  user_id: string;
+  name: string;
+  image_url: string | null;
+  email: string;
+  username: string;
+}
+
+interface CategoryDetails {
+  category_id: string;
+  name: string;
+  description: string | null;
+}
+
+interface Event {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus | null;
+  is_active: boolean | null;
+  is_vip: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+  category: string;
+  thumbnail_image: string | null;
+  start_ticket_price: number | null;
+  vip_priority_order: number | null;
+}
+
+interface EventDetails extends Event {
+  images: EventImage[];
+  banner_image: string | null;
+  ticket_types: TicketType[];
+  organizer: Organizer;
+  category_details: CategoryDetails;
+}
+
+interface BaseActionResponse {
+  success: boolean;
+  message?: string;
+}
+
+interface GetFeaturedEventsResult extends BaseActionResponse {
+  events?: Event[];
+}
+
+interface GetAllEventsResult extends BaseActionResponse {
+  events?: Event[];
+}
+
+interface GetEventByIdResult extends BaseActionResponse {
+  event?: EventDetails;
+}
 
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
@@ -50,15 +129,15 @@ interface RawEventRow {
   map_link: string;
   start_at: string;
   end_at: string;
-  status: EventStatus;
-  is_active: boolean;
-  is_vip: boolean;
-  allowed_payment_methods: import("@/lib/types/payment").PaymentMethod[] | null;
-  created_at: string;
+  status: EventStatus | null;
+  is_active: boolean | null;
+  is_vip: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
+  created_at: string | null;
   updated_at: string | null;
   categories: { name: string } | null;
   event_images: { image_url: string; priority_order: number }[];
-  ticket_types: { price: number; is_active: boolean }[];
+  ticket_types: { price: number; is_active: boolean | null }[];
   vip_events: { priority_order: number }[];
 }
 
@@ -117,7 +196,7 @@ function sortEvents(a: Event, b: Event): number {
     new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
   if (dateDiff !== 0) return dateDiff;
 
-  return (STATUS_PRIORITY[a.status] ?? 7) - (STATUS_PRIORITY[b.status] ?? 7);
+  return (STATUS_PRIORITY[a.status ?? ""] ?? 7) - (STATUS_PRIORITY[b.status ?? ""] ?? 7);
 }
 
 export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {
@@ -278,7 +357,7 @@ export async function getEventById(
       is_vip: data.is_vip,
       allowed_payment_methods:
         (data.allowed_payment_methods as
-          | import("@/lib/types/payment").PaymentMethod[]
+          | PaymentSource[]
           | null) ?? null,
       created_at: data.created_at,
       updated_at: data.updated_at ?? null,

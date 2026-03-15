@@ -24,13 +24,43 @@ import {
   destroySession,
   type SessionUser,
 } from "@/lib/utils/session";
-import type {
-  AuthResult,
-  VerifyResult,
-  ResendResult,
-  OtpStatus,
-  DataFetchResult,
-} from "@/lib/types/auth";
+// --- Auth Result Types (application-level, not DB tables) ---
+
+interface AuthResult {
+  success: boolean;
+  message: string;
+  token?: string;
+  redirectTo?: string;
+  needsVerification?: boolean;
+}
+
+interface VerifyResult {
+  success: boolean;
+  message: string;
+  attemptsRemaining?: number;
+  redirectTo?: string;
+  resetToken?: string;
+  purpose?: string;
+}
+
+interface ResendResult {
+  success: boolean;
+  message: string;
+  remainingSeconds?: number;
+}
+
+interface OtpStatus {
+  email: string;
+  purpose: string;
+  canResend: boolean;
+  remainingSeconds: number;
+}
+
+interface DataFetchResult<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
 
 const DASHBOARD_ROLES = new Set(["SYSTEM", "ORGANIZER", "STAFF"]);
 

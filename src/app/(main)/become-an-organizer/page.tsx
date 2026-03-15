@@ -23,11 +23,48 @@ import {
   getOrganizerOnboardingState,
   submitOrganizerDetails,
 } from "@/lib/actions/organizer";
-import type {
-  OrganizerDetails,
-  OrganizerDetailsFieldErrors,
-  OrganizerOnboardingUser,
-} from "@/lib/types/organizer";
+import type { Database } from "@/lib/types/supabase";
+
+type OrganizerStatus = Database["public"]["Enums"]["organizer_status"];
+type UserRole = Database["public"]["Enums"]["user_role"];
+
+interface OrganizerOnboardingUser {
+  user_id: string;
+  name: string;
+  email: string;
+  mobile: string;
+  role: UserRole;
+  is_active: boolean | null;
+}
+
+interface OrganizerDetails {
+  user_id: string;
+  nic_number: string;
+  address: string;
+  bank_name: string;
+  bank_branch: string;
+  account_holder_name: string;
+  account_number: string;
+  nic_front_image_url: string;
+  nic_back_image_url: string;
+  remarks: string | null;
+  status: OrganizerStatus | null;
+  is_submitted: boolean | null;
+  verified_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface OrganizerDetailsFieldErrors {
+  nic_number?: string;
+  address?: string;
+  bank_name?: string;
+  bank_branch?: string;
+  account_holder_name?: string;
+  account_number?: string;
+  nic_front_image?: string;
+  nic_back_image?: string;
+}
 
 interface OrganizerFormState {
   nic_number: string;

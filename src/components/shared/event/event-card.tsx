@@ -16,7 +16,34 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
 import { Button } from "@/components/ui/button";
-import type { Event, EventStatus } from "@/lib/types/event";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+
+interface Event {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus | null;
+  is_active: boolean | null;
+  is_vip: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+  category: string;
+  thumbnail_image: string | null;
+  start_ticket_price: number | null;
+  vip_priority_order: number | null;
+}
 
 interface StatusUI {
   text: string;
@@ -110,7 +137,7 @@ export const EventCard: React.FC<EventCardProps> = memo(
     const router = useRouter();
     const [imgError, setImgError] = useState(false);
 
-    const statusUI = STATUS_UI_MAP[event.status] ?? FALLBACK_STATUS_UI;
+    const statusUI = (event.status ? STATUS_UI_MAP[event.status] : undefined) ?? FALLBACK_STATUS_UI;
     const detailHref = `/events/${event.event_id}`;
     const buyTicketHref = `/events/${event.event_id}/buy-tickets`;
 

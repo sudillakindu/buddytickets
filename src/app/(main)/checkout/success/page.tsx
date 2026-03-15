@@ -21,7 +21,19 @@ import {
   getOrderPaymentStatus,
 } from "@/lib/actions/order";
 import { cn } from "@/lib/ui/utils";
-import type { OrderSuccessData } from "@/lib/types/payment";
+import type { Database } from "@/lib/types/supabase";
+
+type PaymentStatus = Database["public"]["Enums"]["payment_status"];
+
+interface OrderSuccessData {
+  order_id: string;
+  event_name: string;
+  event_start_at: string;
+  event_location: string;
+  ticket_count: number;
+  final_amount: number;
+  payment_status: PaymentStatus;
+}
 
 const formatLKR = (n: number) =>
   `LKR ${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;

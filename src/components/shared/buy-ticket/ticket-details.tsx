@@ -27,8 +27,93 @@ import {
   EVENT_STATUS_PILLS,
   FALLBACK_STATUS_PILL,
 } from "@/lib/constants/event-status";
-import type { TicketType, EventDetails } from "@/lib/types/event";
-import type { CartItem, BuyTicketItem } from "@/lib/types/checkout";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+
+interface TicketType {
+  ticket_type_id: string;
+  event_id: string;
+  name: string;
+  description: string;
+  inclusions: string[];
+  price: number;
+  capacity: number;
+  qty_sold: number;
+  sale_start_at: string | null;
+  sale_end_at: string | null;
+  is_active: boolean | null;
+  version: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface Organizer {
+  user_id: string;
+  name: string;
+  image_url: string | null;
+  email: string;
+  username: string;
+}
+
+interface CategoryDetails {
+  category_id: string;
+  name: string;
+  description: string | null;
+}
+
+interface EventImage {
+  event_id: string;
+  priority_order: number;
+  image_url: string;
+  created_at: string | null;
+}
+
+interface Event {
+  event_id: string;
+  organizer_id: string;
+  category_id: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  requirements: string | null;
+  location: string;
+  map_link: string;
+  start_at: string;
+  end_at: string;
+  status: EventStatus | null;
+  is_active: boolean | null;
+  is_vip: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+  category: string;
+  thumbnail_image: string | null;
+  start_ticket_price: number | null;
+  vip_priority_order: number | null;
+}
+
+interface EventDetails extends Event {
+  images: EventImage[];
+  banner_image: string | null;
+  ticket_types: TicketType[];
+  organizer: Organizer;
+  category_details: CategoryDetails;
+}
+
+interface CartItem {
+  ticket_type_id: string;
+  quantity: number;
+}
+
+interface BuyTicketItem extends TicketType {
+  available: number;
+  is_sold_out: boolean;
+  sale_not_started: boolean;
+  sale_ended: boolean;
+  can_purchase: boolean;
+}
 import LogoSrc from "@/app/assets/images/logo/upscale_media_logo.png";
 
 const MAX_QTY_PER_TYPE = 10;
@@ -337,13 +422,13 @@ interface TicketDetailsProps {
 
 export function TicketDetails({ event }: TicketDetailsProps) {
   const router = useRouter();
-  const statusCfg = EVENT_STATUS_PILLS[event.status] ?? FALLBACK_STATUS_PILL;
+  const statusCfg = (event.status ? EVENT_STATUS_PILLS[event.status] : undefined) ?? FALLBACK_STATUS_PILL;
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const enrichedTickets = useMemo(
-    () => event.ticket_types.map((t) => enrichTicketType(t, event.status)),
+    () => event.ticket_types.map((t) => enrichTicketType(t, event.status ?? "")),
     [event.ticket_types, event.status],
   );
 

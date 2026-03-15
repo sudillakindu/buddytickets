@@ -4,7 +4,32 @@ import React, { memo } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Clock, MapPin, QrCode, Tag } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
-import type { Ticket } from "@/lib/types/ticket";
+import type { Database } from "@/lib/types/supabase";
+
+type EventStatus = Database["public"]["Enums"]["event_status"];
+type TicketStatus = Database["public"]["Enums"]["ticket_status"];
+
+interface Ticket {
+  ticket_id: string;
+  qr_hash: string;
+  status: TicketStatus;
+  price_purchased: string;
+  created_at: string;
+  ticket_type: {
+    ticket_type_id: string;
+    name: string;
+    description: string;
+  };
+  event: {
+    event_id: string;
+    name: string;
+    location: string;
+    start_at: string;
+    end_at: string;
+    status: EventStatus;
+    primary_image: string | null;
+  };
+}
 
 export interface TicketCardProps {
   ticket: Ticket;

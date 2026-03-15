@@ -3,26 +3,76 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
-import type {
-  OrganizerDetails,
-  OrganizerDetailsInput,
-  OrganizerStateResult,
-  SubmitOrganizerDetailsResult,
-  UserRole,
-} from "@/lib/types/organizer";
-import { logger } from "@/lib/logger";
+import type { Database } from "@/lib/types/supabase";
 
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+type OrganizerStatus = Database["public"]["Enums"]["organizer_status"];
+type UserRole = Database["public"]["Enums"]["user_role"];
 
-interface UserRow {
+interface OrganizerOnboardingUser {
   user_id: string;
   name: string;
   email: string;
   mobile: string;
   role: UserRole;
-  is_active: boolean;
+  is_active: boolean | null;
 }
+
+interface OrganizerDetails {
+  user_id: string;
+  nic_number: string;
+  address: string;
+  bank_name: string;
+  bank_branch: string;
+  account_holder_name: string;
+  account_number: string;
+  nic_front_image_url: string;
+  nic_back_image_url: string;
+  remarks: string | null;
+  status: OrganizerStatus | null;
+  is_submitted: boolean | null;
+  verified_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+interface OrganizerDetailsInput {
+  nic_number: string;
+  address: string;
+  bank_name: string;
+  bank_branch: string;
+  account_holder_name: string;
+  account_number: string;
+}
+
+interface OrganizerDetailsFieldErrors {
+  nic_number?: string;
+  address?: string;
+  bank_name?: string;
+  bank_branch?: string;
+  account_holder_name?: string;
+  account_number?: string;
+  nic_front_image?: string;
+  nic_back_image?: string;
+}
+
+interface OrganizerBaseResult {
+  success: boolean;
+  message: string;
+}
+
+interface OrganizerStateResult extends OrganizerBaseResult {
+  user: OrganizerOnboardingUser | null;
+  organizerDetails: OrganizerDetails | null;
+  whatsappNumber: string;
+}
+
+interface SubmitOrganizerDetailsResult extends OrganizerBaseResult {
+  fieldErrors?: OrganizerDetailsFieldErrors;
+}
+import { logger } from "@/lib/logger";
+
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 interface OrganizerDetailsRow {
   user_id: string;
@@ -35,10 +85,10 @@ interface OrganizerDetailsRow {
   nic_front_image_url: string;
   nic_back_image_url: string;
   remarks: string | null;
-  status: OrganizerDetails["status"];
-  is_submitted: boolean;
+  status: OrganizerStatus | null;
+  is_submitted: boolean | null;
   verified_at: string | null;
-  created_at: string;
+  created_at: string | null;
   updated_at: string | null;
 }
 
@@ -127,7 +177,7 @@ export async function getOrganizerOnboardingState(): Promise<OrganizerStateResul
       .from("users")
       .select("user_id, name, email, mobile, role, is_active")
       .eq("user_id", session.sub)
-      .maybeSingle<UserRow>();
+      .maybeSingle<OrganizerOnboardingUser>();
 
     if (userError || !user) {
       if (userError)

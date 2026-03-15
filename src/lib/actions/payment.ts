@@ -4,45 +4,123 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSession } from "@/lib/utils/session";
 import { logger } from "@/lib/logger";
 import { initiatePaymentGateway } from "@/lib/utils/payment-gateway";
-import { ALL_PAYMENT_METHODS } from "@/lib/types/payment";
-import type {
-  CreateOrderInput,
-  CreateOrderResult,
-  PaymentSource,
-  PaymentMethod,
-  BankTransferDetails,
-} from "@/lib/types/payment";
-import type { ValidatedPromotion, ReservationRow } from "@/lib/types/checkout";
+import type { Database } from "@/lib/types/supabase";
+
+type PaymentSource = Database["public"]["Enums"]["payment_source"];
+type DiscountType = Database["public"]["Enums"]["discount_type"];
+
+const ALL_PAYMENT_METHODS: PaymentSource[] = [
+  "PAYMENT_GATEWAY",
+  "BANK_TRANSFER",
+  "ONGATE",
+];
+
+interface CreateOrderInput {
+  reservation_id: string;
+  promotion_id: string | null;
+  discount_amount: number;
+  subtotal: number;
+  final_amount: number;
+  payment_method: PaymentSource;
+  remarks: string | null;
+}
+
+interface CreatedOrder {
+  order_id: string;
+  final_amount: number;
+  payment_source: PaymentSource;
+}
+
+interface PaymentGatewayFormData {
+  merchant_id: string;
+  return_url: string;
+  cancel_url: string;
+  notify_url: string;
+  order_id: string;
+  items: string;
+  currency: "LKR";
+  amount: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  hash: string;
+  checkout_url: string;
+}
+
+interface BankTransferDetails {
+  order_id: string;
+  amount: number;
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+  reference: string;
+  instructions: string;
+}
+
+interface CreateOrderResult {
+  success: boolean;
+  message: string;
+  order?: CreatedOrder;
+  gateway_form?: PaymentGatewayFormData;
+  bank_details?: BankTransferDetails;
+}
+
+interface ValidatedPromotion {
+  promotion_id: string;
+  code: string;
+  description: string | null;
+  discount_type: DiscountType;
+  discount_value: number;
+  max_discount_cap: number | null;
+  discount_amount: number;
+  final_total: number;
+}
+
+interface ReservationRow {
+  reservation_id: string;
+  user_id: string;
+  event_id: string;
+  ticket_type_id: string;
+  quantity: number;
+  reserved_at: string | null;
+  expires_at: string;
+  status: Database["public"]["Enums"]["reservation_status"] | null;
+  order_id: string | null;
+}
 
 interface TicketTypeRow {
   ticket_type_id: string;
   price: number;
   capacity: number;
-  qty_sold: number;
-  is_active: boolean;
+  qty_sold: number | null;
+  is_active: boolean | null;
   sale_start_at: string | null;
   sale_end_at: string | null;
-  version: number;
+  version: number | null;
 }
 
 interface EventRow {
   event_id: string;
   status: string;
-  is_active: boolean;
-  allowed_payment_methods: PaymentMethod[] | null;
+  is_active: boolean | null;
+  allowed_payment_methods: PaymentSource[] | null;
 }
 
 interface PromotionValidationRow {
   promotion_id: string;
-  is_active: boolean;
+  is_active: boolean | null;
   start_at: string;
   end_at: string;
-  usage_limit_global: number;
-  current_global_usage: number;
+  usage_limit_global: number | null;
+  current_global_usage: number | null;
   discount_type: string;
   discount_value: number;
   max_discount_cap: number | null;
-  min_order_amount: number;
+  min_order_amount: number | null;
   scope_event_id: string | null;
   scope_ticket_type_id: string | null;
 }
@@ -54,7 +132,7 @@ interface PrePaymentValidationResult {
   computedDiscount?: number;
   computedFinal?: number;
   reservations?: ReservationRow[];
-  allowedPaymentMethods?: PaymentMethod[];
+  allowedPaymentMethods?: PaymentSource[];
 }
 
 // Server-side validation to recompute pricing and verify availability
@@ -130,7 +208,7 @@ async function runPrePaymentValidation(
     return { valid: false, error: "Ticket sales are closed for this event." };
 
   const rawMethods = event.allowed_payment_methods;
-  const allowedPaymentMethods: PaymentMethod[] =
+  const allowedPaymentMethods: PaymentSource[] =
     rawMethods && rawMethods.length > 0 ? rawMethods : [...ALL_PAYMENT_METHODS];
 
   let computedSubtotal = 0;
@@ -152,7 +230,7 @@ async function runPrePaymentValidation(
         error: "Ticket sales have ended for a selected type.",
       };
 
-    const available = tt.capacity - tt.qty_sold;
+    const available = tt.capacity - (tt.qty_sold ?? 0);
     if (available < res.quantity)
       return { valid: false, error: "INVENTORY_CONFLICT" };
 
@@ -188,8 +266,8 @@ async function runPrePaymentValidation(
         error: "The applied promo code is no longer valid.",
       };
     if (
-      promotion.usage_limit_global > 0 &&
-      promotion.current_global_usage >= promotion.usage_limit_global
+      (promotion.usage_limit_global ?? 0) > 0 &&
+      (promotion.current_global_usage ?? 0) >= (promotion.usage_limit_global ?? 0)
     )
       return { valid: false, error: "The promo code has reached its limit." };
     if (promotion.scope_event_id && promotion.scope_event_id !== eventId)
@@ -266,7 +344,7 @@ export async function createPendingOrder(
       };
     }
 
-    const paymentSource: PaymentSource = input.payment_method as PaymentSource;
+    const paymentSource: PaymentSource = input.payment_method;
     const remarks = input.remarks ?? null;
     const eventId = reservations![0].event_id;
 
