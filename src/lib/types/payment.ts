@@ -83,6 +83,7 @@ export interface OrderRow {
   remarks: string | null;
   subtotal: number;
   discount_amount: number;
+  platform_fee_amount: number;
   final_amount: number;
   payment_source: PaymentSource;
   payment_status: PaymentStatus;
@@ -95,6 +96,7 @@ export interface CreateOrderInput {
   promotion_id: string | null;
   discount_amount: number;
   subtotal: number;
+  platform_fee: number;
   final_amount: number;
   payment_method: PaymentMethod;
   remarks: string | null;

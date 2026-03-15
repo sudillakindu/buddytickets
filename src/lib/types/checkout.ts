@@ -50,6 +50,7 @@ export interface CheckoutData {
   expires_at: string;
   line_items: ReservationLineItem[];
   subtotal: number;
+  platform_fee: number;
   allowed_payment_methods: PaymentMethod[];
 }
 
@@ -75,7 +76,15 @@ export interface PromotionRow {
   current_global_usage: number;
   scope_event_id: string | null;
   scope_ticket_type_id: string | null;
+  extra_rules_json: ExtraRulesJson | null;
+  created_by: string;
   version: number;
+}
+
+export interface ExtraRulesJson {
+  min_ticket_quantity?: number;
+  allowed_categories?: string[];
+  event_restrictions?: string[];
 }
 
 export interface ValidatedPromotion {
@@ -113,6 +122,13 @@ export interface GetCheckoutDataResult {
   success: boolean;
   message: string;
   data?: CheckoutData;
+}
+
+export interface AttendeeInfo {
+  attendee_name: string;
+  attendee_nic: string;
+  attendee_email?: string;
+  attendee_mobile?: string;
 }
 
 export interface BuyTicketItem extends TicketType {

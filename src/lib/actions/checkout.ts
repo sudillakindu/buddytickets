@@ -35,6 +35,9 @@ interface EventRow {
   start_at: string;
   location: string;
   status: string;
+  platform_fee_type: string;
+  platform_fee_value: number;
+  platform_fee_cap: number | null;
   allowed_payment_methods: PaymentMethod[] | null;
 }
 
@@ -154,7 +157,7 @@ export async function getCheckoutData(
     const { data: event, error: evErr } = await getSupabaseAdmin()
       .from("events")
       .select(
-        "event_id, name, start_at, location, status, allowed_payment_methods",
+        "event_id, name, start_at, location, status, platform_fee_type, platform_fee_value, platform_fee_cap, allowed_payment_methods",
       )
       .eq("event_id", eventId)
       .maybeSingle<EventRow>();
@@ -183,6 +186,25 @@ export async function getCheckoutData(
     });
 
     const subtotal = lineItems.reduce((sum, li) => sum + li.line_total, 0);
+
+    // --- Platform Fee Calculation ---
+    let platformFee = 0;
+    const feeType = event.platform_fee_type ?? "PERCENTAGE";
+    const feeValue = Number(event.platform_fee_value ?? 0);
+    const feeCap = event.platform_fee_cap != null ? Number(event.platform_fee_cap) : null;
+
+    if (feeValue > 0) {
+      if (feeType === "PERCENTAGE") {
+        platformFee = subtotal * (feeValue / 100);
+      } else {
+        platformFee = feeValue;
+      }
+      if (feeCap !== null) {
+        platformFee = Math.min(platformFee, feeCap);
+      }
+      platformFee = Math.round(platformFee * 100) / 100;
+    }
+
     const rawMethods = event.allowed_payment_methods;
     const allowedPaymentMethods: PaymentMethod[] =
       rawMethods && rawMethods.length > 0
@@ -199,6 +221,7 @@ export async function getCheckoutData(
       expires_at: reservations[0].expires_at,
       line_items: lineItems,
       subtotal,
+      platform_fee: platformFee,
       allowed_payment_methods: allowedPaymentMethods,
     };
 
@@ -232,7 +255,7 @@ export async function validatePromoCode(
     const { data: promoRaw, error: promoErr } = await getSupabaseAdmin()
       .from("promotions")
       .select(
-        `promotion_id, code, description, discount_type, discount_value, max_discount_cap, min_order_amount, start_at, end_at, is_active, usage_limit_global, usage_limit_per_user, current_global_usage, scope_event_id, scope_ticket_type_id, version`,
+        `promotion_id, code, description, discount_type, discount_value, max_discount_cap, min_order_amount, start_at, end_at, is_active, usage_limit_global, usage_limit_per_user, current_global_usage, scope_event_id, scope_ticket_type_id, extra_rules_json, created_by, version`,
       )
       .eq("code", code.trim().toUpperCase())
       .maybeSingle();
@@ -294,6 +317,30 @@ export async function validatePromoCode(
         success: false,
         message: `Minimum order amount of LKR ${promo.min_order_amount.toLocaleString()} required.`,
       };
+
+    // --- Extra Rules JSON Validation ---
+    if (promo.extra_rules_json) {
+      const rules = promo.extra_rules_json;
+
+      if (
+        rules.min_ticket_quantity &&
+        ticketTypeIds.length < rules.min_ticket_quantity
+      ) {
+        return {
+          success: false,
+          message: `Minimum ${rules.min_ticket_quantity} ticket(s) required for this promo.`,
+        };
+      }
+
+      if (rules.event_restrictions && rules.event_restrictions.length > 0) {
+        if (!rules.event_restrictions.includes(eventId)) {
+          return {
+            success: false,
+            message: "This promo code is not valid for this event.",
+          };
+        }
+      }
+    }
 
     let discountAmount = 0;
     if (promo.discount_type === "PERCENTAGE") {

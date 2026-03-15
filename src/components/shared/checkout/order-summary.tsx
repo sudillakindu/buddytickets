@@ -271,7 +271,8 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
   const [orderCreated, setOrderCreated] = useState<string | null>(null);
 
   const discountAmount = appliedPromo?.discount_amount ?? 0;
-  const finalTotal = Math.max(0, data.subtotal - discountAmount);
+  const platformFee = data.platform_fee ?? 0;
+  const finalTotal = Math.max(0, data.subtotal - discountAmount + platformFee);
 
   useEffect(() => {
     if (isExpired) {
@@ -330,6 +331,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
       promotion_id: appliedPromo?.promotion_id ?? null,
       discount_amount: discountAmount,
       subtotal: data.subtotal,
+      platform_fee: platformFee,
       final_amount: finalTotal,
       payment_method: paymentMethod,
       remarks: null,
@@ -439,6 +441,13 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
             <span>Subtotal</span>
             <span>{formatLKR(data.subtotal)}</span>
           </div>
+
+          {platformFee > 0 && (
+            <div className="flex justify-between text-sm font-secondary text-gray-500">
+              <span>Service Fee</span>
+              <span>{formatLKR(platformFee)}</span>
+            </div>
+          )}
 
           <AnimatePresence>
             {appliedPromo && (

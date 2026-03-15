@@ -29,6 +29,9 @@ interface EventRow {
   event_id: string;
   status: string;
   is_active: boolean;
+  platform_fee_type: string;
+  platform_fee_value: number;
+  platform_fee_cap: number | null;
   allowed_payment_methods: PaymentMethod[] | null;
 }
 
@@ -52,6 +55,7 @@ interface PrePaymentValidationResult {
   error?: string;
   computedSubtotal?: number;
   computedDiscount?: number;
+  computedPlatformFee?: number;
   computedFinal?: number;
   reservations?: ReservationRow[];
   allowedPaymentMethods?: PaymentMethod[];
@@ -119,7 +123,7 @@ async function runPrePaymentValidation(
 
   const { data: event, error: evErr } = await getSupabaseAdmin()
     .from("events")
-    .select("event_id, status, is_active, allowed_payment_methods")
+    .select("event_id, status, is_active, platform_fee_type, platform_fee_value, platform_fee_cap, allowed_payment_methods")
     .eq("event_id", eventId)
     .maybeSingle<EventRow>();
 
@@ -210,12 +214,31 @@ async function runPrePaymentValidation(
     computedDiscount = Math.round(computedDiscount * 100) / 100;
   }
 
-  const computedFinal = Math.max(0, computedSubtotal - computedDiscount);
+  // --- Platform Fee Calculation ---
+  let computedPlatformFee = 0;
+  const feeType = event.platform_fee_type ?? "PERCENTAGE";
+  const feeValue = Number(event.platform_fee_value ?? 0);
+  const feeCap = event.platform_fee_cap != null ? Number(event.platform_fee_cap) : null;
+
+  if (feeValue > 0) {
+    if (feeType === "PERCENTAGE") {
+      computedPlatformFee = computedSubtotal * (feeValue / 100);
+    } else {
+      computedPlatformFee = feeValue;
+    }
+    if (feeCap !== null) {
+      computedPlatformFee = Math.min(computedPlatformFee, feeCap);
+    }
+    computedPlatformFee = Math.round(computedPlatformFee * 100) / 100;
+  }
+
+  const computedFinal = Math.max(0, computedSubtotal - computedDiscount + computedPlatformFee);
 
   return {
     valid: true,
     computedSubtotal,
     computedDiscount,
+    computedPlatformFee,
     computedFinal,
     reservations: reservations as ReservationRow[],
     allowedPaymentMethods,
@@ -254,6 +277,7 @@ export async function createPendingOrder(
     const {
       computedSubtotal,
       computedDiscount,
+      computedPlatformFee,
       computedFinal,
       reservations,
       allowedPaymentMethods = ALL_PAYMENT_METHODS,
@@ -279,6 +303,7 @@ export async function createPendingOrder(
         remarks,
         subtotal: computedSubtotal,
         discount_amount: computedDiscount ?? 0,
+        platform_fee_amount: computedPlatformFee ?? 0,
         final_amount: computedFinal,
         payment_source: paymentSource,
         payment_status: "PENDING",
