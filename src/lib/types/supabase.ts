@@ -1493,7 +1493,7 @@ export type Database = {
         | "DENIED_INVALID"
       ticket_status: "ACTIVE" | "PENDING" | "USED" | "CANCELLED"
       transaction_status: "SUCCESS" | "FAILED"
-      user_role: "SYSTEM" | "ORGANIZER" | "CO_ORGANIZER" | "STAFF" | "USER"
+      user_role: "SYSTEM" | "ORGANIZER" | "STAFF" | "USER"
       waitlist_status: "WAITING" | "NOTIFIED" | "CONVERTED" | "EXPIRED"
     }
     CompositeTypes: {
@@ -1648,7 +1648,7 @@ export const Constants = {
       ],
       ticket_status: ["ACTIVE", "PENDING", "USED", "CANCELLED"],
       transaction_status: ["SUCCESS", "FAILED"],
-      user_role: ["SYSTEM", "ORGANIZER", "CO_ORGANIZER", "STAFF", "USER"],
+      user_role: ["SYSTEM", "ORGANIZER", "STAFF", "USER"],
       waitlist_status: ["WAITING", "NOTIFIED", "CONVERTED", "EXPIRED"],
     },
   },
