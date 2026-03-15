@@ -69,6 +69,7 @@ interface GetEventByIdResult extends BaseActionResponse {
 
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
+const DEFAULT_STATUS_PRIORITY = 7;
 
 const STATUS_PRIORITY: Partial<Record<EventStatus, number>> = {
   ONGOING: 1,
@@ -158,8 +159,8 @@ function sortEvents(a: Event, b: Event): number {
     new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
   if (dateDiff !== 0) return dateDiff;
 
-  const priorityA = (a.status ? STATUS_PRIORITY[a.status] : undefined) ?? 7;
-  const priorityB = (b.status ? STATUS_PRIORITY[b.status] : undefined) ?? 7;
+  const priorityA = (a.status ? STATUS_PRIORITY[a.status] : undefined) ?? DEFAULT_STATUS_PRIORITY;
+  const priorityB = (b.status ? STATUS_PRIORITY[b.status] : undefined) ?? DEFAULT_STATUS_PRIORITY;
   return priorityA - priorityB;
 }
 
