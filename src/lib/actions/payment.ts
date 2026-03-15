@@ -291,7 +291,10 @@ export async function createPendingOrder(
     }
 
     const paymentSource: PaymentSource = input.payment_method as PaymentSource;
-    const remarks = input.remarks ?? null;
+    const attendeesJson = input.attendees && input.attendees.length > 0
+      ? JSON.stringify(input.attendees)
+      : null;
+    const remarks = attendeesJson ?? input.remarks ?? null;
     const eventId = reservations![0].event_id;
 
     const { data: newOrder, error: orderErr } = await getSupabaseAdmin()

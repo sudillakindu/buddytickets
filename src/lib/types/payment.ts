@@ -71,6 +71,8 @@ export interface PaymentGatewayWebhookPayload {
   md5sig: string;
   method?: string;
   status_message?: string;
+  card_holder_name?: string;
+  card_no?: string;
   custom_1?: string;
   custom_2?: string;
 }
@@ -100,6 +102,14 @@ export interface CreateOrderInput {
   final_amount: number;
   payment_method: PaymentMethod;
   remarks: string | null;
+  attendees?: AttendeeInfo[];
+}
+
+export interface AttendeeInfo {
+  attendee_name: string;
+  attendee_nic: string;
+  attendee_email?: string;
+  attendee_mobile?: string;
 }
 
 export interface CreatedOrder {

@@ -26,7 +26,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePromoCode } from "@/lib/actions/checkout";
 import { createPendingOrder } from "@/lib/actions/payment";
-import type { CheckoutData, ValidatedPromotion } from "@/lib/types/checkout";
+import { AttendeeForm } from "@/components/shared/checkout/attendee-form";
+import type {
+  CheckoutData,
+  ValidatedPromotion,
+  AttendeeInfo,
+} from "@/lib/types/checkout";
 import type {
   PaymentMethod,
   PaymentGatewayFormData,
@@ -270,6 +275,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
   );
   const [orderCreated, setOrderCreated] = useState<string | null>(null);
 
+  const totalTickets = data.line_items.reduce((s, li) => s + li.quantity, 0);
+  const showAttendeeForm = totalTickets > 1;
+  const [attendees, setAttendees] = useState<AttendeeInfo[]>(() =>
+    Array.from({ length: totalTickets }, () => ({
+      attendee_name: "",
+      attendee_nic: "",
+    })),
+  );
+
   const discountAmount = appliedPromo?.discount_amount ?? 0;
   const platformFee = data.platform_fee ?? 0;
   const finalTotal = Math.max(0, data.subtotal - discountAmount + platformFee);
@@ -323,6 +337,18 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
       return;
     }
 
+    if (showAttendeeForm) {
+      const invalidAttendee = attendees.find(
+        (a) => !a.attendee_name.trim() || !a.attendee_nic.trim(),
+      );
+      if (invalidAttendee) {
+        setSubmitError(
+          "Please fill in name and NIC/ID for all attendees.",
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -335,6 +361,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
       final_amount: finalTotal,
       payment_method: paymentMethod,
       remarks: null,
+      attendees: showAttendeeForm ? attendees : undefined,
     });
 
     if (!result.success) {
@@ -359,9 +386,12 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
     router.push(`/checkout/success?order_id=${result.order!.order_id}`);
   }, [
     isExpired,
+    showAttendeeForm,
+    attendees,
     data,
     appliedPromo,
     discountAmount,
+    platformFee,
     finalTotal,
     paymentMethod,
     router,
@@ -583,6 +613,18 @@ export const OrderSummary: React.FC<OrderSummaryProps> = memo(({ data }) => {
           )}
         </AnimatePresence>
       </div>
+
+      {showAttendeeForm && !bankDetails && !gatewayForm && (
+        <AttendeeForm
+          lineItems={data.line_items.map((li) => ({
+            ticket_type_id: li.ticket_type_id,
+            ticket_type_name: li.ticket_type_name,
+            quantity: li.quantity,
+          }))}
+          attendees={attendees}
+          onChange={setAttendees}
+        />
+      )}
 
       {!bankDetails && !gatewayForm && (
         <div className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm">

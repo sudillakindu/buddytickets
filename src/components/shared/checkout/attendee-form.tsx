@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useState, useCallback } from "react";
+import React, { memo, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/ui/utils";
@@ -44,13 +44,20 @@ export const AttendeeForm: React.FC<AttendeeFormProps> = memo(
     );
 
     // Compute starting index in the flat attendees array for each line item
-    let runningIndex = 0;
+    const startIndexMap = useMemo(() => {
+      const map: Record<string, number> = {};
+      let idx = 0;
+      for (const item of lineItems) {
+        map[item.ticket_type_id] = idx;
+        idx += item.quantity;
+      }
+      return map;
+    }, [lineItems]);
 
     return (
       <div className="space-y-4">
         {lineItems.map((item) => {
-          const startIndex = runningIndex;
-          runningIndex += item.quantity;
+          const startIndex = startIndexMap[item.ticket_type_id];
           const isExpanded = expandedSections[item.ticket_type_id] ?? true;
 
           return (

@@ -104,7 +104,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // but an early check avoids unnecessary work.
     const { data: existingOrder, error: orderFetchErr } = await getSupabaseAdmin()
       .from("orders")
-      .select("order_id, user_id, payment_status, event_id, final_amount")
+      .select("order_id, user_id, payment_status, event_id, final_amount, remarks, promotion_id, discount_amount")
       .eq("order_id", orderId)
       .maybeSingle();
 
@@ -262,6 +262,80 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const result = finalizeResult as { order_id: string; ticket_count: number };
+
+    // --- Record transaction with gateway details ---
+    const transactionId = crypto.randomUUID();
+    await getSupabaseAdmin()
+      .from("transactions")
+      .upsert(
+        {
+          transaction_id: transactionId,
+          order_id: orderId,
+          gateway_ref_id: payload.payment_id ?? null,
+          amount: paidAmount,
+          currency: payload.payhere_currency ?? "LKR",
+          status: "SUCCESS",
+          meta_data: {
+            status_code: payload.status_code,
+            method: payload.method ?? null,
+            card_holder_name: payload.card_holder_name ?? null,
+            card_no: payload.card_no ?? null,
+            status_message: payload.status_message ?? null,
+          },
+        },
+        { onConflict: "order_id" },
+      );
+
+    // --- Update tickets with attendee info if available ---
+    if (existingOrder.remarks) {
+      try {
+        const attendees = JSON.parse(existingOrder.remarks as string) as Array<{
+          attendee_name: string;
+          attendee_nic: string;
+          attendee_email?: string;
+          attendee_mobile?: string;
+        }>;
+        if (Array.isArray(attendees) && attendees.length > 0) {
+          const { data: tickets } = await getSupabaseAdmin()
+            .from("tickets")
+            .select("ticket_id")
+            .eq("order_id", orderId)
+            .order("created_at", { ascending: true });
+
+          if (tickets) {
+            for (let i = 0; i < Math.min(tickets.length, attendees.length); i++) {
+              await getSupabaseAdmin()
+                .from("tickets")
+                .update({
+                  attendee_name: attendees[i].attendee_name || null,
+                  attendee_nic: attendees[i].attendee_nic || null,
+                  attendee_email: attendees[i].attendee_email || null,
+                  attendee_mobile: attendees[i].attendee_mobile || null,
+                })
+                .eq("ticket_id", tickets[i].ticket_id);
+            }
+          }
+        }
+      } catch {
+        // remarks is not attendee JSON — ignore
+      }
+    }
+
+    // --- Record promotion usage if applicable ---
+    if (existingOrder.promotion_id) {
+      await getSupabaseAdmin()
+        .from("promotion_usages")
+        .upsert(
+          {
+            promotion_id: existingOrder.promotion_id as string,
+            user_id: userId,
+            order_id: orderId,
+            discount_received: Number(existingOrder.discount_amount ?? 0),
+            used_at: new Date().toISOString(),
+          },
+          { onConflict: "promotion_id,user_id,order_id" },
+        );
+    }
 
     logger.success({
       fn: "payhere.webhook",
