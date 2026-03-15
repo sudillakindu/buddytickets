@@ -182,7 +182,7 @@ async function autoLogin(userId: string): Promise<string | null> {
     .update({ last_login_at: new Date().toISOString() })
     .eq("user_id", userId);
 
-  return user.role as string;
+  return user.role;
 }
 
 export async function getVerifyEmailData(

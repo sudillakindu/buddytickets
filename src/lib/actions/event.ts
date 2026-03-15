@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import type { Database } from "@/lib/types/supabase";
 
 type PaymentSource = Database["public"]["Enums"]["payment_source"];
+type EventStatus = Database["public"]["Enums"]["event_status"];
 
 // --- Row Type Aliases ---
 type EventsRow = Database["public"]["Tables"]["events"]["Row"];
@@ -69,7 +70,7 @@ interface GetEventByIdResult extends BaseActionResponse {
 const FEATURED_ACTIVE_LIMIT = 8;
 const FEATURED_UPCOMING_LIMIT = 4;
 
-const STATUS_PRIORITY: Record<string, number> = {
+const STATUS_PRIORITY: Partial<Record<EventStatus, number>> = {
   ONGOING: 1,
   ON_SALE: 2,
   PUBLISHED: 3,
@@ -157,7 +158,9 @@ function sortEvents(a: Event, b: Event): number {
     new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
   if (dateDiff !== 0) return dateDiff;
 
-  return (STATUS_PRIORITY[a.status ?? ""] ?? 7) - (STATUS_PRIORITY[b.status ?? ""] ?? 7);
+  const priorityA = (a.status ? STATUS_PRIORITY[a.status] : undefined) ?? 7;
+  const priorityB = (b.status ? STATUS_PRIORITY[b.status] : undefined) ?? 7;
+  return priorityA - priorityB;
 }
 
 export async function getFeaturedEvents(): Promise<GetFeaturedEventsResult> {

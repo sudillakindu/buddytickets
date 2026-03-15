@@ -1,6 +1,7 @@
 "use server";
 
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { logger } from "@/lib/logger";
 import { getSession } from "@/lib/utils/session";
 import { uploadOrganizerNicImages } from "@/lib/utils/organizer-doc-upload";
 import type { Database } from "@/lib/types/supabase";
@@ -52,7 +53,6 @@ interface OrganizerStateResult extends OrganizerBaseResult {
 interface SubmitOrganizerDetailsResult extends OrganizerBaseResult {
   fieldErrors?: OrganizerDetailsFieldErrors;
 }
-import { logger } from "@/lib/logger";
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -71,7 +71,7 @@ function isValidSriLankanNic(value: string): boolean {
 function validateDetailsPayload(
   payload: OrganizerDetailsInput,
 ): SubmitOrganizerDetailsResult | null {
-  const fieldErrors: Record<string, string> = {};
+  const fieldErrors: OrganizerDetailsFieldErrors = {};
 
   if (!isValidSriLankanNic(payload.nic_number))
     fieldErrors.nic_number =
